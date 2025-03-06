@@ -2370,8 +2370,8 @@ IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT;
 struct ImDrawCmdHeader
 {
     ImVec4          ClipRect;
-    ImTextureID     TextureId;
-    unsigned int    VtxOffset;
+    ImTextureID     TextureId{};
+    unsigned int    VtxOffset{};
 };
 
 // [Internal] For use by ImDrawListSplitter
@@ -2380,7 +2380,6 @@ struct ImDrawChannel
     ImVector<ImDrawCmd>         _CmdBuffer;
     ImVector<ImDrawIdx>         _IdxBuffer;
 };
-
 
 // Split/Merge functions are used to split the draw list into different layers which can be drawn into out of order.
 // This is used by the Columns/Tables API, so items of each column can be batched together in a same draw call.

@@ -39,10 +39,10 @@ void OnGlfwError(int errorCode, const char *errorMessage)
 void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
-    app->input.mouseDelta.x = xpos - app->input.mousePos.x;
-    app->input.mouseDelta.y = ypos - app->input.mousePos.y;
-    app->input.mousePos.x = xpos;
-    app->input.mousePos.y = ypos;
+    app->input.mouseDelta.x = static_cast<float>(xpos) - app->input.mousePos.x;
+    app->input.mouseDelta.y = static_cast<float>(ypos) - app->input.mousePos.y;
+    app->input.mousePos.x = static_cast<float>(xpos);
+    app->input.mousePos.y = static_cast<float>(ypos);
 }
 
 void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
@@ -130,7 +130,7 @@ int main()
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -381,9 +381,9 @@ u64 GetFileLastWriteTimestamp(const char* filepath)
     union Filetime2u64 {
         FILETIME filetime;
         u64      u64time;
-    } conversor;
+    } conversor{};
 
-    WIN32_FILE_ATTRIBUTE_DATA Data;
+    WIN32_FILE_ATTRIBUTE_DATA Data{};
     if(GetFileAttributesExA(filepath, GetFileExInfoStandard, &Data)) {
         conversor.filetime = Data.ftLastWriteTime;
         return(conversor.u64time);
