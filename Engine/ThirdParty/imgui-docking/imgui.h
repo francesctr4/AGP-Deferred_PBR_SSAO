@@ -2370,8 +2370,8 @@ IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT;
 struct ImDrawCmdHeader
 {
     ImVec4          ClipRect;
-    ImTextureID     TextureId{};
-    unsigned int    VtxOffset{};
+    ImTextureID     TextureId;
+    unsigned int    VtxOffset;
 };
 
 // [Internal] For use by ImDrawListSplitter

@@ -19,6 +19,8 @@
 
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <iostream>
+#include <sstream>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -199,6 +201,33 @@ int main()
 
     GlobalFrameArenaMemory = (u8*)malloc(GLOBAL_FRAME_ARENA_SIZE);
 
+    std::stringstream vendorInfo;
+
+    // Obtener información de OpenGL
+    vendorInfo << "OpenGL version:" << std::endl;
+    vendorInfo << glGetString(GL_VERSION) << std::endl << std::endl;
+
+    vendorInfo << "OpenGL renderer:" << std::endl;
+    vendorInfo << glGetString(GL_RENDERER) << std::endl << std::endl;
+
+    vendorInfo << "OpenGL vendor:" << std::endl;
+    vendorInfo << glGetString(GL_VENDOR) << std::endl << std::endl;
+
+    vendorInfo << "OpenGL GLSL version:" << std::endl;
+    vendorInfo << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl << std::endl;
+
+    vendorInfo << "OpenGL extensions:" << std::endl;
+
+    GLint num_extensions;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    for (int i = 0; i < num_extensions; ++i) {
+        const unsigned char* str = glGetStringi(GL_EXTENSIONS, GLuint(i));
+        vendorInfo << str << std::endl;
+    }
+    vendorInfo << std::endl;
+
+    app.mOpenGLInfo = vendorInfo.str();
+
     Init(&app);
 
     while (app.isRunning)
@@ -261,6 +290,8 @@ int main()
         // Reset frame allocator
         GlobalFrameArenaHead = 0;
     }
+
+    CleanUp(&app);
 
     free(GlobalFrameArenaMemory);
 

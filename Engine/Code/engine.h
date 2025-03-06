@@ -52,8 +52,7 @@ struct App
     Input input;
 
     // Graphics
-    char gpuName[64];
-    char openGlVersion[64];
+    std::string mOpenGLInfo;
 
     ivec2 displaySize;
 
@@ -93,3 +92,4 @@ void Update(App* app);
 
 void Render(App* app);
 
+void CleanUp(App* app);

@@ -6,6 +6,8 @@
 //
 
 #include "engine.h"
+#include "openGL_types.inl"
+
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -181,11 +183,43 @@ u32 LoadTexture2D(App* app, const char* filepath)
 void Init(App* app)
 {
     // TODO: Initialize your resources here!
+    
     // - vertex buffers
+    glGenBuffers(1, &app->embeddedVertices);
+    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     // - element/index buffers
+    glGenBuffers(1, &app->embeddedElements);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
     // - vaos
+    glGenVertexArrays(1, &app->vao);
+    glBindVertexArray(app->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3UV2), (void*)offsetof(Vertex3UV2, pos));
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3UV2), (void*)offsetof(Vertex3UV2, uv));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
     // - programs (and retrieve uniform indices)
+    app->texturedGeometryProgramIdx = LoadProgram(app, "RENDER_QUAD.glsl", "RENDER_QUAD");
+    app->programUniformTexture = glGetUniformLocation(app->programs[app->texturedGeometryProgramIdx].handle, "uTexture");
+
     // - textures
+    app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
+    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
+    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
     app->mode = Mode_TexturedQuad;
 }
@@ -194,6 +228,7 @@ void Gui(App* app)
 {
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
+    ImGui::Text(app->mOpenGLInfo.c_str());
     ImGui::End();
 }
 
@@ -207,20 +242,82 @@ void Render(App* app)
     switch (app->mode)
     {
         case Mode_TexturedQuad:
-            {
-                // TODO: Draw your textured quad here!
-                // - clear the framebuffer
-                // - set the viewport
-                // - set the blending state
-                // - bind the texture into unit 0
-                // - bind the program 
-                //   (...and make its texture sample from unit 0)
-                // - bind the vao
-                // - glDrawElements() !!!
-            }
-            break;
+        {
+            // TODO: Draw your textured quad here!
+            // - clear the framebuffer
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // - set the viewport
+            glViewport(0, 0, app->windowWidth, app->windowHeight);
+            // - set the blending state
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            // - bind the texture into unit 0
+            // - bind the program 
+            //   (...and make its texture sample from unit 0)
+            // - bind the vao
+            // - glDrawElements() !!!
+
+            // Bind texture to unit 0
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->textures[0].handle);
+
+            // Bind program and set uniform to sample from texture unit 0
+            glUseProgram(app->programs[0].handle);
+            glUniform1i(glGetUniformLocation(app->programs[0].handle, "u_Texture"), 0); // Assuming shader has a "u_Texture" uniform
+
+            // Bind VAO and draw
+            glBindVertexArray(app->vao);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+            glBindVertexArray(0);
+        }
+        break;
 
         default:;
     }
 }
 
+void CleanUp(App* app)
+{
+    ELOG("Cleaning Up Engine");
+
+    // TODO: Deinitialize your resources here!
+    // - vertex buffers
+    // - element/index buffers
+    // - vaos
+    // - programs (and retrieve uniform indices)
+    // - textures
+
+    // Delete textures
+    for (auto& texture : app->textures)
+    {
+        glDeleteTextures(1, &texture.handle);
+    }
+    app->textures.clear();
+
+    // Delete shader programs
+    for (auto& program : app->programs)
+    {
+        glDeleteProgram(program.handle);
+    }
+    app->programs.clear();
+
+    // Delete VAO
+    if (app->vao != 0)
+    {
+        glDeleteVertexArrays(1, &app->vao);
+        app->vao = 0;
+    }
+
+    // Delete buffers
+    if (app->embeddedElements != 0)
+    {
+        glDeleteBuffers(1, &app->embeddedElements);
+        app->embeddedElements = 0;
+    }
+
+    if (app->embeddedVertices != 0)
+    {
+        glDeleteBuffers(1, &app->embeddedVertices);
+        app->embeddedVertices = 0;
+    }
+}

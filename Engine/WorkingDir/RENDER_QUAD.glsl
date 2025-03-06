@@ -1,0 +1,33 @@
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef RENDER_QUAD
+
+#if defined(VERTEX) ///////////////////////////////////////////////////
+
+layout(location=0) in vec3 iPosition;
+layout(location=1) in vec2 vTexCoord;
+
+out vec2 oTexCoord;
+
+void main()
+{
+	oTexCoord = vTexCoord;
+	gl_Position = vec4(iPosition, 1.0);
+}
+
+#elif defined(FRAGMENT) ///////////////////////////////////////////////
+
+in vec2 vTexCoord;
+uniform sampler2D uTexture;
+
+layout(location=0) out vec4 oColor;
+
+void main()
+{
+	oColor = texture(uTexture, vTexCoord);
+}
+
+#endif
+#endif
