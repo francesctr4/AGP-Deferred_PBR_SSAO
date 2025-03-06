@@ -246,28 +246,31 @@ void Render(App* app)
             // TODO: Draw your textured quad here!
             // - clear the framebuffer
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             // - set the viewport
-            glViewport(0, 0, app->windowWidth, app->windowHeight);
+            glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
             // - set the blending state
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
             // - bind the texture into unit 0
+            //glActiveTexture(GL_TEXTURE0);
+            //glBindTexture(GL_TEXTURE_2D, app->textures[0].handle);
+
             // - bind the program 
-            //   (...and make its texture sample from unit 0)
-            // - bind the vao
-            // - glDrawElements() !!!
-
-            // Bind texture to unit 0
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->textures[0].handle);
-
-            // Bind program and set uniform to sample from texture unit 0
             glUseProgram(app->programs[0].handle);
-            glUniform1i(glGetUniformLocation(app->programs[0].handle, "u_Texture"), 0); // Assuming shader has a "u_Texture" uniform
 
-            // Bind VAO and draw
+            //   (...and make its texture sample from unit 0)
+            //glUniform1i(glGetUniformLocation(app->programs[app->texturedGeometryProgramIdx].handle, "u_Texture"), 0); // Assuming shader has a "u_Texture" uniform
+
+            // - bind the vao
             glBindVertexArray(app->vao);
+
+            // - glDrawElements() !!!
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+            // - unbind the vao
             glBindVertexArray(0);
         }
         break;
