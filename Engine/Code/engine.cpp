@@ -212,7 +212,8 @@ void Init(App* app)
 
     // - programs (and retrieve uniform indices)
     app->texturedGeometryProgramIdx = LoadProgram(app, "RENDER_QUAD.glsl", "RENDER_QUAD");
-    app->programUniformTexture = glGetUniformLocation(app->programs[app->texturedGeometryProgramIdx].handle, "uTexture");
+    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
+    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
@@ -245,24 +246,27 @@ void Render(App* app)
         {
             // TODO: Draw your textured quad here!
             // - clear the framebuffer
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             // - set the viewport
-            glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
             // - set the blending state
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // - bind the texture into unit 0
-            //glActiveTexture(GL_TEXTURE0);
-            //glBindTexture(GL_TEXTURE_2D, app->textures[0].handle);
+            glActiveTexture(GL_TEXTURE0);
+            GLuint textureHandle = app->textures[app->diceTexIdx].handle;
+            glBindTexture(GL_TEXTURE_2D, textureHandle);
 
             // - bind the program 
-            glUseProgram(app->programs[0].handle);
+            Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+            glUseProgram(programTexturedGeometry.handle);
 
             //   (...and make its texture sample from unit 0)
-            //glUniform1i(glGetUniformLocation(app->programs[app->texturedGeometryProgramIdx].handle, "u_Texture"), 0); // Assuming shader has a "u_Texture" uniform
+            glUniform1i(app->programUniformTexture, 0); // Assuming shader has a "u_Texture" uniform
 
             // - bind the vao
             glBindVertexArray(app->vao);
@@ -272,6 +276,9 @@ void Render(App* app)
 
             // - unbind the vao
             glBindVertexArray(0);
+
+            // - unbind the program
+            glUseProgram(0);
         }
         break;
 
@@ -284,40 +291,36 @@ void CleanUp(App* app)
     ELOG("Cleaning Up Engine");
 
     // TODO: Deinitialize your resources here!
-    // - vertex buffers
-    // - element/index buffers
-    // - vaos
-    // - programs (and retrieve uniform indices)
-    // - textures
-
-    // Delete textures
+    
+    // - delete textures
     for (auto& texture : app->textures)
     {
         glDeleteTextures(1, &texture.handle);
     }
     app->textures.clear();
 
-    // Delete shader programs
+    // - delete shader programs
     for (auto& program : app->programs)
     {
         glDeleteProgram(program.handle);
     }
     app->programs.clear();
 
-    // Delete VAO
+    // - delete vao
     if (app->vao != 0)
     {
         glDeleteVertexArrays(1, &app->vao);
         app->vao = 0;
     }
 
-    // Delete buffers
+    // - delete element/index buffers
     if (app->embeddedElements != 0)
     {
         glDeleteBuffers(1, &app->embeddedElements);
         app->embeddedElements = 0;
     }
 
+    // - delete vertex buffers
     if (app->embeddedVertices != 0)
     {
         glDeleteBuffers(1, &app->embeddedVertices);
