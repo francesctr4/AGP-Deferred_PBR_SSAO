@@ -235,7 +235,23 @@ void Gui(App* app)
 
 void Update(App* app)
 {
+#ifdef _DEBUG
+    // Shader Hot Reload
     // You can handle app->input keyboard/mouse here
+    for (u64 i = 0; i < app->programs.size(); ++i)
+    {
+        Program& program = app->programs[i];
+        u64 currentTimestamp = GetFileLastWriteTimestamp(program.filepath.c_str());
+        if (currentTimestamp > program.lastWriteTimestamp)
+        {
+            glDeleteProgram(program.handle);
+            String programSource = ReadTextFile(program.filepath.c_str());
+            const char* programName = program.programName.c_str();
+            program.handle = CreateProgramFromSource(programSource, programName);
+            program.lastWriteTimestamp = currentTimestamp;
+        }
+    }
+#endif
 }
 
 void Render(App* app)
