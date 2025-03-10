@@ -256,17 +256,17 @@ void Render(App* app)
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            // - bind the texture into unit 0
-            glActiveTexture(GL_TEXTURE0);
-            GLuint textureHandle = app->textures[app->diceTexIdx].handle;
-            glBindTexture(GL_TEXTURE_2D, textureHandle);
-
             // - bind the program 
             Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
             glUseProgram(programTexturedGeometry.handle);
 
-            //   (...and make its texture sample from unit 0)
-            glUniform1i(app->programUniformTexture, 0); // Assuming shader has a "u_Texture" uniform
+            // - (...and make its texture sample from unit 0)
+            glUniform1i(app->programUniformTexture, 0);
+
+            // - bind the texture into unit 0
+            glActiveTexture(GL_TEXTURE0);
+            GLuint textureHandle = app->textures[app->diceTexIdx].handle;
+            glBindTexture(GL_TEXTURE_2D, textureHandle);
 
             // - bind the vao
             glBindVertexArray(app->vao);
