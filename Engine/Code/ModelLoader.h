@@ -1,8 +1,8 @@
 #pragma once
 
 #include "platform.h"
-#include "engine.h"
 
+#include <glad/glad.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -38,7 +38,7 @@ struct VertexBufferAttribute
 struct VertexBufferLayout 
 {
 	std::vector<VertexBufferAttribute> attributes;
-	float stride;
+	u32 stride;
 };
 
 struct Submesh 
