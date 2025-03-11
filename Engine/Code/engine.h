@@ -6,6 +6,9 @@
 
 #include "platform.h"
 #include <glad/glad.h>
+#include "ModelLoader.h"
+
+#include <vector>
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -56,8 +59,11 @@ struct App
 
     ivec2 displaySize;
 
-    std::vector<Texture>  textures;
-    std::vector<Program>  programs;
+    std::vector<Texture>    textures;
+    std::vector<Program>    programs;
+    std::vector<Mesh>       meshes;
+    std::vector<Model>      models;
+    std::vector<Material>   materials;
 
     // program indices
     u32 texturedGeometryProgramIdx;
@@ -83,6 +89,8 @@ struct App
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
 };
+
+u32 LoadTexture2D(App* app, const char* filepath);
 
 void Init(App* app);
 

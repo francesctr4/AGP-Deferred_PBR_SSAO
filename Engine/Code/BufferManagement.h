@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <glad/glad.h>
+#include "platform.h"
 
 using u32 = uint32_t;
 using u8 = uint8_t;
