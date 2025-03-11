@@ -1,14 +1,24 @@
-#pragma once
+#ifndef OPENGL_ERROR_GUARD_H
+#define OPENGL_ERROR_GUARD_H
 
-static void CheckOpenGLErrors()
+#include <glad/glad.h>
+
+class OpenGLErrorGuard
 {
-    GLenum error;
-    do
-    {
-        error = glGetError();
-        if (error != GL_NO_ERROR)
-        {
-            std::cerr << "OpenGL Error: " << std::hex << error << std::dec << std::endl;
-        }
-    } while (error != GL_NO_ERROR && error != GL_CONTEXT_LOST);
-}
+public:
+
+    OpenGLErrorGuard(const char* message);
+    ~OpenGLErrorGuard();
+
+private:
+
+    void CheckGLError(const char* around, const char* message);
+    const char* GetGLErrorString(GLenum error);
+
+private:
+
+    const char* msg;
+
+};
+
+#endif // OPENGL_ERROR_GUARD_H

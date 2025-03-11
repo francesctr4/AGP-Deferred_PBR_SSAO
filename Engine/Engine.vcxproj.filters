@@ -4,9 +4,6 @@
     <Filter Include="Engine">
       <UniqueIdentifier>{f9a9780f-cc91-4f43-81f2-a71f14f8528a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{410f82bd-d92b-48f6-8515-3eb1c1af5b9d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="External">
       <UniqueIdentifier>{36cae6b1-cae3-42f1-8f30-34ebb8342012}</UniqueIdentifier>
     </Filter>
@@ -18,6 +15,15 @@
     </Filter>
     <Filter Include="External\Glad">
       <UniqueIdentifier>{db9fd684-3058-4040-9399-cae66729442b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Debugging Tools">
+      <UniqueIdentifier>{3f563369-5383-4b21-b92b-a52204192d36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Utils">
+      <UniqueIdentifier>{39d30c22-2602-4a12-84e8-32ecd310eeb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Shaders">
+      <UniqueIdentifier>{410f82bd-d92b-48f6-8515-3eb1c1af5b9d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -54,11 +60,14 @@
     <ClCompile Include="ThirdParty\stb\stb.cpp">
       <Filter>External\Stb</Filter>
     </ClCompile>
+    <ClCompile Include="Code\OpenGLErrorGuard.cpp">
+      <Filter>Engine\Debugging Tools</Filter>
+    </ClCompile>
     <ClCompile Include="Code\BufferManagement.cpp">
-      <Filter>Engine</Filter>
+      <Filter>Engine\Utils</Filter>
     </ClCompile>
     <ClCompile Include="Code\ModelLoader.cpp">
-      <Filter>Engine</Filter>
+      <Filter>Engine\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -101,25 +110,25 @@
     <ClInclude Include="ThirdParty\stb\stb_image.h">
       <Filter>External\Stb</Filter>
     </ClInclude>
-    <ClInclude Include="Code\OpenGLErrorGuard.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Code\OpenGLDebugCallback.h">
-      <Filter>Engine</Filter>
+      <Filter>Engine\Debugging Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\OpenGLErrorGuard.h">
+      <Filter>Engine\Debugging Tools</Filter>
     </ClInclude>
     <ClInclude Include="Code\BufferManagement.h">
-      <Filter>Engine</Filter>
+      <Filter>Engine\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Code\ModelLoader.h">
-      <Filter>Engine</Filter>
+      <Filter>Engine\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\shaders.glsl">
-      <Filter>Shaders</Filter>
+      <Filter>Engine\Shaders</Filter>
     </None>
     <None Include="WorkingDir\RENDER_QUAD.glsl">
-      <Filter>Shaders</Filter>
+      <Filter>Engine\Shaders</Filter>
     </None>
     <None Include="Code\openGL_types.inl">
       <Filter>Engine</Filter>

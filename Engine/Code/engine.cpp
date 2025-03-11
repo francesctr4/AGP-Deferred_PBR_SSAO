@@ -7,6 +7,7 @@
 
 #include "engine.h"
 #include "openGL_types.inl"
+#include "OpenGLErrorGuard.h"
 
 #include <imgui.h>
 #include <stb_image.h>
@@ -233,6 +234,14 @@ void Gui(App* app)
     ImGui::End();
 }
 
+void TestFunction()
+{
+    OpenGLErrorGuard guard("TestFunction");
+
+    // Trigger GL_INVALID_VALUE (0x0501) - Passing an out-of-range value
+    glPointSize(-10.0f); // Negative size is not allowed
+}
+
 void Update(App* app)
 {
 #ifdef _DEBUG
@@ -252,6 +261,8 @@ void Update(App* app)
         }
     }
 #endif
+
+    TestFunction();
 }
 
 void Render(App* app)
