@@ -101,6 +101,29 @@ u32 LoadProgram(App* app, const char* filepath, const char* programName)
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
+
+    if (program.handle != 0) 
+    {
+        GLint attributeCount = 0UL;
+        glGetProgramiv(program.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
+
+        for (size_t i = 0; i < attributeCount; ++i) 
+        {
+            GLchar attributeName[248];
+            GLsizei attributeNameLength = 0UL;
+            GLsizei attributeSize = 0UL;
+            GLenum attributeType = 0UL;
+
+            glGetActiveAttrib(program.handle, i, ARRAY_COUNT(attributeName),
+                &attributeNameLength, &attributeSize, &attributeType, attributeName);
+
+            GLuint attibuteLocation = glGetAttribLocation(program.handle, attributeName);
+
+            program.vertexInputLayout.attributes.push_back(
+                VertexShaderAttribute(static_cast<u8>(attibuteLocation), static_cast<u8>(attributeSize)));
+        }
+    }
+
     app->programs.push_back(program);
 
     return app->programs.size() - 1;
@@ -215,6 +238,9 @@ void Init(App* app)
     app->texturedGeometryProgramIdx = LoadProgram(app, "RENDER_QUAD.glsl", "RENDER_QUAD");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+
+    app->texturedMeshProgramIdx = LoadProgram(app, "RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
+    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
 
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");

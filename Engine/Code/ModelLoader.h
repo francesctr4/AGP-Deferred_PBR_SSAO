@@ -16,7 +16,7 @@ struct Material
 	std::string name;
 	glm::vec3 albedo;
 	glm::vec3 emissive;
-	float smoothness;
+	f32 smoothness;
 
 	u32 albedoTextureIdx;
 	u32 emissiveTextureIdx;
@@ -27,27 +27,35 @@ struct Material
 
 struct VertexBufferAttribute
 {
-	u32 index;    // Location in the shader
-	u32 size;     // Number of components (e.g., 3 for vec3)
-	u32 offset;   // Byte offset in the buffer layout
+	u8 location;    // Location in the shader
+	u8 componentCount;     // Number of components (e.g., 3 for vec3)
+	u8 offset;   // Byte offset in the buffer layout
 
-	VertexBufferAttribute(u32 index, u32 size, u32 offset)
-		: index(index), size(size), offset(offset) {}
+	VertexBufferAttribute(u32 location, u32 componentCount, u32 offset)
+		: location(location), componentCount(componentCount), offset(offset) {}
 };
 
 struct VertexBufferLayout 
 {
 	std::vector<VertexBufferAttribute> attributes;
-	u32 stride;
+	u8 stride;
+};
+
+struct VAO
+{
+	GLuint handle;
+	GLuint programHandle;
 };
 
 struct Submesh 
 {
 	VertexBufferLayout vertexBufferLayout;
-	std::vector<float> vertices;
+	std::vector<f32> vertices;
 	std::vector<u32> indices;
 	u32 vertexOffset;
 	u32 indexOffset;
+
+	std::vector<VAO> vaos;
 };
 
 struct Mesh

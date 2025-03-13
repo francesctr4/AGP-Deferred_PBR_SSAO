@@ -133,5 +133,8 @@
     <None Include="Code\openGL_types.inl">
       <Filter>Engine</Filter>
     </None>
+    <None Include="WorkingDir\RENDER_GEOMETRY.glsl">
+      <Filter>Engine\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
