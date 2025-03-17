@@ -1,13 +1,11 @@
+#ifndef ENGINE_H
+#define ENGINE_H
+
 //
 // engine.h: This file contains the types and functions relative to the engine.
 //
 
-#pragma once
-
-#include "platform.h"
-#include <glad/glad.h>
-#include "ModelLoader.h"
-
+#include "openGL_types.inl"
 #include <vector>
 
 typedef glm::vec2  vec2;
@@ -16,50 +14,6 @@ typedef glm::vec4  vec4;
 typedef glm::ivec2 ivec2;
 typedef glm::ivec3 ivec3;
 typedef glm::ivec4 ivec4;
-
-struct Image
-{
-    void* pixels;
-    ivec2 size;
-    i32   nchannels;
-    i32   stride;
-};
-
-struct Texture
-{
-    GLuint      handle;
-    std::string filepath;
-};
-
-struct VertexShaderAttribute
-{
-    u8 location;
-    u8 componentCount;
-
-    VertexShaderAttribute(u8 location, u8 componentCount)
-        : location(location), componentCount(componentCount) {}
-};
-
-struct VertexShaderLayout
-{
-    std::vector<VertexShaderAttribute> attributes;
-};
-
-struct Program
-{
-    GLuint             handle;
-    std::string        filepath;
-    std::string        programName;
-    u64                lastWriteTimestamp; // What is this for?
-    VertexShaderLayout vertexInputLayout;
-};
-
-enum Mode
-{
-    Mode_TexturedQuad,
-    Mode_Forward_Geometry,
-    Mode_Count
-};
 
 struct App
 {
@@ -84,7 +38,7 @@ struct App
     // program indices
     u32 texturedGeometryProgramIdx;
     u32 texturedMeshProgramIdx;
-    
+
     // texture indices
     u32 diceTexIdx;
     u32 whiteTexIdx;
@@ -124,3 +78,5 @@ void Render(App* app);
 void CleanUp(App* app);
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+
+#endif // ENGINE_H

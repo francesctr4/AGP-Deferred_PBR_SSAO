@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform.h"
+#include <glad/glad.h>
 
 struct Vertex3UV2
 {
@@ -18,4 +19,108 @@ const Vertex3UV2 vertices[] = {
 const u16 indices[] = {
     0, 1, 2,  
     0, 2, 3   
+};
+
+struct Image
+{
+    void* pixels;
+    glm::ivec2 size;
+    i32   nchannels;
+    i32   stride;
+};
+
+struct Texture
+{
+    GLuint      handle;
+    std::string filepath;
+};
+
+struct VertexShaderAttribute
+{
+    u8 location;
+    u8 componentCount;
+
+    VertexShaderAttribute(u8 location, u8 componentCount)
+        : location(location), componentCount(componentCount) {}
+};
+
+struct VertexShaderLayout
+{
+    std::vector<VertexShaderAttribute> attributes;
+};
+
+struct Program
+{
+    GLuint             handle;
+    std::string        filepath;
+    std::string        programName;
+    u64                lastWriteTimestamp; // What is this for?
+    VertexShaderLayout vertexInputLayout;
+};
+
+enum Mode
+{
+    Mode_TexturedQuad,
+    Mode_Forward_Geometry,
+    Mode_Count
+};
+
+struct Material
+{
+	std::string name;
+	glm::vec3 albedo;
+	glm::vec3 emissive;
+	f32 smoothness;
+
+	u32 albedoTextureIdx;
+	u32 emissiveTextureIdx;
+	u32 specularTextureIdx;
+	u32 normalsTextureIdx;
+	u32 bumpTextureIdx;
+};
+
+struct VertexBufferAttribute
+{
+	u8 location;    // Location in the shader
+	u8 componentCount;     // Number of components (e.g., 3 for vec3)
+	u8 offset;   // Byte offset in the buffer layout
+
+	VertexBufferAttribute(u32 location, u32 componentCount, u32 offset)
+		: location(location), componentCount(componentCount), offset(offset) {}
+};
+
+struct VertexBufferLayout
+{
+	std::vector<VertexBufferAttribute> attributes;
+	u8 stride;
+};
+
+struct VAO
+{
+	GLuint handle;
+	GLuint programHandle;
+};
+
+struct Submesh
+{
+	VertexBufferLayout vertexBufferLayout;
+	std::vector<f32> vertices;
+	std::vector<u32> indices;
+	u32 vertexOffset;
+	u32 indexOffset;
+
+	std::vector<VAO> vaos;
+};
+
+struct Mesh
+{
+	std::vector<Submesh> submeshes;
+	GLuint vertexBufferHandle;
+	GLuint indexBufferHandle;
+};
+
+struct Model
+{
+	u32 meshIdx;
+	std::vector<u32> materialIdx;
 };

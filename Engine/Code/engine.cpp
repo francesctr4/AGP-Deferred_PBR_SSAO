@@ -6,8 +6,8 @@
 //
 
 #include "engine.h"
-#include "openGL_types.inl"
 #include "OpenGLErrorGuard.h"
+#include "ModelLoader.h"
 
 #include <imgui.h>
 #include <stb_image.h>
@@ -206,6 +206,8 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    glEnable(GL_DEPTH_TEST);
+
     // TODO: Initialize your resources here!
     
     // - vertex buffers

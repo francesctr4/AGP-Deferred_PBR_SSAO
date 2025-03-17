@@ -55,9 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Code\openGL_types.inl" />
-    <None Include="WorkingDir\RENDER_GEOMETRY.glsl" />
-    <None Include="WorkingDir\RENDER_QUAD.glsl" />
-    <None Include="WorkingDir\shaders.glsl" />
+    <None Include="WorkingDir\Shaders\RENDER_GEOMETRY.glsl" />
+    <None Include="WorkingDir\Shaders\RENDER_QUAD.glsl" />
+    <None Include="WorkingDir\Shaders\shaders.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
