@@ -94,6 +94,7 @@ struct App
 
     // models
     u32 patrickIdx;
+    u32 patrickProgramUniformTexture;
 
     // Mode
     Mode mode;
@@ -121,3 +122,5 @@ void Update(App* app);
 void Render(App* app);
 
 void CleanUp(App* app);
+
+GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
