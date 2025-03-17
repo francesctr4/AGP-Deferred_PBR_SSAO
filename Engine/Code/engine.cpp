@@ -239,15 +239,15 @@ void Init(App* app)
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
-    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
     app->blackTexIdx = LoadTexture2D(app, "color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+
+    app->texturedMeshProgramIdx = LoadProgram(app, "RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
+    app->patrickIdx = LoadModel(app, "patrick.obj");
 
     app->mode = Mode_TexturedQuad;
 }
@@ -332,8 +332,50 @@ void Render(App* app)
 
             // - unbind the program
             glUseProgram(0);
+
+            break;
         }
-        break;
+        case Mode_Forward_Geometry:
+        {
+            // TODO: Draw your textured quad here!
+            // - clear the framebuffer
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // - set the viewport
+            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+            // - set the blending state
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+            glUseProgram(texturedMeshProgram.handle);
+
+            Program& textureMeshProgram = app->programs[app->texturedMeshProgramIdx];
+            glUseProgram(textureMeshProgram.handle);
+
+            Model& model = app->models[app->patrick];
+            Mesh& mesh = app->meshes[model.meshIdx];
+
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = findVAO(mesh, i, textureMeshProgram);
+                glBindVertexArray(vao);
+
+                u32 submeshMaterialIdx = model.materialIdx[i];
+                Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                glUniform1i(app->texturedMeshProgram.uTexture, 0);
+
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(uintptr_t)submesh.indexOffset);
+            }
+
+            break;
+        }
 
         default:;
     }
