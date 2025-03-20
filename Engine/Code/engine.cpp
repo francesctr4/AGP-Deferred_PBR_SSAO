@@ -255,6 +255,36 @@ void Init(App* app)
     app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
 
+    // Camera Configuration
+
+    app->worldCamera.SetPosition(glm::vec3(-5.0f, 3.0f, 0.0f));
+    app->worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+    app->worldCamera.SetAspectRatio(static_cast<float>(app->displaySize.x) / static_cast<float>(app->displaySize.y));
+    app->worldCamera.SetNearFar(0.1f, 1000.0f);
+    app->worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+    app->worldCamera.SetVerticalFOV(60.0f);
+
+    glm::mat4 view = app->worldCamera.ViewMatrix();
+    glm::mat4 projection = app->worldCamera.ProjectionMatrix();
+
+    glm::vec3 translation = glm::vec3(2.5f, 1.5f, -2.8f);
+    glm::vec3 scale = glm::vec3(0.45f);
+
+    glm::mat4 world = TransformPositionScale(translation, scale);
+    glm::mat4 worldViewProjection = projection * view * world;
+
+    // Uniform Buffer
+
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
+
+    app->localParamsUBO = CreateConstantBuffer(app->maxUniformBufferSize);
+
+    MapBuffer(app->localParamsUBO, GL_WRITE_ONLY);
+    PushMat4(app->localParamsUBO, view);
+    PushMat4(app->localParamsUBO, projection);
+    UnmapBuffer(app->localParamsUBO);
+
     app->mode = Mode_Forward_Geometry;
 }
 
@@ -357,6 +387,48 @@ void Render(App* app)
 
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
+
+            Model& model = app->models[app->patrickIdx];
+            Mesh& mesh = app->meshes[model.meshIdx];
+
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                glBindVertexArray(vao);
+
+                u32 submeshMaterialIdx = model.materialIdx[i];
+                Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                glUniform1i(app->patrickProgramUniformTexture, 0);
+
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+            }
+
+            break;
+        }
+        case Mode_Forward_Geometry_UBO:
+        {
+            // TODO: Draw your textured quad here!
+            // - clear the framebuffer
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // - set the viewport
+            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+            // - set the blending state
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+            glUseProgram(texturedMeshProgram.handle);
+
+            // UNIFORM BUFFER:
+            // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->localParamsUBO.handle, 0, app->localParamsUBO.size);
 
             Model& model = app->models[app->patrickIdx];
             Mesh& mesh = app->meshes[model.meshIdx];

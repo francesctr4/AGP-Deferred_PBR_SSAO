@@ -6,6 +6,9 @@
 //
 
 #include "openGL_types.inl"
+#include "BufferManagement.h"
+#include "Camera.h"
+
 #include <vector>
 
 typedef glm::vec2  vec2;
@@ -63,6 +66,13 @@ struct App
 
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
+
+    Camera worldCamera;
+
+    GLint maxUniformBufferSize;
+    GLint uniformBlockAlignment;
+
+    Buffer localParamsUBO;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);

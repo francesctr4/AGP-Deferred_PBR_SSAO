@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Code\BufferManagement.cpp" />
+    <ClCompile Include="Code\Camera.cpp" />
     <ClCompile Include="Code\engine.cpp" />
     <ClCompile Include="Code\ModelLoader.cpp" />
     <ClCompile Include="Code\OpenGLErrorGuard.cpp" />
@@ -36,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\BufferManagement.h" />
+    <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\ModelLoader.h" />
     <ClInclude Include="Code\OpenGLDebugCallback.h" />
@@ -58,6 +60,7 @@
     <None Include="WorkingDir\Shaders\RENDER_GEOMETRY.glsl" />
     <None Include="WorkingDir\Shaders\RENDER_QUAD.glsl" />
     <None Include="WorkingDir\Shaders\shaders.glsl" />
+    <None Include="WorkingDir\Shaders\UNIFORM_BUFFER.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

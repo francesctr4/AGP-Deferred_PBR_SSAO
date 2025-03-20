@@ -69,6 +69,9 @@
     <ClCompile Include="Code\ModelLoader.cpp">
       <Filter>Source Code\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Code\Camera.cpp">
+      <Filter>Source Code</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">
@@ -122,6 +125,9 @@
     <ClInclude Include="Code\ModelLoader.h">
       <Filter>Source Code\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Camera.h">
+      <Filter>Source Code</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Code\openGL_types.inl">
@@ -134,6 +140,9 @@
       <Filter>Source Code\Shaders</Filter>
     </None>
     <None Include="WorkingDir\Shaders\shaders.glsl">
+      <Filter>Source Code\Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\UNIFORM_BUFFER.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
   </ItemGroup>
