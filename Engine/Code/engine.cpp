@@ -294,7 +294,7 @@ void Init(App* app)
     //PushMat4(app->globalUBO, MVPMatrix);
     //UnmapBuffer(app->globalUBO);
 
-    app->lights.push_back({LightType_Directional, glm::vec3(1.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), vec3(0.0f) });
+    app->lights.push_back({LightType_Directional, glm::vec3(1.0f, 0.0f, 0.0f), vec3(1.0f, 1.0f, -1.0f), vec3(0.0f) });
 
     MapBuffer(app->globalUBO, GL_WRITE_ONLY);
     PushVec3(app->globalUBO, app->worldCamera.GetPosition());
