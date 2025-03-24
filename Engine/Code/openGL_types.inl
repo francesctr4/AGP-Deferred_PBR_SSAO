@@ -133,3 +133,17 @@ struct Entity
 	u32 entityBufferOffset;
 	u32 entityBufferSize;
 };
+
+enum LightType 
+{
+	LightType_Directional,
+	LightType_Point
+};
+
+struct Light
+{
+	LightType type;
+	glm::vec3 color;
+	glm::vec3 direction;
+	glm::vec3 position;
+};

@@ -250,10 +250,12 @@ void Init(App* app)
 
     // Patrick Program
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/UNIFORM_BUFFER.glsl", "UNIFORM_BUFFER");
+    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/LIGHTS.glsl", "LIGHTS");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
+
+    app->planeIdx = LoadModel(app, "Patrick/plane.obj");
 
     // Camera Configuration
 
@@ -292,8 +294,20 @@ void Init(App* app)
     //PushMat4(app->globalUBO, MVPMatrix);
     //UnmapBuffer(app->globalUBO);
 
+    app->lights.push_back({LightType_Directional, glm::vec3(1.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), vec3(0.0f) });
+
     MapBuffer(app->globalUBO, GL_WRITE_ONLY);
     PushVec3(app->globalUBO, app->worldCamera.GetPosition());
+    PushUInt(app->globalUBO, app->lights.size());
+    for (size_t i = 0; i < app->lights.size(); i++) 
+    {
+        AlignHead(app->globalUBO, sizeof(vec4));
+        Light& light = app->lights[i];
+        PushUInt(app->globalUBO, static_cast<unsigned int>(light.type));
+        PushVec3(app->globalUBO, light.color);
+        PushVec3(app->globalUBO, light.direction);
+        PushVec3(app->globalUBO, light.position);
+    }
     UnmapBuffer(app->globalUBO);
 
     Buffer& entityUBO = app->entityUBO;
@@ -322,6 +336,11 @@ void Init(App* app)
     UnmapBuffer(app->entityUBO);
 
     app->mode = Mode_Forward_Geometry_UBO;
+}
+
+void CreateEntity(App& app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aPosition) 
+{
+
 }
 
 void Gui(App* app)
@@ -491,6 +510,22 @@ void Render(App* app)
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
                 }
             }
+
+            Model& model = app->models[app->planeIdx];
+            Mesh& mesh = app->meshes[model.meshIdx];
+
+            GLuint vao = FindVAO(mesh, 0, texturedMeshProgram);
+            glBindVertexArray(vao);
+
+            u32 submeshMaterialIdx = model.materialIdx[0];
+            Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->textures[app->whiteTexIdx].handle);
+            glUniform1i(app->patrickProgramUniformTexture, 0);
+
+            Submesh& submesh = mesh.submeshes[0];
+            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
 
             break;
         }

@@ -51,6 +51,7 @@ struct App
 
     // models
     u32 patrickIdx;
+    u32 planeIdx;
     u32 patrickProgramUniformTexture;
 
     // Mode
@@ -75,6 +76,7 @@ struct App
     Buffer globalUBO;
     Buffer entityUBO;
     std::vector<Entity> entities;
+    std::vector<Light> lights;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);
