@@ -250,14 +250,14 @@ void Init(App* app)
 
     // Patrick Program
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
+    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/UNIFORM_BUFFER.glsl", "UNIFORM_BUFFER");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
 
     // Camera Configuration
 
-    app->worldCamera.SetPosition(glm::vec3(-5.0f, 3.0f, 0.0f));
+    app->worldCamera.SetPosition(glm::vec3(0.0f, 12.0f, 30.0f));
     app->worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
     app->worldCamera.SetAspectRatio(static_cast<float>(app->displaySize.x) / static_cast<float>(app->displaySize.y));
     app->worldCamera.SetNearFar(0.1f, 1000.0f);
@@ -270,22 +270,58 @@ void Init(App* app)
     glm::vec3 translation = glm::vec3(2.5f, 1.5f, -2.8f);
     glm::vec3 scale = glm::vec3(0.45f);
 
-    glm::mat4 world = TransformPositionScale(translation, scale);
-    glm::mat4 worldViewProjection = projection * view * world;
+    glm::mat4 model = TransformPositionScale(translation, scale);
+    glm::mat4 MVP = projection * view * model;
 
     // Uniform Buffer
 
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
 
-    app->localParamsUBO = CreateConstantBuffer(app->maxUniformBufferSize);
+    app->globalUBO = CreateConstantBuffer(app->maxUniformBufferSize);
+    app->entityUBO = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    MapBuffer(app->localParamsUBO, GL_WRITE_ONLY);
-    PushMat4(app->localParamsUBO, view);
-    PushMat4(app->localParamsUBO, projection);
-    UnmapBuffer(app->localParamsUBO);
+    //MapBuffer(app->localParamsUBO, GL_WRITE_ONLY);
+    //PushMat4(app->localParamsUBO, view);
+    //PushMat4(app->localParamsUBO, projection);
+    //UnmapBuffer(app->localParamsUBO);
 
-    app->mode = Mode_Forward_Geometry;
+    //MapBuffer(app->globalUBO, GL_WRITE_ONLY);
+    //PushMat4(app->globalUBO, glm::identity<glm::mat4>());
+    //glm::mat4 MVPMatrix = projection * view * glm::identity<glm::mat4>();
+    //PushMat4(app->globalUBO, MVPMatrix);
+    //UnmapBuffer(app->globalUBO);
+
+    MapBuffer(app->globalUBO, GL_WRITE_ONLY);
+    PushVec3(app->globalUBO, app->worldCamera.GetPosition());
+    UnmapBuffer(app->globalUBO);
+
+    Buffer& entityUBO = app->entityUBO;
+
+    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
+    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
+    for (int z = -2; z <= 2; ++z) 
+    {
+        for (int x = -2; x <= 2; ++x) 
+        {
+            Entity entity;
+            AlignHead(entityUBO, app->uniformBlockAlignment);
+            entity.entityBufferOffset = entityUBO.head;
+
+            entity.worldMatrix = glm::translate(glm::vec3(x * 6, 0, z * 6));
+            entity.modelIndex = app->patrickIdx;
+
+            PushMat4(entityUBO, entity.worldMatrix);
+            PushMat4(entityUBO, VP * entity.worldMatrix);
+
+            entity.entityBufferSize = entityUBO.head - entity.entityBufferOffset;
+
+            app->entities.push_back(entity);
+        }
+    }
+    UnmapBuffer(app->entityUBO);
+
+    app->mode = Mode_Forward_Geometry_UBO;
 }
 
 void Gui(App* app)
@@ -428,25 +464,32 @@ void Render(App* app)
 
             // UNIFORM BUFFER:
             // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->localParamsUBO.handle, 0, app->localParamsUBO.size);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->globalUBO.handle, 0, app->globalUBO.size);
 
-            Model& model = app->models[app->patrickIdx];
-            Mesh& mesh = app->meshes[model.meshIdx];
-
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            for (const auto& entity : app->entities)
             {
-                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                glBindVertexArray(vao);
+                // UNIFORM BUFFER:
+                // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
 
-                u32 submeshMaterialIdx = model.materialIdx[i];
-                Material& submeshMaterial = app->materials[submeshMaterialIdx];
+                Model& model = app->models[app->patrickIdx];
+                Mesh& mesh = app->meshes[model.meshIdx];
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                glUniform1i(app->patrickProgramUniformTexture, 0);
+                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+                {
+                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                    glBindVertexArray(vao);
 
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                    u32 submeshMaterialIdx = model.materialIdx[i];
+                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                    glUniform1i(app->patrickProgramUniformTexture, 0);
+
+                    Submesh& submesh = mesh.submeshes[i];
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
             }
 
             break;

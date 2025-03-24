@@ -18,6 +18,8 @@ public:
     void SetVerticalFOV(float newFOV) { verticalFOV = newFOV; isProjectionDirty = true; }
     void SetNearFar(float newZnear, float newZfar) { znear = newZnear; zfar = newZfar; isProjectionDirty = true; }
 
+    const glm::vec3& GetPosition() { return position; };
+
     // Update the view matrix if necessary
     const glm::mat4& ViewMatrix() const;
 

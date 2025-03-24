@@ -12,7 +12,12 @@ layout(location=2) in vec2 aTexCoord;
 layout(location=3) in vec3 aTangent;
 layout(location=4) in vec3 aBitangent;
 
-layout(binding = 1, std140) uniform LocalParams
+layout(binding = 0, std140) uniform globalUBO
+{
+	vec3 cameraPosition;
+};
+
+layout(binding = 1, std140) uniform entityUBO
 {
 	mat4 uWorldMatrix;
 	mat4 uWorldViewProjectionMatrix;
@@ -21,6 +26,7 @@ layout(binding = 1, std140) uniform LocalParams
 out vec3 vPosition;
 out vec3 vNormal;
 out vec2 vTexCoord;
+//out vec3 vViewDir;
 
 void main()
 {

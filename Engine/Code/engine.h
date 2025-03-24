@@ -72,7 +72,9 @@ struct App
     GLint maxUniformBufferSize;
     GLint uniformBlockAlignment;
 
-    Buffer localParamsUBO;
+    Buffer globalUBO;
+    Buffer entityUBO;
+    std::vector<Entity> entities;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);

@@ -125,3 +125,11 @@ struct Model
 	u32 meshIdx;
 	std::vector<u32> materialIdx;
 };
+
+struct Entity
+{
+	glm::mat4 worldMatrix;
+	u32 modelIndex;
+	u32 entityBufferOffset;
+	u32 entityBufferSize;
+};
