@@ -352,20 +352,29 @@ void Init(App* app)
 
     app->primaryFBO.depthHandle = depthAttachment;
     
-    GLuint framebufferHandle = app->primaryFBO.
-    glGenFramebuffers(1, &app->primaryFBO);
+    GLuint framebufferHandle = app->primaryFBO.handle;
+    glGenFramebuffers(1, &framebufferHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferHandle);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorAttachmentHandle, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthAttachmentHandle, 0);
+
+    for (auto& attachment : app->primaryFBO.attachments)
+    {
+        glFramebufferTexture(GL_FRAMEBUFFER, attachment.first, attachment.second, 0);
+    }
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->primaryFBO.depthHandle, 0);
 
     GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
+    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) 
+    {
         // Handle framebuffer creation error
     }
 
-    glDrawBuffers(1, &colorAttachment);
+    for (auto& [attachment, handle] : app->primaryFBO.attachments)
+    {
+        glDrawBuffers(1, &handle);
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        
 }
 
 void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aWorldMatrix) 
