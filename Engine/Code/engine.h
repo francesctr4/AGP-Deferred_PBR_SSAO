@@ -77,6 +77,8 @@ struct App
     Buffer entityUBO;
     std::vector<Entity> entities;
     std::vector<Light> lights;
+
+    Framebuffer primaryFBO;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);

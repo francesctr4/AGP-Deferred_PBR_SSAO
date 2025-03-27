@@ -147,3 +147,14 @@ struct Light
 	glm::vec3 direction;
 	glm::vec3 position;
 };
+
+struct Framebuffer 
+{
+	GLuint handle;
+	GLuint depthHandle;
+	//GLuint stencilHandle;
+
+	glm::vec2 bufferSize;
+	std::vector<GLuint> textures;
+	std::vector<std::pair<GLenum, GLuint>> attachments;
+};
