@@ -296,74 +296,99 @@ void Init(App* app)
 
     app->lights.push_back({ LightType_Directional, glm::vec3(0.5f, 0.0f, 0.0f), vec3(1.0f, 1.0f, -1.0f), vec3(0.0f) });
     app->lights.push_back({ LightType_Point, glm::vec3(0.2f, 0.2f, 0.2f), vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f)});
-
-    MapBuffer(app->globalUBO, GL_WRITE_ONLY);
-    PushVec3(app->globalUBO, app->worldCamera.GetPosition());
-    PushUInt(app->globalUBO, app->lights.size());
-    for (size_t i = 0; i < app->lights.size(); i++) 
-    {
-        AlignHead(app->globalUBO, sizeof(vec4));
-        Light& light = app->lights[i];
-        PushUInt(app->globalUBO, static_cast<unsigned int>(light.type));
-        PushVec3(app->globalUBO, light.color);
-        PushVec3(app->globalUBO, light.direction);
-        PushVec3(app->globalUBO, light.position);
-    }
-    UnmapBuffer(app->globalUBO);
+    UpdateLights(app);
 
     Buffer& entityUBO = app->entityUBO;
 
     MapBuffer(app->entityUBO, GL_WRITE_ONLY);
     glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
+
     for (int z = -2; z <= 2; ++z) 
     {
         for (int x = -2; x <= 2; ++x) 
         {
-            Entity entity;
-            AlignHead(entityUBO, app->uniformBlockAlignment);
-            entity.entityBufferOffset = entityUBO.head;
-
-            entity.worldMatrix = glm::translate(glm::vec3(x * 6, 0, z * 6));
-            entity.modelIndex = app->patrickIdx;
-
-            PushMat4(entityUBO, entity.worldMatrix);
-            PushMat4(entityUBO, VP * entity.worldMatrix);
-
-            entity.entityBufferSize = entityUBO.head - entity.entityBufferOffset;
-
-            app->entities.push_back(entity);
+            CreateEntity(app, app->patrickIdx, VP, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
         }
     }
 
-    Entity entity;
-    AlignHead(entityUBO, app->uniformBlockAlignment);
-    entity.entityBufferOffset = entityUBO.head;
-
-    entity.worldMatrix = TransformPositionScale(glm::vec3(0.0f,0.0f,0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-    entity.modelIndex = app->planeIdx;
-
-    PushMat4(entityUBO, entity.worldMatrix);
-    PushMat4(entityUBO, VP * entity.worldMatrix);
-
-    entity.entityBufferSize = entityUBO.head - entity.entityBufferOffset;
-
-    app->entities.push_back(entity);
+    CreateEntity(app, app->planeIdx, VP, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
 
     UnmapBuffer(app->entityUBO);
 
     app->mode = Mode_Forward_Geometry_UBO;
 }
 
-void CreateEntity(App& app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aPosition) 
+void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aWorldMatrix) 
 {
+    Entity entity;
+    AlignHead(app->entityUBO, app->uniformBlockAlignment);
+    entity.entityBufferOffset = app->entityUBO.head;
 
+    entity.worldMatrix = aWorldMatrix;
+    entity.modelIndex = aModelIdx;
+
+    PushMat4(app->entityUBO, entity.worldMatrix);
+    PushMat4(app->entityUBO, aVP * entity.worldMatrix);
+
+    entity.entityBufferSize = app->entityUBO.head - entity.entityBufferOffset;
+
+    app->entities.push_back(entity);
 }
 
 void Gui(App* app)
 {
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
-    ImGui::Text(app->mOpenGLInfo.c_str());
+    //ImGui::Text(app->mOpenGLInfo.c_str());
+
+    ImGui::Separator();
+
+    bool lightChanged = false;
+    ImGui::Text("Lights");
+    for (auto& light : app->lights) 
+    {
+        glm::vec3 checkVector;
+        ImGui::PushID(&light);
+
+        float color[3] = { light.color.x, light.color.y, light.color.z };
+        ImGui::DragFloat3("Color", color, 0.01, 0.0, 1.0);
+        checkVector = vec3(color[0], color[1], color[2]);
+
+        if (checkVector != light.color) 
+        {
+            light.color = checkVector;
+            lightChanged = true;
+        }
+
+        float direction[3] = { light.direction.x, light.direction.y, light.direction.z };
+        ImGui::DragFloat3("Direction", direction, 0.01, -1.0, 1.0);
+        checkVector = vec3(direction[0], direction[1], direction[2]);
+
+        if (checkVector != light.direction)
+        {
+            light.direction = checkVector;
+            lightChanged = true;
+        }
+
+        float position[3] = { light.position.x, light.position.y, light.position.z };
+        ImGui::DragFloat3("Position", position, 0.1);
+        checkVector = vec3(position[0], position[1], position[2]);
+
+        if (checkVector != light.position)
+        {
+            light.position = checkVector;
+            lightChanged = true;
+        }
+
+        ImGui::PopID();
+        ImGui::Separator();
+    }
+
+    if (lightChanged) 
+    {
+        UpdateLights(app);
+    }
+
     ImGui::End();
 }
 
@@ -644,4 +669,45 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     submesh.vaos.push_back(vao);
 
     return vaoHandle;
+}
+
+void UpdateLights(App* app)
+{
+    MapBuffer(app->globalUBO, GL_WRITE_ONLY);
+    PushVec3(app->globalUBO, app->worldCamera.GetPosition());
+    PushUInt(app->globalUBO, app->lights.size());
+    for (size_t i = 0; i < app->lights.size(); i++)
+    {
+        AlignHead(app->globalUBO, sizeof(vec4));
+        Light& light = app->lights[i];
+        PushUInt(app->globalUBO, static_cast<unsigned int>(light.type));
+        PushVec3(app->globalUBO, light.color);
+        PushVec3(app->globalUBO, light.direction);
+        PushVec3(app->globalUBO, light.position);
+    }
+    UnmapBuffer(app->globalUBO);
+}
+
+void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program)
+{
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
+
+    Model& model = app->models[entityIdx];
+    Mesh& mesh = app->meshes[model.meshIdx];
+
+    for (u32 i = 0; i < mesh.submeshes.size(); ++i) 
+    {
+        GLuint vao = FindVAO(mesh, 0, program);
+        glBindVertexArray(vao);
+
+        u32 submeshMaterialIdx = model.materialIdx[0];
+        Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, app->textures[textureIdx].handle);
+        glUniform1i(textureProgramUniform, 0);
+
+        Submesh& submesh = mesh.submeshes[0];
+        glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+    }
 }
