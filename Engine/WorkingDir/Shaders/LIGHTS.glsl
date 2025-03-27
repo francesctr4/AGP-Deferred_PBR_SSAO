@@ -74,15 +74,68 @@ uniform sampler2D uTexture;
 
 layout(location=0) out vec4 oColor;
 
+vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
+{
+    vec3 lightDir = normalize(-aLight.direction);
+
+    float diff = max(dot(aNormal, lightDir), 0.0);
+
+    vec3 reflectDir = reflect(-lightDir, aNormal);
+    float spec = pow(max(dot(aViewDir, reflectDir), 0.0), 2.0);
+
+    vec3 ambient = aLight.color * 0.2;
+    vec3 diffuse = texture(uTexture, vTexCoord).xyz * diff;
+    vec3 specular = aLight.color * spec * 0.1;
+
+    return (ambient + diffuse + specular);
+}
+
+vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
+{
+    vec3 lightDir = normalize(aLight.position - aPosition);
+
+    float diff = max(dot(aNormal, lightDir), 0.0);
+
+    vec3 reflectDir = reflect(-lightDir, aNormal);
+    float spec = pow(max(dot(aViewDir, reflectDir), 0.0), 2.0);
+
+    float distance = length(aLight.position - aPosition);
+    
+	float constant = 1.0f;
+	float linear = 0.09f;
+	float quadratic = 0.032f;
+
+	float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));    
+
+    vec3 ambient = aLight.color * 0.2;
+    vec3 diffuse = texture(uTexture, vTexCoord).xyz * diff;
+    vec3 specular = aLight.color * spec * 0.1;
+
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+
+    return (ambient + diffuse + specular);
+}
+
 void main()
 {
-	vec3 lightDir = normalize(-uLight[0].direction);
-	vec3 reflectDir = reflect(-lightDir, vNormal);
+	vec3 returnColor = vec3(0.0);
 
-    float diff = max(dot(vNormal, lightDir), 0.0);
-    float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 0.2f);
-	vec4 finalColor = texture(uTexture, vTexCoord) * diff * spec;
-	oColor = finalColor * vec4(uLight[0].color, 1.0f);
+	for (int i = 0; i < uLightCount; ++i) 
+	{
+		if(uLight[i].type == 0)
+		{
+			returnColor += CalcDirLight(uLight[i], vNormal, vViewDir);
+		}
+
+		if(uLight[i].type == 1)
+		{
+			returnColor += CalcPointLight(uLight[i], vNormal, vPosition, vViewDir);
+		}
+	}
+
+	oColor = vec4(returnColor, 1.0f);
 }
 
 #endif

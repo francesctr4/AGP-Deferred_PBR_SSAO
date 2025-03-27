@@ -294,7 +294,8 @@ void Init(App* app)
     //PushMat4(app->globalUBO, MVPMatrix);
     //UnmapBuffer(app->globalUBO);
 
-    app->lights.push_back({LightType_Directional, glm::vec3(1.0f, 0.0f, 0.0f), vec3(1.0f, 1.0f, -1.0f), vec3(0.0f) });
+    app->lights.push_back({ LightType_Directional, glm::vec3(0.5f, 0.0f, 0.0f), vec3(1.0f, 1.0f, -1.0f), vec3(0.0f) });
+    app->lights.push_back({ LightType_Point, glm::vec3(0.2f, 0.2f, 0.2f), vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f)});
 
     MapBuffer(app->globalUBO, GL_WRITE_ONLY);
     PushVec3(app->globalUBO, app->worldCamera.GetPosition());
@@ -333,6 +334,21 @@ void Init(App* app)
             app->entities.push_back(entity);
         }
     }
+
+    Entity entity;
+    AlignHead(entityUBO, app->uniformBlockAlignment);
+    entity.entityBufferOffset = entityUBO.head;
+
+    entity.worldMatrix = TransformPositionScale(glm::vec3(0.0f,0.0f,0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    entity.modelIndex = app->planeIdx;
+
+    PushMat4(entityUBO, entity.worldMatrix);
+    PushMat4(entityUBO, VP * entity.worldMatrix);
+
+    entity.entityBufferSize = entityUBO.head - entity.entityBufferOffset;
+
+    app->entities.push_back(entity);
+
     UnmapBuffer(app->entityUBO);
 
     app->mode = Mode_Forward_Geometry_UBO;
