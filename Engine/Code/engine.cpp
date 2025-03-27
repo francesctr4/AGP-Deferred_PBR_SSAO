@@ -12,9 +12,12 @@
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
+#include <format>
 
-GLuint CreateProgramFromSource(String programSource, const char* shaderName)
+GLuint CreateProgramFromSource(App* app, String programSource, const char* shaderName)
 {
+    app->shaderErrors.clear();
+
     GLchar  infoLogBuffer[1024] = {};
     GLsizei infoLogBufferSize = sizeof(infoLogBuffer);
     GLsizei infoLogSize;
@@ -58,6 +61,11 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
     if (!success)
     {
         glGetShaderInfoLog(vshader, infoLogBufferSize, &infoLogSize, infoLogBuffer);
+
+        app->shaderErrors.push_back(std::format(
+            "glCompileShader() failed with vertex shader '{}'\nReported message:\n{}\n",
+            shaderName, infoLogBuffer));
+
         ELOG("glCompileShader() failed with vertex shader %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
     }
 
@@ -68,6 +76,11 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
     if (!success)
     {
         glGetShaderInfoLog(fshader, infoLogBufferSize, &infoLogSize, infoLogBuffer);
+
+        app->shaderErrors.push_back(std::format(
+            "glCompileShader() failed with fragment shader '{}'\nReported message:\n{}\n",
+            shaderName, infoLogBuffer));
+
         ELOG("glCompileShader() failed with fragment shader %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
     }
 
@@ -79,6 +92,11 @@ GLuint CreateProgramFromSource(String programSource, const char* shaderName)
     if (!success)
     {
         glGetProgramInfoLog(programHandle, infoLogBufferSize, &infoLogSize, infoLogBuffer);
+
+        app->shaderErrors.push_back(std::format(
+            "glLinkProgram() failed with program '{}'\nReported message:\n{}\n",
+            shaderName, infoLogBuffer));
+
         ELOG("glLinkProgram() failed with program %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
     }
 
@@ -97,7 +115,7 @@ u32 LoadProgram(App* app, const char* filepath, const char* programName)
     String programSource = ReadTextFile(filepath);
 
     Program program = {};
-    program.handle = CreateProgramFromSource(programSource, programName);
+    program.handle = CreateProgramFromSource(app, programSource, programName);
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
@@ -410,13 +428,67 @@ void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm
 }
 
 void Gui(App* app)
-{
+{    
+    // Set DockSpace Invisible Window Flags
+    ImGuiWindowFlags window = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+    // Get Window Viewport
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+    // Set Window Parameters
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+
+    // Set Window Style Parameters
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    // Begin DockSpace Invisible Window with the flags
+    ImGui::Begin("Dockspace", 0, window);
+
+    // Apply Window Style Parameters
+    ImGui::PopStyleVar(3);
+
+    // Create DockSpace on the invisible window
+    ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    // End DockSpace Window
+    ImGui::End();
+
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New")) { /* Handle new */ }
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { /* Handle open */ }
+            if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Handle save */ }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Exit")) { app->isRunning = false; }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Help"))
+        {
+            if (ImGui::MenuItem("About")) { /* Show about dialog */ }
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
-    //ImGui::Text(app->mOpenGLInfo.c_str());
+    ImGui::Text(app->mOpenGLInfo.c_str());
+    ImGui::End();
 
     ImGui::Separator();
 
+    ImGui::Begin("Lights");
     bool lightChanged = false;
     ImGui::Text("Lights");
     for (auto& light : app->lights) 
@@ -464,6 +536,22 @@ void Gui(App* app)
     }
 
     ImGui::End();
+
+    // Error display window
+    ImGui::Begin("Shader Errors", &app->showShaderErrors);
+    {
+        ImGui::SameLine();
+        ImGui::Text("%d error(s)", static_cast<int>(app->shaderErrors.size()));
+
+        ImGui::BeginChild("ErrorScroll");
+        for (const auto& error : app->shaderErrors)
+        {
+            ImGui::TextUnformatted(error.c_str());
+            ImGui::Separator();
+        }
+        ImGui::EndChild();
+    }
+    ImGui::End();
 }
 
 void TestFunction()
@@ -488,13 +576,37 @@ void Update(App* app)
             glDeleteProgram(program.handle);
             String programSource = ReadTextFile(program.filepath.c_str());
             const char* programName = program.programName.c_str();
-            program.handle = CreateProgramFromSource(programSource, programName);
+            program.handle = CreateProgramFromSource(app, programSource, programName);
             program.lastWriteTimestamp = currentTimestamp;
         }
     }
 #endif
 
     TestFunction();
+
+    app->worldCamera.SetAspectRatio((float)app->displaySize.x / (float)app->displaySize.y);
+}
+
+void App::OnResize(int width, int height) 
+{
+    displaySize = vec2(width, height);
+
+    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
+
+    MapBuffer(entityUBO, GL_WRITE_ONLY);
+    glm::mat4 VP = worldCamera.ProjectionMatrix() * worldCamera.ViewMatrix();
+
+    for (int z = -2; z <= 2; ++z)
+    {
+        for (int x = -2; x <= 2; ++x)
+        {
+            CreateEntity(this, patrickIdx, VP, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
+        }
+    }
+
+    CreateEntity(this, planeIdx, VP, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
+
+    UnmapBuffer(entityUBO);
 }
 
 void Render(App* app)

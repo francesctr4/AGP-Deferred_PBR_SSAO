@@ -79,6 +79,11 @@ struct App
     std::vector<Light> lights;
 
     Framebuffer primaryFBO;
+
+    std::vector<std::string> shaderErrors;
+    bool showShaderErrors = false;
+
+    void OnResize(int width, int height);
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);
