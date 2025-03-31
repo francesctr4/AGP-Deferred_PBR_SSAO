@@ -3,6 +3,8 @@
 #include "platform.h"
 #include <glad/glad.h>
 
+struct App;
+
 struct Vertex3UV2
 {
     glm::vec3 pos;
@@ -63,6 +65,7 @@ enum Mode
     Mode_TexturedQuad,
     Mode_Forward_Geometry,
 	Mode_Forward_Geometry_UBO,
+	Mode_Deferred_Shading,
     Mode_Count
 };
 
@@ -152,9 +155,19 @@ struct Framebuffer
 {
 	GLuint handle;
 	GLuint depthHandle;
-	//GLuint stencilHandle;
-
-	glm::vec2 bufferSize;
-	std::vector<GLuint> textures;
 	std::vector<std::pair<GLenum, GLuint>> attachments;
+
+	bool CreateFBO(GLuint aAttachments, glm::vec2 displaySize);
+
+	void Clean() 
+	{
+		glDeleteFramebuffers(1, &handle);
+
+		for (auto& texture : attachments) 
+		{
+			glDeleteTextures(1, &texture.second);
+		}
+
+		glDeleteTextures(1, &depthHandle);
+	}
 };

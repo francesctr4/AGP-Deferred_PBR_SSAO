@@ -14,6 +14,89 @@
 #include <stb_image_write.h>
 #include <format>
 
+bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
+{
+    for (size_t i = 0; i < aAttachments; ++i)
+    {
+        // Color Attachment
+        GLuint colorAttachment;
+        glGenTextures(1, &colorAttachment);
+        glBindTexture(GL_TEXTURE_2D, colorAttachment);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, // Better precision
+            displaySize.x, displaySize.y, 0, GL_RGBA, GL_FLOAT, NULL);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        attachments.push_back({ GL_COLOR_ATTACHMENT0 + i, colorAttachment });
+    }
+
+    // Depth Attachment
+    GLuint depthAttachment;
+    glGenTextures(1, &depthAttachment);
+    glBindTexture(GL_TEXTURE_2D, depthAttachment);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, // Better depth format
+        displaySize.x, displaySize.y, 0,
+        GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    depthHandle = depthAttachment;
+
+    glGenFramebuffers(1, &handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, handle);
+
+    for (auto& attachment : attachments)
+    {
+        glFramebufferTexture(GL_FRAMEBUFFER, attachment.first, attachment.second, 0);
+    }
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthHandle, 0);
+
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+    {
+        GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+        {
+            switch (framebufferStatus)
+            {
+            case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+            case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+            default: ELOG("Unknown framebuffer status error");
+            }
+        }
+    }
+
+    std::vector<GLenum> drawBuffers;
+    for (auto& [attachment, _] : attachments) 
+    {
+        drawBuffers.push_back(attachment);
+    }
+    glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return true;
+}
+
 GLuint CreateProgramFromSource(App* app, String programSource, const char* shaderName)
 {
     app->shaderErrors.clear();
@@ -222,6 +305,39 @@ u32 LoadTexture2D(App* app, const char* filepath)
     }
 }
 
+void RenderScreenFillQuad(App* app, const Framebuffer& aFBO) 
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+    glUseProgram(programTexturedGeometry.handle);
+
+    glBindVertexArray(app->vao);
+
+    size_t iteration = 0;
+    const char* uniformNames[] = { "uAlbedo", "uNormal", "uPosition", "uViewDir" };
+    for (const auto& texture : aFBO.attachments) 
+    {
+        glUniform1i(glad_glGetUniformLocation(programTexturedGeometry.handle, uniformNames[iteration]), 0);
+        glActiveTexture(GL_TEXTURE0 + iteration);
+        glBindTexture(GL_TEXTURE_2D, texture.second);
+
+        ++iteration;
+    }
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
 void Init(App* app)
 {
     glEnable(GL_DEPTH_TEST);
@@ -257,7 +373,7 @@ void Init(App* app)
     // - programs (and retrieve uniform indices)
     app->texturedGeometryProgramIdx = LoadProgram(app, "Shaders/RENDER_QUAD.glsl", "RENDER_QUAD");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uAlbedo");
 
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
@@ -268,9 +384,9 @@ void Init(App* app)
 
     // Patrick Program
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/LIGHTS.glsl", "LIGHTS");
+    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
+    app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedo");
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
 
     app->planeIdx = LoadModel(app, "Patrick/plane.obj");
@@ -333,81 +449,9 @@ void Init(App* app)
 
     UnmapBuffer(app->entityUBO);
 
-    app->mode = Mode_Forward_Geometry_UBO;
+    app->mode = Mode_Deferred_Shading;
 
-    for (size_t i = 0; i < 1; ++i)
-    {
-        // Color Attachment
-        GLuint colorAttachment;
-        glGenTextures(1, &colorAttachment);
-        glBindTexture(GL_TEXTURE_2D, colorAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        app->primaryFBO.attachments.push_back({ GL_COLOR_ATTACHMENT0 + i, colorAttachment });
-    }
-
-    // Depth Attachment
-    GLuint depthAttachment;
-    glGenTextures(1, &depthAttachment);
-    glBindTexture(GL_TEXTURE_2D, depthAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    app->primaryFBO.depthHandle = depthAttachment;
-    
-    GLuint framebufferHandle = app->primaryFBO.handle;
-    glGenFramebuffers(1, &framebufferHandle);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebufferHandle);
-
-    for (auto& attachment : app->primaryFBO.attachments)
-    {
-        glFramebufferTexture(GL_FRAMEBUFFER, attachment.first, attachment.second, 0);
-    }
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->primaryFBO.depthHandle, 0);
-
-    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) 
-    {
-        GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
-        {
-            switch (framebufferStatus)
-            {
-                case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
-                case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
-                default: ELOG("Unknown framebuffer status error");
-            }
-        }
-    }
-
-    for (auto& [attachment, handle] : app->primaryFBO.attachments)
-    {
-        glDrawBuffers(1, &handle);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    app->primaryFBO.CreateFBO(4, app->displaySize);
 }
 
 void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aWorldMatrix) 
@@ -600,7 +644,7 @@ void CameraMovement(App* app)
         glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
         forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
 
-        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(deltaY), right);
+        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaY), right);
         forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
 
         // Update target
@@ -847,6 +891,100 @@ void Render(App* app)
 
             break;
         }
+        case Mode_Deferred_Shading:
+        {
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // Geometry Pass -------------------------------------------------
+            glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.handle);
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            Program& geometryProgram = app->programs[app->texturedGeometryProgramIdx];
+            glUseProgram(geometryProgram.handle);
+
+            // Render all geometry to G-Buffer
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->globalUBO.handle, 0, app->globalUBO.size);
+
+            for (const auto& entity : app->entities)
+            {
+                // UNIFORM BUFFER:
+                // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
+
+                Model& model = app->models[app->patrickIdx];
+                Mesh& mesh = app->meshes[model.meshIdx];
+
+                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+                {
+                    GLuint vao = FindVAO(mesh, i, geometryProgram);
+                    glBindVertexArray(vao);
+
+                    u32 submeshMaterialIdx = model.materialIdx[i];
+                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                    glUniform1i(app->patrickProgramUniformTexture, 0);
+
+                    Submesh& submesh = mesh.submeshes[i];
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
+            }
+
+            Model& model = app->models[app->planeIdx];
+            Mesh& mesh = app->meshes[model.meshIdx];
+
+            GLuint vao = FindVAO(mesh, 0, geometryProgram);
+            glBindVertexArray(vao);
+
+            u32 submeshMaterialIdx = model.materialIdx[0];
+            Material& submeshMaterial = app->materials[submeshMaterialIdx];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->textures[app->whiteTexIdx].handle);
+            glUniform1i(app->patrickProgramUniformTexture, 0);
+
+            Submesh& submesh = mesh.submeshes[0];
+            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+
+            // Lighting Pass ------------------------------------------------
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDisable(GL_DEPTH_TEST);
+
+            Program& quadProgram = app->programs[app->texturedMeshProgramIdx];
+            glUseProgram(quadProgram.handle);
+
+            // Bind G-Buffer textures
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[0].second); // Albedo
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "uAlbedo"), 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[1].second); // Normal
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "uNormal"), 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[2].second); // Position
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "uPosition"), 2);
+
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[3].second); // ViewDir
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "uViewDir"), 3);
+
+            // Render fullscreen quad
+            glBindVertexArray(app->vao);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+            break;
+        }
 
         default:;
     }
@@ -892,6 +1030,8 @@ void CleanUp(App* app)
         glDeleteBuffers(1, &app->embeddedVertices);
         app->embeddedVertices = 0;
     }
+
+    app->primaryFBO.Clean();
 }
 
 GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
