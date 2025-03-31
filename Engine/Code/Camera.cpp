@@ -2,6 +2,24 @@
 
 // Update the view matrix if necessary
 
+Camera::Camera()
+{
+
+}
+
+Camera::~Camera()
+{
+
+}
+
+// Mark matrices as dirty when camera properties change
+
+void Camera::SetPosition(const glm::vec3& newPosition) 
+{ 
+    position = newPosition; 
+    isViewDirty = true; 
+}
+
 const glm::mat4& Camera::ViewMatrix() const
 {
     if (isViewDirty)

@@ -559,7 +559,98 @@ void TestFunction()
     OpenGLErrorGuard guard("TestFunction");
 
     // Trigger GL_INVALID_VALUE (0x0501) - Passing an out-of-range value
-    glPointSize(-10.0f); // Negative size is not allowed
+    // glPointSize(-10.0f); // Negative size is not allowed
+}
+
+void PushCameraUniforms(App* app)
+{
+    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
+    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
+
+    for (int z = -2; z <= 2; ++z)
+    {
+        for (int x = -2; x <= 2; ++x)
+        {
+            CreateEntity(app, app->patrickIdx, VP, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
+        }
+    }
+
+    CreateEntity(app, app->planeIdx, VP, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
+
+    UnmapBuffer(app->entityUBO);
+}
+
+void CameraMovement(App* app)
+{
+    // Camera rotation with right mouse button
+    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+    {
+        float sensitivity = 0.1f;
+        float deltaX = app->input.mouseDelta.x * sensitivity;
+        float deltaY = app->input.mouseDelta.y * sensitivity;
+
+        glm::vec3 position = app->worldCamera.GetPosition();
+        glm::vec3 target = app->worldCamera.GetTarget();
+        glm::vec3 up = app->worldCamera.GetUpVector();
+
+        glm::vec3 forward = glm::normalize(target - position);
+        glm::vec3 right = glm::normalize(glm::cross(forward, up));
+
+        // Rotate forward vector based on mouse delta
+        glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
+        forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
+
+        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(deltaY), right);
+        forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
+
+        // Update target
+        app->worldCamera.SetTarget(position + forward);
+
+        PushCameraUniforms(app);
+    }
+
+    // WASD movement
+    glm::vec3 position = app->worldCamera.GetPosition();
+    float speed = 5.0f * app->deltaTime; // Adjust speed as needed
+
+    glm::vec3 forward = glm::normalize(app->worldCamera.GetTarget() - position);
+    glm::vec3 right = glm::normalize(glm::cross(forward, app->worldCamera.GetUpVector()));
+    glm::vec3 up = app->worldCamera.GetUpVector();
+
+    if (app->input.keys[K_W] == BUTTON_PRESSED)
+    {
+        position += forward * speed;
+    }
+    if (app->input.keys[K_S] == BUTTON_PRESSED) 
+    {
+        position -= forward * speed;
+    }
+        
+    if (app->input.keys[K_A] == BUTTON_PRESSED) 
+    {
+        position -= right * speed;
+    }
+        
+    if (app->input.keys[K_D] == BUTTON_PRESSED)
+    {
+        position += right * speed;
+    }
+        
+    if (app->input.keys[K_Q] == BUTTON_PRESSED) 
+    {
+        // Move down
+        position -= up * speed;
+    }
+        
+    if (app->input.keys[K_E] == BUTTON_PRESSED) 
+    {
+        // Move up
+        position += up * speed;
+    }
+
+    // Update camera position and target
+    app->worldCamera.SetPosition(position);
+    app->worldCamera.SetTarget(position + forward); // Keep looking ahead
 }
 
 void Update(App* app)
@@ -584,7 +675,7 @@ void Update(App* app)
 
     TestFunction();
 
-    app->worldCamera.SetAspectRatio((float)app->displaySize.x / (float)app->displaySize.y);
+    CameraMovement(app);
 }
 
 void App::OnResize(int width, int height) 

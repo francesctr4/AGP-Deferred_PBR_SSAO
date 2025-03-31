@@ -7,18 +7,20 @@ class Camera
 {
 public:
 
-    Camera() {};
-    ~Camera() {};
+    Camera();
+    ~Camera();
 
     // Mark matrices as dirty when camera properties change
-    void SetPosition(const glm::vec3& newPosition) { position = newPosition; isViewDirty = true; }
+    void SetPosition(const glm::vec3& newPosition);
     void SetTarget(const glm::vec3& newTarget) { target = newTarget; isViewDirty = true; }
     void SetUpVector(const glm::vec3& newUpVector) { upVector = newUpVector; isViewDirty = true; }
     void SetAspectRatio(float newAspectRatio) { aspectRatio = newAspectRatio; isProjectionDirty = true; }
     void SetVerticalFOV(float newFOV) { verticalFOV = newFOV; isProjectionDirty = true; }
     void SetNearFar(float newZnear, float newZfar) { znear = newZnear; zfar = newZfar; isProjectionDirty = true; }
 
-    const glm::vec3& GetPosition() { return position; };
+    const glm::vec3& GetPosition() const { return position; }
+    const glm::vec3& GetTarget() const { return target; }
+    const glm::vec3& GetUpVector() const { return upVector; }
 
     // Update the view matrix if necessary
     const glm::mat4& ViewMatrix() const;
