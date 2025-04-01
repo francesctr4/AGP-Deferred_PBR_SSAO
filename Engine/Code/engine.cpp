@@ -387,8 +387,8 @@ void Init(App* app)
     app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
     Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedo");
+    
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
-
     app->planeIdx = LoadModel(app, "Patrick/plane.obj");
 
     // Camera Configuration
@@ -907,7 +907,7 @@ void Render(App* app)
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            Program& geometryProgram = app->programs[app->texturedGeometryProgramIdx];
+            Program& geometryProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(geometryProgram.handle);
 
             // Render all geometry to G-Buffer
@@ -960,7 +960,7 @@ void Render(App* app)
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
 
-            Program& quadProgram = app->programs[app->texturedMeshProgramIdx];
+            Program& quadProgram = app->programs[app->texturedGeometryProgramIdx];
             glUseProgram(quadProgram.handle);
 
             // Bind G-Buffer textures

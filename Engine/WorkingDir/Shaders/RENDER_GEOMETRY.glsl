@@ -14,7 +14,7 @@ layout(location=4) in vec3 aBitangent;
 
 struct Light 
 {
-	unsigned int type;
+	int type;
 	vec3 color;
 	vec3 direction;
 	vec3 position;
@@ -23,7 +23,7 @@ struct Light
 layout(binding = 0, std140) uniform globalUBO
 {
 	vec3 uCameraPosition;
-	unsigned int uLightCount;
+	int uLightCount;
 	Light uLight[16];
 };
 
