@@ -16,8 +16,8 @@
 #include <string>
 
 #define WINDOW_TITLE  "Advanced Graphics Programming"
-#define WINDOW_WIDTH  800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH  1920
+#define WINDOW_HEIGHT 1080
 
 #pragma warning(disable : 4267) // conversion from X to Y, possible loss of data
 

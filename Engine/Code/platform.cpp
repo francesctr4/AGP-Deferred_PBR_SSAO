@@ -235,7 +235,7 @@ int main()
 
     Init(&app);
 
-    glfwMaximizeWindow(window);
+    //glfwMaximizeWindow(window);
 
     while (app.isRunning)
     {

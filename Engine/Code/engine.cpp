@@ -16,13 +16,13 @@
 
 bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
 {
-    for (size_t i = 0; i < aAttachments; ++i)
+    for (int i = 0; i < aAttachments; ++i)
     {
         // Color Attachment
         GLuint colorAttachment;
         glGenTextures(1, &colorAttachment);
         glBindTexture(GL_TEXTURE_2D, colorAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, // Better precision
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
             displaySize.x, displaySize.y, 0, GL_RGBA, GL_FLOAT, NULL);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -40,7 +40,7 @@ bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
     GLuint depthAttachment;
     glGenTextures(1, &depthAttachment);
     glBindTexture(GL_TEXTURE_2D, depthAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, // Better depth format
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8,
         displaySize.x, displaySize.y, 0,
         GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
 
@@ -86,7 +86,7 @@ bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
     }
 
     std::vector<GLenum> drawBuffers;
-    for (auto& [attachment, _] : attachments) 
+    for (auto& [attachment, handle] : attachments) 
     {
         drawBuffers.push_back(attachment);
     }
@@ -323,9 +323,10 @@ void RenderScreenFillQuad(App* app, const Framebuffer& aFBO)
 
     size_t iteration = 0;
     const char* uniformNames[] = { "uAlbedo", "uNormal", "uPosition", "uViewDir" };
-    for (const auto& texture : aFBO.attachments) 
+    for (const auto& texture : aFBO.attachments)
     {
-        glUniform1i(glad_glGetUniformLocation(programTexturedGeometry.handle, uniformNames[iteration]), 0);
+        GLint uniformLoc = glGetUniformLocation(programTexturedGeometry.handle, uniformNames[iteration]);
+        glUniform1i(uniformLoc, iteration); // Use iteration index instead of 0
         glActiveTexture(GL_TEXTURE0 + iteration);
         glBindTexture(GL_TEXTURE_2D, texture.second);
 
@@ -726,6 +727,9 @@ void App::OnResize(int width, int height)
 {
     displaySize = vec2(width, height);
 
+    primaryFBO.Clean();
+    primaryFBO.CreateFBO(4, displaySize);
+
     worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
 
     MapBuffer(entityUBO, GL_WRITE_ONLY);
@@ -893,6 +897,7 @@ void Render(App* app)
         }
         case Mode_Deferred_Shading:
         {
+            glEnable(GL_DEPTH_TEST);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -903,6 +908,13 @@ void Render(App* app)
 
             // Geometry Pass -------------------------------------------------
             glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.handle);
+
+            std::vector<GLuint> drawBuffers;
+            for (auto& [attachment, handle] : app->primaryFBO.attachments)
+            {
+                drawBuffers.push_back(handle);
+            }
+            glDrawBuffers(drawBuffers.size(), drawBuffers.data());
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -917,7 +929,7 @@ void Render(App* app)
             {
                 // UNIFORM BUFFER:
                 // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
+                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, entity.entityBufferSize);
 
                 Model& model = app->models[app->patrickIdx];
                 Mesh& mesh = app->meshes[model.meshIdx];
@@ -936,6 +948,7 @@ void Render(App* app)
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                    glBindTexture(GL_TEXTURE_2D, 0);
                 }
             }
 

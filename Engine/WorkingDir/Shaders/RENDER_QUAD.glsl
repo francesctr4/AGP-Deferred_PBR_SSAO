@@ -21,7 +21,7 @@ void main()
 
 struct Light 
 {
-	unsigned int type;
+	int type;
 	vec3 color;
 	vec3 direction;
 	vec3 position;
@@ -30,7 +30,7 @@ struct Light
 layout(binding = 0, std140) uniform globalUBO
 {
 	vec3 uCameraPosition;
-	unsigned int uLightCount;
+	int uLightCount;
 	Light uLight[16];
 };
 
@@ -98,13 +98,21 @@ void main()
     
     for(int i = 0; i < uLightCount; ++i)
     {
+        vec3 lightResult = vec3(0.0f);
+
         if(uLight[i].type == 0)
-            returnColor += CalcDirLight(uLight[i], normalTex, viewDirTex);
+        {
+            lightResult += CalcDirLight(uLight[i], normalTex, viewDirTex);
+        }
         else if(uLight[i].type == 1)
-            returnColor += CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex);
+        {
+            lightResult += CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex);
+        }
+
+        returnColor += lightResult * albedoTex;
     }
 
-    oColor = vec4(returnColor * albedoTex, 1.0); // Multiply with albedo
+    oColor = vec4(returnColor, 1.0); // Multiply with albedo
 }
 
 #endif

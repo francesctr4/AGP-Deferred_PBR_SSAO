@@ -65,9 +65,9 @@ layout(location=3) out vec4 oViewDir;
 void main()
 {
 	oColor = texture(uTexture, vTexCoord);
-    oNormal = vec4(normalize(vNormal), 0.0f);
+    oNormal = vec4(vNormal, 1.0f);
     oPosition = vec4(vPosition, 1.0f);
-    oViewDir = vec4(normalize(vViewDir), 0.0f);
+    oViewDir = vec4(vViewDir, 1.0f);
 }
 
 #endif
