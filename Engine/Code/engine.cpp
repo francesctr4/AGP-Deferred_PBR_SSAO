@@ -598,6 +598,24 @@ void Gui(App* app)
         ImGui::EndChild();
     }
     ImGui::End();
+
+    ImGui::Begin("GBuffer Debug View");
+    {
+        const char* debugModes[] = {
+            "Final Render",
+            "Albedo",
+            "Normal",
+            "Position",
+            "View Direction"
+        };
+
+        ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
+
+        // Optional: Add a separator and some help text
+        ImGui::Separator();
+        ImGui::Text("DEBUG KEYS -> 1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir");
+    }
+    ImGui::End();
 }
 
 void TestFunction()
@@ -722,6 +740,12 @@ void Update(App* app)
     TestFunction();
 
     CameraMovement(app);
+
+    if (app->input.keys[K_1] == BUTTON_PRESS) app->gBufferDebugMode = 0;
+    if (app->input.keys[K_2] == BUTTON_PRESS) app->gBufferDebugMode = 1;
+    if (app->input.keys[K_3] == BUTTON_PRESS) app->gBufferDebugMode = 2;
+    if (app->input.keys[K_4] == BUTTON_PRESS) app->gBufferDebugMode = 3;
+    if (app->input.keys[K_5] == BUTTON_PRESS) app->gBufferDebugMode = 4;
 }
 
 void App::OnResize(int width, int height) 
@@ -1001,6 +1025,8 @@ void Render(App* app)
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[3].second); // ViewDir
             glUniform1i(glGetUniformLocation(quadProgram.handle, "uViewDir"), 3);
+
+            glUniform1i(app->programUniformDebugMode, (GLint)app->gBufferDebugMode);
 
             // Render fullscreen quad
             glBindVertexArray(app->vao);
