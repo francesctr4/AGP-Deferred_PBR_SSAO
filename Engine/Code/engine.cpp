@@ -430,8 +430,8 @@ void Init(App* app)
     //PushMat4(app->globalUBO, MVPMatrix);
     //UnmapBuffer(app->globalUBO);
 
-    int gridSizeX = 4;  // Number of columns (X-axis)
-    int gridSizeZ = 4;  // Number of rows (Z-axis)
+    int gridSizeX = 10;  // Number of columns (X-axis)
+    int gridSizeZ = 10;  // Number of rows (Z-axis)
     float minX = -5.0f; // Start X range
     float maxX = 5.0f;  // End X range
     float minZ = -5.0f; // Start Z range
