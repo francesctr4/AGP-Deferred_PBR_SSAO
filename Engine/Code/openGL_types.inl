@@ -161,13 +161,28 @@ struct Framebuffer
 
 	void Clean() 
 	{
-		glDeleteFramebuffers(1, &handle);
+		// Unbind primaryFBO to safely modify it
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		for (auto& texture : attachments) 
+		// Delete all color attachments
+		for (auto& [attachment, handle] : attachments)
 		{
-			glDeleteTextures(1, &texture.second);
+			glDeleteTextures(1, &handle);
+		}
+		attachments.clear();
+
+		// Delete depth attachment (if it exists)
+		if (depthHandle != 0)
+		{
+			glDeleteTextures(1, &depthHandle);
+			depthHandle = 0;
 		}
 
-		glDeleteTextures(1, &depthHandle);
+		// Delete the framebuffer itself
+		if (handle != 0)
+		{
+			glDeleteFramebuffers(1, &handle);
+			handle = 0;
+		}
 	}
 };

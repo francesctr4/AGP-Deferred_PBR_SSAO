@@ -41,6 +41,9 @@ uniform sampler2D uNormal;
 uniform sampler2D uPosition;
 uniform sampler2D uViewDir;
 
+// Debug mode switch (0 = Final Render, 1 = Albedo, 2 = Normal, 3 = Position, 4 = ViewDir)
+uniform int uDebugMode;
+
 layout(location=0) out vec4 oColor;
 
 vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
@@ -94,8 +97,27 @@ void main()
     vec3 positionTex = texture(uPosition, vTexCoord).rgb;
     vec3 viewDirTex = normalize(texture(uViewDir, vTexCoord).rgb);
 
+    // Debug mode switch
+    switch(uDebugMode)
+    {
+        case 1: // Albedo
+            oColor = vec4(albedoTex, 1.0);
+            return;
+        case 2: // Normal (visualize as RGB)
+            oColor = vec4(normalTex, 1.0);
+            return;
+        case 3: // Position (visualize world space)
+            oColor = vec4(positionTex, 1.0);
+            return;
+        case 4: // View Direction
+            oColor = vec4(viewDirTex, 1.0);
+            return;
+        default: // Final render (default)
+            break;
+    }
+
+    // Standard deferred shading (final render)
     vec3 returnColor = vec3(0.0);
-    
     for(int i = 0; i < uLightCount; ++i)
     {
         vec3 lightResult = vec3(0.0f);

@@ -375,6 +375,7 @@ void Init(App* app)
     app->texturedGeometryProgramIdx = LoadProgram(app, "Shaders/RENDER_QUAD.glsl", "RENDER_QUAD");
     Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
     app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uAlbedo");
+    app->programUniformDebugMode = glGetUniformLocation(texturedGeometryProgram.handle, "uDebugMode");
 
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
@@ -906,7 +907,7 @@ void Render(App* app)
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            // Geometry Pass -------------------------------------------------
+            // ==================== GEOMETRY PASS ====================
             glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.handle);
 
             std::vector<GLuint> drawBuffers;
@@ -948,7 +949,10 @@ void Render(App* app)
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                    
+                    // Unbind texture & VAO after drawing
                     glBindTexture(GL_TEXTURE_2D, 0);
+                    glBindVertexArray(0);
                 }
             }
 
@@ -967,6 +971,11 @@ void Render(App* app)
 
             Submesh& submesh = mesh.submeshes[0];
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+
+            // Unbind after drawing
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glBindVertexArray(0);
+            glUseProgram(0); // Unbind shader program
 
             // Lighting Pass ------------------------------------------------
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -996,6 +1005,12 @@ void Render(App* app)
             // Render fullscreen quad
             glBindVertexArray(app->vao);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+            // Unbind everything after lighting pass
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0); // Unbind last active texture
+            glUseProgram(0); // Unbind shader program
+
             break;
         }
 
