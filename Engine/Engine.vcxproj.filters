@@ -25,6 +25,9 @@
     <Filter Include="External\Glad">
       <UniqueIdentifier>{db9fd684-3058-4040-9399-cae66729442b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Editor">
+      <UniqueIdentifier>{75aae78f-ce50-4409-a5a8-15dc989cedf0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -71,6 +74,12 @@
     </ClCompile>
     <ClCompile Include="Code\Camera.cpp">
       <Filter>Source Code</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\EditorMenuBar.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\EditorDockspace.cpp">
+      <Filter>Source Code\Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="Code\Camera.h">
       <Filter>Source Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Editor.h">
+      <Filter>Source Code\Editor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,10 +9,10 @@
 #include "OpenGLErrorGuard.h"
 #include "ModelLoader.h"
 
-#include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include <format>
+#include "Editor.h"
 
 bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
 {
@@ -430,8 +430,35 @@ void Init(App* app)
     //PushMat4(app->globalUBO, MVPMatrix);
     //UnmapBuffer(app->globalUBO);
 
-    app->lights.push_back({ LightType_Directional, glm::vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, -1.0f, -1.0f), vec3(0.0f) });
-    app->lights.push_back({ LightType_Point, glm::vec3(0.2f, 0.2f, 0.8f), vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f, 20.0f, 0.0f)});
+    int gridSizeX = 4;  // Number of columns (X-axis)
+    int gridSizeZ = 4;  // Number of rows (Z-axis)
+    float minX = -5.0f; // Start X range
+    float maxX = 5.0f;  // End X range
+    float minZ = -5.0f; // Start Z range
+    float maxZ = 5.0f;  // End Z range
+    float yPos = 0.0f;  // Fixed Y position
+
+    // Calculate spacing between lights
+    float stepX = (maxX - minX) / (gridSizeX - 1);
+    float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
+
+    // Create grid of point lights
+    for (int i = 0; i < gridSizeX; ++i) {
+        for (int j = 0; j < gridSizeZ; ++j) {
+            // Calculate position
+            float x = minX + i * stepX;
+            float z = minZ + j * stepZ;
+
+            // Add point light to the scene
+            app->lights.push_back({
+                LightType_Point,
+                glm::vec3(0.2f, 0.2f, 0.8f), // Color (blueish)
+                glm::vec3(0.0f,0.0f,0.0f),       // Position
+                glm::vec3(x, yPos, z) // Attenuation (constant, linear, quadratic)
+                });
+        }
+    }
+
     UpdateLights(app);
 
     Buffer& entityUBO = app->entityUBO;
@@ -476,57 +503,8 @@ void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix)
 
 void Gui(App* app)
 {    
-    // Set DockSpace Invisible Window Flags
-    ImGuiWindowFlags window = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    // Get Window Viewport
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-    // Set Window Parameters
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::SetNextWindowBgAlpha(0.0f);
-
-    // Set Window Style Parameters
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-    // Begin DockSpace Invisible Window with the flags
-    ImGui::Begin("Dockspace", 0, window);
-
-    // Apply Window Style Parameters
-    ImGui::PopStyleVar(3);
-
-    // Create DockSpace on the invisible window
-    ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-
-    // End DockSpace Window
-    ImGui::End();
-
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New")) { /* Handle new */ }
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { /* Handle open */ }
-            if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Handle save */ }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Exit")) { app->isRunning = false; }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Help"))
-        {
-            if (ImGui::MenuItem("About")) { /* Show about dialog */ }
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMainMenuBar();
-    }
+    Editor::DrawDockspace(app);
+    Editor::DrawMainMenuBar(app);
 
     ImGui::Begin("Info");
     ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
@@ -819,20 +797,7 @@ void App::OnResize(int width, int height)
 
     worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
 
-    MapBuffer(entityUBO, GL_WRITE_ONLY);
-    glm::mat4 VP = worldCamera.ProjectionMatrix() * worldCamera.ViewMatrix();
-
-    for (int z = -2; z <= 2; ++z)
-    {
-        for (int x = -2; x <= 2; ++x)
-        {
-            CreateEntity(this, patrickIdx, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
-        }
-    }
-
-    CreateEntity(this, planeIdx, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
-
-    UnmapBuffer(entityUBO);
+    UpdateEntityUBO(this);
 }
 
 void Render(App* app)

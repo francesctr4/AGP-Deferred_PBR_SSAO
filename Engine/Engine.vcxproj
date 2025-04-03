@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClCompile Include="Code\BufferManagement.cpp" />
     <ClCompile Include="Code\Camera.cpp" />
+    <ClCompile Include="Code\EditorDockspace.cpp" />
+    <ClCompile Include="Code\EditorMenuBar.cpp" />
     <ClCompile Include="Code\engine.cpp" />
     <ClCompile Include="Code\ModelLoader.cpp" />
     <ClCompile Include="Code\OpenGLErrorGuard.cpp" />
@@ -38,6 +40,7 @@
   <ItemGroup>
     <ClInclude Include="Code\BufferManagement.h" />
     <ClInclude Include="Code\Camera.h" />
+    <ClInclude Include="Code\Editor.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\ModelLoader.h" />
     <ClInclude Include="Code\OpenGLDebugCallback.h" />
