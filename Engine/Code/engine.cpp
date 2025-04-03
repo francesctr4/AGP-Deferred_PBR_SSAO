@@ -616,6 +616,62 @@ void Gui(App* app)
         ImGui::Text("DEBUG KEYS -> 1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir");
     }
     ImGui::End();
+
+    ImGui::Begin("FBO Textures");
+
+    // Get the texture handles from your FBO
+    GLuint albedoTexture = app->primaryFBO.GetTextureAttachment(0);
+    GLuint normalTexture = app->primaryFBO.GetTextureAttachment(1);
+    GLuint positionTexture = app->primaryFBO.GetTextureAttachment(2);
+    GLuint viewDirTexture = app->primaryFBO.GetTextureAttachment(3);
+    GLuint depthTexture = app->primaryFBO.GetDepthTexture();
+
+    // Display each texture in a separate ImGui window/tab
+    if (ImGui::BeginTabBar("FBO Textures")) {
+
+        float windowWidth = ImGui::GetWindowWidth();
+        float aspectRatio = (float)app->displaySize.y / (float)app->displaySize.x;
+        float displayHeight = windowWidth * aspectRatio;
+
+        if (ImGui::BeginTabItem("Albedo")) {
+            ImGui::Image((void*)(intptr_t)albedoTexture,
+                ImVec2(windowWidth, displayHeight),
+                ImVec2(0, 1), ImVec2(1, 0)); // Flip UVs if needed
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Normal")) {
+            ImGui::Image((void*)(intptr_t)normalTexture,
+                ImVec2(windowWidth, displayHeight),
+                ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Position")) {
+            ImGui::Image((void*)(intptr_t)positionTexture,
+                ImVec2(windowWidth, displayHeight),
+                ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("ViewDir")) {
+            ImGui::Image((void*)(intptr_t)viewDirTexture,
+                ImVec2(windowWidth, displayHeight),
+                ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Depth")) {
+            ImGui::Image((void*)(intptr_t)depthTexture,
+                ImVec2(windowWidth, displayHeight),
+                ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+
+    ImGui::End();
 }
 
 void TestFunction()

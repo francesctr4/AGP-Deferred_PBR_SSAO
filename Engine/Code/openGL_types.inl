@@ -185,4 +185,16 @@ struct Framebuffer
 			handle = 0;
 		}
 	}
+
+	GLuint GetTextureAttachment(int index) {
+		if (index >= 0 && index < attachments.size()) {
+			return attachments[index].second;
+		}
+		return 0;
+	}
+
+	// Returns the depth texture handle
+	GLuint GetDepthTexture() {
+		return depthHandle;
+	}
 };
