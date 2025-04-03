@@ -105,7 +105,7 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
 
 void UpdateLights(App* app);
 
-void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aWorldMatrix);
+void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix);
 
 void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program);
 

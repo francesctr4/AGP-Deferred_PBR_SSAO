@@ -430,8 +430,8 @@ void Init(App* app)
     //PushMat4(app->globalUBO, MVPMatrix);
     //UnmapBuffer(app->globalUBO);
 
-    app->lights.push_back({ LightType_Directional, glm::vec3(0.5f, 0.0f, 0.0f), vec3(1.0f, 1.0f, -1.0f), vec3(0.0f) });
-    app->lights.push_back({ LightType_Point, glm::vec3(0.2f, 0.2f, 0.2f), vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f)});
+    app->lights.push_back({ LightType_Directional, glm::vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, -1.0f, -1.0f), vec3(0.0f) });
+    app->lights.push_back({ LightType_Point, glm::vec3(0.2f, 0.2f, 0.8f), vec3(-1.0f, -1.0f, 1.0f), vec3(0.0f, 20.0f, 0.0f)});
     UpdateLights(app);
 
     Buffer& entityUBO = app->entityUBO;
@@ -443,11 +443,11 @@ void Init(App* app)
     {
         for (int x = -2; x <= 2; ++x) 
         {
-            CreateEntity(app, app->patrickIdx, VP, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
+            CreateEntity(app, app->patrickIdx, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
         }
     }
 
-    CreateEntity(app, app->planeIdx, VP, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
+    CreateEntity(app, app->planeIdx, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
 
     UnmapBuffer(app->entityUBO);
 
@@ -456,7 +456,7 @@ void Init(App* app)
     app->primaryFBO.CreateFBO(4, app->displaySize);
 }
 
-void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm::mat4& aWorldMatrix) 
+void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix)
 {
     Entity entity;
     AlignHead(app->entityUBO, app->uniformBlockAlignment);
@@ -465,11 +465,12 @@ void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aVP, const glm
     entity.worldMatrix = aWorldMatrix;
     entity.modelIndex = aModelIdx;
 
+    // Only push world matrix during creation
     PushMat4(app->entityUBO, entity.worldMatrix);
-    PushMat4(app->entityUBO, aVP * entity.worldMatrix);
+    // Reserve space for MVP (will be updated later)
+    PushMat4(app->entityUBO, glm::mat4(1.0f));
 
     entity.entityBufferSize = app->entityUBO.head - entity.entityBufferOffset;
-
     app->entities.push_back(entity);
 }
 
@@ -682,20 +683,22 @@ void TestFunction()
     // glPointSize(-10.0f); // Negative size is not allowed
 }
 
-void PushCameraUniforms(App* app)
+void UpdateEntityUBO(App* app)
 {
     MapBuffer(app->entityUBO, GL_WRITE_ONLY);
+
     glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
 
-    for (int z = -2; z <= 2; ++z)
+    // Update existing entities' VP matrices
+    for (auto& entity : app->entities)
     {
-        for (int x = -2; x <= 2; ++x)
-        {
-            CreateEntity(app, app->patrickIdx, VP, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
-        }
-    }
+        // Calculate new MVP
+        glm::mat4 mvp = VP * entity.worldMatrix;
 
-    CreateEntity(app, app->planeIdx, VP, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
+        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
+        u8* bufferPtr = (u8*)app->entityUBO.data + entity.entityBufferOffset + sizeof(glm::mat4);
+        memcpy(bufferPtr, &mvp, sizeof(glm::mat4));
+    }
 
     UnmapBuffer(app->entityUBO);
 }
@@ -725,13 +728,12 @@ void CameraMovement(App* app)
 
         // Update target
         app->worldCamera.SetTarget(position + forward);
-
-        PushCameraUniforms(app);
     }
 
     // WASD movement
     glm::vec3 position = app->worldCamera.GetPosition();
-    float speed = 5.0f * app->deltaTime; // Adjust speed as needed
+    float baseSpeed = 10.0f * app->deltaTime;
+    float speed = baseSpeed;
 
     glm::vec3 forward = glm::normalize(app->worldCamera.GetTarget() - position);
     glm::vec3 right = glm::normalize(glm::cross(forward, app->worldCamera.GetUpVector()));
@@ -741,36 +743,40 @@ void CameraMovement(App* app)
     {
         position += forward * speed;
     }
-    if (app->input.keys[K_S] == BUTTON_PRESSED) 
+    if (app->input.keys[K_S] == BUTTON_PRESSED)
     {
         position -= forward * speed;
     }
-        
-    if (app->input.keys[K_A] == BUTTON_PRESSED) 
+
+    if (app->input.keys[K_A] == BUTTON_PRESSED)
     {
         position -= right * speed;
     }
-        
+
     if (app->input.keys[K_D] == BUTTON_PRESSED)
     {
         position += right * speed;
     }
-        
-    if (app->input.keys[K_Q] == BUTTON_PRESSED) 
+
+    if (app->input.keys[K_Q] == BUTTON_PRESSED)
     {
         // Move down
         position -= up * speed;
     }
-        
-    if (app->input.keys[K_E] == BUTTON_PRESSED) 
+
+    if (app->input.keys[K_E] == BUTTON_PRESSED)
     {
         // Move up
         position += up * speed;
     }
 
     // Update camera position and target
+    // Update camera position and target
     app->worldCamera.SetPosition(position);
-    app->worldCamera.SetTarget(position + forward); // Keep looking ahead
+    app->worldCamera.SetTarget(position + forward);
+
+    // Only update existing entities' VP matrices
+    UpdateEntityUBO(app);  // Replace PushCameraUniforms with this
 }
 
 void Update(App* app)
@@ -793,7 +799,7 @@ void Update(App* app)
     }
 #endif
 
-    TestFunction();
+    //TestFunction();
 
     CameraMovement(app);
 
@@ -820,11 +826,11 @@ void App::OnResize(int width, int height)
     {
         for (int x = -2; x <= 2; ++x)
         {
-            CreateEntity(this, patrickIdx, VP, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
+            CreateEntity(this, patrickIdx, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
         }
     }
 
-    CreateEntity(this, planeIdx, VP, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
+    CreateEntity(this, planeIdx, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
 
     UnmapBuffer(entityUBO);
 }

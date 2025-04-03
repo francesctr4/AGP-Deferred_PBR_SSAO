@@ -93,9 +93,9 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 void main()
 {
 	vec3 albedoTex = texture(uAlbedo, vTexCoord).rgb;
-    vec3 normalTex = normalize(texture(uNormal, vTexCoord).rgb);
+    vec3 normalTex = texture(uNormal, vTexCoord).rgb;
     vec3 positionTex = texture(uPosition, vTexCoord).rgb;
-    vec3 viewDirTex = normalize(texture(uViewDir, vTexCoord).rgb);
+    vec3 viewDirTex = texture(uViewDir, vTexCoord).rgb;
 
     // Debug mode switch
     switch(uDebugMode)
