@@ -62,11 +62,8 @@ struct Program
 
 enum Mode
 {
-    Mode_TexturedQuad,
-    Mode_Forward_Geometry,
-	Mode_Forward_Geometry_UBO,
-	Mode_Deferred_Shading,
-    Mode_Count
+	Mode_Forward_Rendering = 0,
+	Mode_Deferred_Rendering = 1,
 };
 
 struct Material
@@ -194,7 +191,7 @@ struct Framebuffer
 	}
 
 	// Returns the depth texture handle
-	GLuint GetDepthTexture() {
+	GLuint GetDepthAttachment() {
 		return depthHandle;
 	}
 };

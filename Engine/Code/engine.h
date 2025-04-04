@@ -18,8 +18,13 @@ typedef glm::ivec2 ivec2;
 typedef glm::ivec3 ivec3;
 typedef glm::ivec4 ivec4;
 
-struct App
+class App
 {
+public:
+
+    App();
+    ~App();
+
     // Loop
     f32  deltaTime;
     bool isRunning;
@@ -39,8 +44,9 @@ struct App
     std::vector<Program>    programs;
 
     // program indices
-    u32 texturedGeometryProgramIdx;
-    u32 texturedMeshProgramIdx;
+    u32 renderQuadProgramIdx;
+    u32 renderGeometryProgramIdx;
+    u32 forwardRenderingProgramIdx;
 
     // texture indices
     u32 diceTexIdx;
@@ -53,9 +59,11 @@ struct App
     u32 patrickIdx;
     u32 planeIdx;
     u32 patrickProgramUniformTexture;
+    u32 fwdPatrickProgramUniformTexture;
 
     // Mode
     Mode mode;
+    bool needsReinit;
 
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
@@ -86,27 +94,22 @@ struct App
     std::vector<std::string> shaderErrors;
     bool showShaderErrors = false;
 
+    static u32 LoadTexture2D(App* app, const char* filepath);
+
+    void Init(App* app);
+    void Update(App* app);
+    void Render(App* app);
+    void Gui(App* app);
+    void CleanUp(App* app);
+
     void OnResize(int width, int height);
+
+private:
+
+    GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+    void UpdateLights(App* app);
+    void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix);
+    void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program);
 };
-
-u32 LoadTexture2D(App* app, const char* filepath);
-
-void Init(App* app);
-
-void Gui(App* app);
-
-void Update(App* app);
-
-void Render(App* app);
-
-void CleanUp(App* app);
-
-GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
-
-void UpdateLights(App* app);
-
-void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix);
-
-void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program);
 
 #endif // ENGINE_H

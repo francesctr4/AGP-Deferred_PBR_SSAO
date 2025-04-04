@@ -118,35 +118,35 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial,
         material->GetTexture(aiTextureType_DIFFUSE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.albedoTextureIdx = LoadTexture2D(app, filepath.str);
+        myMaterial.albedoTextureIdx = App::LoadTexture2D(app, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
     {
         material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.emissiveTextureIdx = LoadTexture2D(app, filepath.str);
+        myMaterial.emissiveTextureIdx = App::LoadTexture2D(app, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
     {
         material->GetTexture(aiTextureType_SPECULAR, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.specularTextureIdx = LoadTexture2D(app, filepath.str);
+        myMaterial.specularTextureIdx = App::LoadTexture2D(app, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
     {
         material->GetTexture(aiTextureType_NORMALS, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.normalsTextureIdx = LoadTexture2D(app, filepath.str);
+        myMaterial.normalsTextureIdx = App::LoadTexture2D(app, filepath.str);
     }
     if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
     {
         material->GetTexture(aiTextureType_HEIGHT, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial.bumpTextureIdx = LoadTexture2D(app, filepath.str);
+        myMaterial.bumpTextureIdx = App::LoadTexture2D(app, filepath.str);
     }
 
     //myMaterial.createNormalFromBump();

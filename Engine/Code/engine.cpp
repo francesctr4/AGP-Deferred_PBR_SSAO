@@ -14,6 +14,59 @@
 #include <format>
 #include "Editor.h"
 
+App::App()
+{
+    int gridSizeX = 10;  // Number of columns (X-axis)
+    int gridSizeZ = 10;  // Number of rows (Z-axis)
+    float minX = -5.0f; // Start X range
+    float maxX = 5.0f;  // End X range
+    float minZ = -5.0f; // Start Z range
+    float maxZ = 5.0f;  // End Z range
+    float yPos = 0.0f;  // Fixed Y position
+
+    // Calculate spacing between lights
+    float stepX = (maxX - minX) / (gridSizeX - 1);
+    float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
+
+    // Create grid of point lights
+    for (int i = 0; i < gridSizeX; ++i) {
+        for (int j = 0; j < gridSizeZ; ++j) {
+            // Calculate position
+            float x = minX + i * stepX;
+            float z = minZ + j * stepZ;
+
+            // Add point light to the scene
+            this->lights.push_back({
+                LightType_Point,
+                glm::vec3(0.2f, 0.2f, 0.8f), // Color (blueish)
+                glm::vec3(0.0f,0.0f,0.0f),       // Position
+                glm::vec3(x, yPos, z) // Attenuation (constant, linear, quadratic)
+                });
+        }
+    }
+
+    this->lights.push_back({
+                LightType_Point,
+                glm::vec3(1.0f, 1.0f, 1.0f), // Color (blueish)
+                glm::vec3(0.0f,0.0f,0.0f),       // Position
+                glm::vec3(0.0f, 10.0f, 0.0f) // Attenuation (constant, linear, quadratic)
+        });
+
+    this->lights.push_back({
+            LightType_Directional,
+            glm::vec3(1.0f, 1.0f, 0.5f), // Color (blueish)
+            glm::vec3(0.0f,0.0f,0.0f),       // Position
+            glm::vec3(0.0f, 10.0f, 0.0f) // Attenuation (constant, linear, quadratic)
+        });
+
+    this->mode = Mode_Deferred_Rendering;
+}
+
+App::~App()
+{
+
+}
+
 bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
 {
     for (int i = 0; i < aAttachments; ++i)
@@ -40,9 +93,9 @@ bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
     GLuint depthAttachment;
     glGenTextures(1, &depthAttachment);
     glBindTexture(GL_TEXTURE_2D, depthAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, // Use DEPTH_COMPONENT
         displaySize.x, displaySize.y, 0,
-        GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+        GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // Adjust format/type
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -72,15 +125,15 @@ bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
         {
             switch (framebufferStatus)
             {
-            case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
-            case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
-            default: ELOG("Unknown framebuffer status error");
+                case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+                case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+                case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+                case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+                case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+                case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+                case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+                case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+                default: ELOG("Unknown framebuffer status error");
             }
         }
     }
@@ -279,7 +332,7 @@ GLuint CreateTexture2DFromImage(Image image)
     return texHandle;
 }
 
-u32 LoadTexture2D(App* app, const char* filepath)
+u32 App::LoadTexture2D(App* app, const char* filepath)
 {
     for (u32 texIdx = 0; texIdx < app->textures.size(); ++texIdx)
         if (app->textures[texIdx].filepath == filepath)
@@ -316,7 +369,7 @@ void RenderScreenFillQuad(App* app, const Framebuffer& aFBO)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
+    Program& programTexturedGeometry = app->programs[app->renderQuadProgramIdx];
     glUseProgram(programTexturedGeometry.handle);
 
     glBindVertexArray(app->vao);
@@ -339,7 +392,7 @@ void RenderScreenFillQuad(App* app, const Framebuffer& aFBO)
     glUseProgram(0);
 }
 
-void Init(App* app)
+void App::Init(App* app)
 {
     glEnable(GL_DEPTH_TEST);
 
@@ -372,10 +425,10 @@ void Init(App* app)
     glBindVertexArray(0);
 
     // - programs (and retrieve uniform indices)
-    app->texturedGeometryProgramIdx = LoadProgram(app, "Shaders/RENDER_QUAD.glsl", "RENDER_QUAD");
-    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uAlbedo");
-    app->programUniformDebugMode = glGetUniformLocation(texturedGeometryProgram.handle, "uDebugMode");
+    app->renderQuadProgramIdx = LoadProgram(app, "Shaders/RENDER_QUAD.glsl", "RENDER_QUAD");
+    Program& renderQuadProgram = app->programs[app->renderQuadProgramIdx];
+    app->programUniformTexture = glGetUniformLocation(renderQuadProgram.handle, "uAlbedo");
+    app->programUniformDebugMode = glGetUniformLocation(renderQuadProgram.handle, "uDebugMode");
 
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
@@ -386,9 +439,13 @@ void Init(App* app)
 
     // Patrick Program
 
-    app->texturedMeshProgramIdx = LoadProgram(app, "Shaders/RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
-    Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-    app->patrickProgramUniformTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedo");
+    app->renderGeometryProgramIdx = LoadProgram(app, "Shaders/RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
+    Program& renderGeometryProgram = app->programs[app->renderGeometryProgramIdx];
+    app->patrickProgramUniformTexture = glGetUniformLocation(renderGeometryProgram.handle, "uAlbedo");
+
+    app->forwardRenderingProgramIdx = LoadProgram(app, "Shaders/LIGHTS.glsl", "LIGHTS");
+    Program& forwardRenderingProgram = app->programs[app->forwardRenderingProgramIdx];
+    app->fwdPatrickProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uTexture");
     
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
     app->planeIdx = LoadModel(app, "Patrick/plane.obj");
@@ -419,46 +476,6 @@ void Init(App* app)
     app->globalUBO = CreateConstantBuffer(app->maxUniformBufferSize);
     app->entityUBO = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    //MapBuffer(app->localParamsUBO, GL_WRITE_ONLY);
-    //PushMat4(app->localParamsUBO, view);
-    //PushMat4(app->localParamsUBO, projection);
-    //UnmapBuffer(app->localParamsUBO);
-
-    //MapBuffer(app->globalUBO, GL_WRITE_ONLY);
-    //PushMat4(app->globalUBO, glm::identity<glm::mat4>());
-    //glm::mat4 MVPMatrix = projection * view * glm::identity<glm::mat4>();
-    //PushMat4(app->globalUBO, MVPMatrix);
-    //UnmapBuffer(app->globalUBO);
-
-    int gridSizeX = 10;  // Number of columns (X-axis)
-    int gridSizeZ = 10;  // Number of rows (Z-axis)
-    float minX = -5.0f; // Start X range
-    float maxX = 5.0f;  // End X range
-    float minZ = -5.0f; // Start Z range
-    float maxZ = 5.0f;  // End Z range
-    float yPos = 0.0f;  // Fixed Y position
-
-    // Calculate spacing between lights
-    float stepX = (maxX - minX) / (gridSizeX - 1);
-    float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
-
-    // Create grid of point lights
-    for (int i = 0; i < gridSizeX; ++i) {
-        for (int j = 0; j < gridSizeZ; ++j) {
-            // Calculate position
-            float x = minX + i * stepX;
-            float z = minZ + j * stepZ;
-
-            // Add point light to the scene
-            app->lights.push_back({
-                LightType_Point,
-                glm::vec3(0.2f, 0.2f, 0.8f), // Color (blueish)
-                glm::vec3(0.0f,0.0f,0.0f),       // Position
-                glm::vec3(x, yPos, z) // Attenuation (constant, linear, quadratic)
-                });
-        }
-    }
-
     UpdateLights(app);
 
     Buffer& entityUBO = app->entityUBO;
@@ -478,12 +495,14 @@ void Init(App* app)
 
     UnmapBuffer(app->entityUBO);
 
-    app->mode = Mode_Deferred_Shading;
+    //app->mode = Mode_Deferred_Rendering;
 
     app->primaryFBO.CreateFBO(4, app->displaySize);
+
+    app->needsReinit = false;
 }
 
-void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix)
+void App::CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix)
 {
     Entity entity;
     AlignHead(app->entityUBO, app->uniformBlockAlignment);
@@ -501,7 +520,28 @@ void CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix)
     app->entities.push_back(entity);
 }
 
-void Gui(App* app)
+void ToggleButton(const char* str_id, bool* v)
+{
+    ImVec2 p = ImGui::GetCursorScreenPos();
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    float height = ImGui::GetFrameHeight();
+    float width = height * 1.55f;
+    float radius = height * 0.50f;
+
+    if (ImGui::InvisibleButton(str_id, ImVec2(width, height)))
+        *v = !*v;
+    ImU32 col_bg;
+    if (ImGui::IsItemHovered())
+        col_bg = *v ? IM_COL32(145 + 20, 211, 68 + 20, 255) : IM_COL32(218 - 20, 218 - 20, 218 - 20, 255);
+    else
+        col_bg = *v ? IM_COL32(145, 211, 68, 255) : IM_COL32(218, 218, 218, 255);
+
+    draw_list->AddRectFilled(p, ImVec2(p.x + width, p.y + height), col_bg, height * 0.5f);
+    draw_list->AddCircleFilled(ImVec2(*v ? (p.x + width - radius) : (p.x + radius), p.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
+}
+
+void App::Gui(App* app)
 {    
     Editor::DrawDockspace(app);
     Editor::DrawMainMenuBar(app);
@@ -580,77 +620,102 @@ void Gui(App* app)
 
     ImGui::Begin("GBuffer Debug View");
     {
-        const char* debugModes[] = {
+        // Store previous mode
+        static Mode prevMode = app->mode;
+
+        // Add rendering mode toggle
+        ImGui::Separator();
+        ImGui::Text("Rendering Mode:");
+
+        ImGui::Text("Forward");
+        ImGui::SameLine();
+        ToggleButton("Rendering Mode", (bool*)&app->mode);
+        ImGui::SameLine();
+        ImGui::Text("Deferred");
+
+        // Detect mode change
+        if (app->mode != prevMode)
+        {
+            app->needsReinit = true;
+            prevMode = app->mode;
+        }
+
+        static const char* debugModes[] = 
+        {
             "Final Render",
             "Albedo",
             "Normal",
             "Position",
-            "View Direction"
+            "View Direction",
+            "Depth"
         };
 
-        ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
+        if (app->mode == Mode_Deferred_Rendering) 
+        {
+            ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
 
-        // Optional: Add a separator and some help text
-        ImGui::Separator();
-        ImGui::Text("DEBUG KEYS -> 1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir");
+            // Optional: Add a separator and some help text
+            ImGui::Separator();
+            ImGui::Text("DEBUG KEYS -> 1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth");
+        }
     }
     ImGui::End();
 
-    ImGui::Begin("FBO Textures");
+    //ImGui::Begin("FBO Textures");
 
-    // Get the texture handles from your FBO
-    GLuint albedoTexture = app->primaryFBO.GetTextureAttachment(0);
-    GLuint normalTexture = app->primaryFBO.GetTextureAttachment(1);
-    GLuint positionTexture = app->primaryFBO.GetTextureAttachment(2);
-    GLuint viewDirTexture = app->primaryFBO.GetTextureAttachment(3);
-    GLuint depthTexture = app->primaryFBO.GetDepthTexture();
+    //// Get the texture handles from your FBO
+    //GLuint albedoTexture = app->primaryFBO.GetTextureAttachment(0);
+    //GLuint normalTexture = app->primaryFBO.GetTextureAttachment(1);
+    //GLuint positionTexture = app->primaryFBO.GetTextureAttachment(2);
+    //GLuint viewDirTexture = app->primaryFBO.GetTextureAttachment(3);
+    //GLuint depthTexture = app->primaryFBO.GetDepthAttachment();
 
     // Display each texture in a separate ImGui window/tab
-    if (ImGui::BeginTabBar("FBO Textures")) {
+    //if (ImGui::BeginTabBar("FBO Textures")) {
 
-        float windowWidth = ImGui::GetWindowWidth();
-        float aspectRatio = (float)app->displaySize.y / (float)app->displaySize.x;
-        float displayHeight = windowWidth * aspectRatio;
+    //    float windowWidth = ImGui::GetWindowWidth();
+    //    float aspectRatio = (float)app->displaySize.y / (float)app->displaySize.x;
+    //    float displayHeight = windowWidth * aspectRatio;
 
-        if (ImGui::BeginTabItem("Albedo")) {
-            ImGui::Image((void*)(intptr_t)albedoTexture,
-                ImVec2(windowWidth, displayHeight),
-                ImVec2(0, 1), ImVec2(1, 0)); // Flip UVs if needed
-            ImGui::EndTabItem();
-        }
+    //    if (ImGui::BeginTabItem("Albedo")) {
+    //        ImGui::Image((void*)(intptr_t)albedoTexture,
+    //            ImVec2(windowWidth, displayHeight),
+    //            ImVec2(0, 1), ImVec2(1, 0)); // Flip UVs if needed
+    //        ImGui::EndTabItem();
+    //    }
 
-        if (ImGui::BeginTabItem("Normal")) {
-            ImGui::Image((void*)(intptr_t)normalTexture,
-                ImVec2(windowWidth, displayHeight),
-                ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::EndTabItem();
-        }
+    //    if (ImGui::BeginTabItem("Normal")) {
+    //        ImGui::Image((void*)(intptr_t)normalTexture,
+    //            ImVec2(windowWidth, displayHeight),
+    //            ImVec2(0, 1), ImVec2(1, 0));
+    //        ImGui::EndTabItem();
+    //    }
 
-        if (ImGui::BeginTabItem("Position")) {
-            ImGui::Image((void*)(intptr_t)positionTexture,
-                ImVec2(windowWidth, displayHeight),
-                ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::EndTabItem();
-        }
+    //    if (ImGui::BeginTabItem("Position")) {
+    //        ImGui::Image((void*)(intptr_t)positionTexture,
+    //            ImVec2(windowWidth, displayHeight),
+    //            ImVec2(0, 1), ImVec2(1, 0));
+    //        ImGui::EndTabItem();
+    //    }
 
-        if (ImGui::BeginTabItem("ViewDir")) {
-            ImGui::Image((void*)(intptr_t)viewDirTexture,
-                ImVec2(windowWidth, displayHeight),
-                ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::EndTabItem();
-        }
+    //    if (ImGui::BeginTabItem("ViewDir")) {
+    //        ImGui::Image((void*)(intptr_t)viewDirTexture,
+    //            ImVec2(windowWidth, displayHeight),
+    //            ImVec2(0, 1), ImVec2(1, 0));
+    //        ImGui::EndTabItem();
+    //    }
 
-        if (ImGui::BeginTabItem("Depth")) {
-            ImGui::Image((void*)(intptr_t)depthTexture,
-                ImVec2(windowWidth, displayHeight),
-                ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::EndTabItem();
-        }
+    //    if (ImGui::BeginTabItem("Depth")) {
+    //        ImGui::Image((void*)(intptr_t)depthTexture,
+    //            ImVec2(windowWidth, displayHeight),
+    //            ImVec2(0, 1), ImVec2(1, 0));
+    //        ImGui::EndTabItem();
+    //    }
 
-        ImGui::EndTabBar();
-    }
+    //    ImGui::EndTabBar();
+    //}
 
-    ImGui::End();
+    //ImGui::End();
 }
 
 void TestFunction()
@@ -757,7 +822,7 @@ void CameraMovement(App* app)
     UpdateEntityUBO(app);  // Replace PushCameraUniforms with this
 }
 
-void Update(App* app)
+void App::Update(App* app)
 {
 #ifdef _DEBUG
     // Shader Hot Reload
@@ -786,9 +851,18 @@ void Update(App* app)
     if (app->input.keys[K_3] == BUTTON_PRESS) app->gBufferDebugMode = 2;
     if (app->input.keys[K_4] == BUTTON_PRESS) app->gBufferDebugMode = 3;
     if (app->input.keys[K_5] == BUTTON_PRESS) app->gBufferDebugMode = 4;
+    if (app->input.keys[K_6] == BUTTON_PRESS) app->gBufferDebugMode = 5; // Add this
+
+    // Handle rendering mode changes
+    if (app->needsReinit)
+    {
+        CleanUp(app);    // Release existing resources
+        Init(app);       // Re-initialize with new mode
+        app->needsReinit = false;
+    }
 }
 
-void App::OnResize(int width, int height) 
+void App::OnResize(int width, int height)
 {
     displaySize = vec2(width, height);
 
@@ -800,11 +874,11 @@ void App::OnResize(int width, int height)
     UpdateEntityUBO(this);
 }
 
-void Render(App* app)
+void App::Render(App* app)
 {
     switch (app->mode)
     {
-        case Mode_TexturedQuad:
+        case Mode_Forward_Rendering:
         {
             // TODO: Draw your textured quad here!
             // - clear the framebuffer
@@ -818,85 +892,7 @@ void Render(App* app)
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            // - bind the program 
-            Program& programTexturedGeometry = app->programs[app->texturedGeometryProgramIdx];
-            glUseProgram(programTexturedGeometry.handle);
-
-            // - (...and make its texture sample from unit 0)
-            glUniform1i(app->programUniformTexture, 0);
-
-            // - bind the texture into unit 0
-            glActiveTexture(GL_TEXTURE0);
-            GLuint textureHandle = app->textures[app->diceTexIdx].handle;
-            glBindTexture(GL_TEXTURE_2D, textureHandle);
-
-            // - bind the vao
-            glBindVertexArray(app->vao);
-
-            // - glDrawElements() !!!
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-            // - unbind the vao
-            glBindVertexArray(0);
-
-            // - unbind the program
-            glUseProgram(0);
-
-            break;
-        }
-        case Mode_Forward_Geometry:
-        {
-            // TODO: Draw your textured quad here!
-            // - clear the framebuffer
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            // - set the viewport
-            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-
-            // - set the blending state
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            glUseProgram(texturedMeshProgram.handle);
-
-            Model& model = app->models[app->patrickIdx];
-            Mesh& mesh = app->meshes[model.meshIdx];
-
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
-            {
-                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                glBindVertexArray(vao);
-
-                u32 submeshMaterialIdx = model.materialIdx[i];
-                Material& submeshMaterial = app->materials[submeshMaterialIdx];
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                glUniform1i(app->patrickProgramUniformTexture, 0);
-
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-            }
-
-            break;
-        }
-        case Mode_Forward_Geometry_UBO:
-        {
-            // TODO: Draw your textured quad here!
-            // - clear the framebuffer
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            // - set the viewport
-            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-
-            // - set the blending state
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+            Program& texturedMeshProgram = app->programs[app->forwardRenderingProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
             // UNIFORM BUFFER:
@@ -922,7 +918,7 @@ void Render(App* app)
 
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->patrickProgramUniformTexture, 0);
+                    glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
@@ -940,14 +936,14 @@ void Render(App* app)
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, app->textures[app->whiteTexIdx].handle);
-            glUniform1i(app->patrickProgramUniformTexture, 0);
+            glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
 
             Submesh& submesh = mesh.submeshes[0];
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
 
             break;
         }
-        case Mode_Deferred_Shading:
+        case Mode_Deferred_Rendering:
         {
             glEnable(GL_DEPTH_TEST);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -971,7 +967,7 @@ void Render(App* app)
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            Program& geometryProgram = app->programs[app->texturedMeshProgramIdx];
+            Program& geometryProgram = app->programs[app->renderGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
 
             // Render all geometry to G-Buffer
@@ -1028,30 +1024,36 @@ void Render(App* app)
             glBindVertexArray(0);
             glUseProgram(0); // Unbind shader program
 
-            // Lighting Pass ------------------------------------------------
+            // ----------------------------------- Lighting Pass ----------------------------------- //
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
 
-            Program& quadProgram = app->programs[app->texturedGeometryProgramIdx];
+            Program& quadProgram = app->programs[app->renderQuadProgramIdx];
             glUseProgram(quadProgram.handle);
 
-            // Bind G-Buffer textures
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[0].second); // Albedo
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "uAlbedo"), 0);
+            static const struct GBufferTexture 
+            {
+                const char* uniformName;
+                GLenum textureUnit;
+                GLuint textureID;
+            } gBufferTextures[] = 
+            {
+                {"uAlbedo",    GL_TEXTURE0,     app->primaryFBO.GetTextureAttachment(0) },
+                {"uNormal",    GL_TEXTURE1,     app->primaryFBO.GetTextureAttachment(1) },
+                {"uPosition",  GL_TEXTURE2,     app->primaryFBO.GetTextureAttachment(2) },
+                {"uViewDir",   GL_TEXTURE3,     app->primaryFBO.GetTextureAttachment(3) },
+                {"uDepth",     GL_TEXTURE4,     app->primaryFBO.GetDepthAttachment()    }
+            };
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[1].second); // Normal
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "uNormal"), 1);
-
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[2].second); // Position
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "uPosition"), 2);
-
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, app->primaryFBO.attachments[3].second); // ViewDir
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "uViewDir"), 3);
+            // Bind all textures in a loop
+            for (const auto& tex : gBufferTextures) 
+            {
+                glActiveTexture(tex.textureUnit);
+                glBindTexture(GL_TEXTURE_2D, tex.textureID);
+                glUniform1i(glGetUniformLocation(quadProgram.handle, tex.uniformName),
+                    tex.textureUnit - GL_TEXTURE0); // Convert to 0-based index
+            }
 
             glUniform1i(app->programUniformDebugMode, (GLint)app->gBufferDebugMode);
 
@@ -1066,12 +1068,10 @@ void Render(App* app)
 
             break;
         }
-
-        default:;
     }
 }
 
-void CleanUp(App* app)
+void App::CleanUp(App* app)
 {
     ELOG("Cleaning Up Engine");
 
@@ -1115,7 +1115,7 @@ void CleanUp(App* app)
     app->primaryFBO.Clean();
 }
 
-GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
+GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
     Submesh& submesh = mesh.submeshes[submeshIndex];
 
@@ -1169,7 +1169,7 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     return vaoHandle;
 }
 
-void UpdateLights(App* app)
+void App::UpdateLights(App* app)
 {
     MapBuffer(app->globalUBO, GL_WRITE_ONLY);
     PushVec3(app->globalUBO, app->worldCamera.GetPosition());
@@ -1186,7 +1186,7 @@ void UpdateLights(App* app)
     UnmapBuffer(app->globalUBO);
 }
 
-void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program)
+void App::RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program)
 {
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
 

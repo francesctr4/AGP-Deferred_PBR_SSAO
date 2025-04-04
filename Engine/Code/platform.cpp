@@ -233,7 +233,7 @@ int main()
     //EnableOpenGLDebugCallback();
 #endif
 
-    Init(&app);
+    app.Init(&app);
 
     glfwMaximizeWindow(window);
 
@@ -246,7 +246,7 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        Gui(&app);
+        app.Gui(&app);
         ImGui::Render();
 
         // Clear input state if required by ImGui
@@ -259,7 +259,7 @@ int main()
                 app.input.mouseButtons[i] = BUTTON_IDLE;
 
         // Update
-        Update(&app);
+        app.Update(&app);
 
         // Transition input key/button states
         if (!ImGui::GetIO().WantCaptureKeyboard)
@@ -275,7 +275,7 @@ int main()
         app.input.mouseDelta = glm::vec2(0.0f, 0.0f);
 
         // Render
-        Render(&app);
+        app.Render(&app);
 
         // ImGui Render
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -298,7 +298,7 @@ int main()
         GlobalFrameArenaHead = 0;
     }
 
-    CleanUp(&app);
+    app.CleanUp(&app);
 
     free(GlobalFrameArenaMemory);
 
