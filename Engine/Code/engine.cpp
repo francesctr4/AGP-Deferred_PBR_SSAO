@@ -14,10 +14,18 @@
 #include <format>
 #include "Editor.h"
 
+void App::UpdateLightList()
+{
+    lights.clear();
+    if (gridLightsEnabled)
+        lights.insert(lights.end(), gridLights.begin(), gridLights.end());
+    lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
+}
+
 App::App()
 {
-    int gridSizeX = 2;  // Number of columns (X-axis)
-    int gridSizeZ = 2;  // Number of rows (Z-axis)
+    int gridSizeX = 20;  // Number of columns (X-axis)
+    int gridSizeZ = 20;  // Number of rows (Z-axis)
     float minX = -5.0f; // Start X range
     float maxX = 5.0f;  // End X range
     float minZ = -5.0f; // Start Z range
@@ -38,28 +46,26 @@ App::App()
             float z = minZ + j * stepZ;
 
             // Add point light to the scene
-            this->lights.push_back({
+            gridLights.push_back({
                 LightType_Point,
-                glm::vec3(0.2f, 0.2f, 0.8f), // Color (blueish)
-                glm::vec3(0.0f,0.0f,0.0f),       // Position
-                glm::vec3(x, yPos, z) // Attenuation (constant, linear, quadratic)
+                glm::vec3(0.2f, 0.2f, 0.8f),
+                glm::vec3(0.0f, 0.0f, 0.0f), // Unused direction
+                glm::vec3(x, yPos, z)        // Position
                 });
         }
     }
 
-    this->lights.push_back({
-                LightType_Point,
-                glm::vec3(1.0f, 1.0f, 1.0f), // Color (blueish)
-                glm::vec3(0.0f,0.0f,0.0f),       // Position
-                glm::vec3(0.0f, 10.0f, 0.0f) // Attenuation (constant, linear, quadratic)
+    defaultLights.push_back({
+        LightType_Directional,
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, -1.0f, 0.0f), // Direction (points downward)
+        glm::vec3(0.0f, 0.0f, 0.0f)   // Unused position
         });
 
-    this->lights.push_back({
-            LightType_Directional,
-            glm::vec3(1.0f, 1.0f, 0.5f), // Color (blueish)
-            glm::vec3(0.0f,0.0f,0.0f),       // Position
-            glm::vec3(0.0f, 10.0f, 0.0f) // Attenuation (constant, linear, quadratic)
-        });
+    // Combine into lights based on flag
+    gridLightsEnabled = false;
+
+    UpdateLightList();
 
     this->mode = Mode_Deferred_Rendering;
 }
@@ -469,7 +475,7 @@ void App::Init(App* app)
 
     if (!app->worldCamera.created)
     {
-        app->worldCamera.SetPosition(glm::vec3(0.0f, 12.0f, 30.0f));
+        app->worldCamera.SetPosition(glm::vec3(10.0f, 8.5f, 11.0f));
         app->worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
         app->worldCamera.SetAspectRatio(static_cast<float>(app->displaySize.x) / static_cast<float>(app->displaySize.y));
         app->worldCamera.SetNearFar(0.1f, 1000.0f);
@@ -565,11 +571,25 @@ void App::Gui(App* app)
     ImGui::Text(app->mOpenGLInfo.c_str());
     ImGui::End();
 
+    //ImGui::Begin("CameraPos");
+    //ImGui::Text("%f, %f, %f", worldCamera.GetPosition().x, worldCamera.GetPosition().y, worldCamera.GetPosition().z);
+    //ImGui::End();
+
     ImGui::Separator();
 
     ImGui::Begin("Lights");
     bool lightChanged = false;
-    ImGui::Text("Lights");
+    ImGui::Text("Stress Test");
+    ImGui::SameLine();
+    static bool prev = app->gridLightsEnabled;
+    ToggleButton("Idx", (bool*)&app->gridLightsEnabled);
+    // Toggle grid lights with 'L' key
+    if (prev != app->gridLightsEnabled)
+    {
+        app->UpdateLightList();
+        prev = app->gridLightsEnabled;
+    }
+    ImGui::Text("Quanity of Lights: %d", static_cast<int>(app->lights.size()));
     for (auto& light : app->lights) 
     {
         glm::vec3 checkVector;

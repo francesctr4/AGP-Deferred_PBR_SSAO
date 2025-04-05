@@ -100,7 +100,11 @@ public:
     Buffer globalUBO;
     Buffer entityUBO;
     std::vector<Entity> entities;
+
     std::vector<Light> lights;
+    std::vector<Light> gridLights;
+    std::vector<Light> defaultLights;
+    bool gridLightsEnabled = true;
 
     Framebuffer primaryFBO;
 
@@ -116,6 +120,8 @@ public:
     void CleanUp(App* app);
 
     void OnResize(int width, int height);
+
+    void UpdateLightList();
 
 private:
 
