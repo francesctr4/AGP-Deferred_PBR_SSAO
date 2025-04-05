@@ -128,10 +128,13 @@ struct Model
 
 struct Entity
 {
-	glm::mat4 worldMatrix;
-	u32 modelIndex;
+	u32 modelIdx;
+	u32 textureIdx;
+
 	u32 entityBufferOffset;
 	u32 entityBufferSize;
+
+	glm::mat4 worldMatrix;
 };
 
 enum LightType 

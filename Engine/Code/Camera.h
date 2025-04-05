@@ -47,16 +47,25 @@ private:
     mutable bool isProjectionDirty = true;
 };
 
-// Function to create a scaling transformation
-static glm::mat4 TransformScale(const glm::vec3& scaleFactors)
-{
-    return glm::scale(glm::mat4(1.0f), scaleFactors);
-}
-
 // Function to create a transformation with position and scale
-static glm::mat4 TransformPositionScale(const glm::vec3& pos, const glm::vec3& scaleFactors)
+static glm::mat4 CreateTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale)
 {
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos);
-    transform = glm::scale(transform, scaleFactors);
+    glm::mat4 transform = glm::identity<glm::mat4>();
+
+    transform = glm::translate(transform, translation);
+
+    // Axis-angle rotation
+    float angleDegrees = glm::length(rotation);
+
+    if (angleDegrees > 0.0001f)
+    {
+        glm::vec3 axis = glm::normalize(rotation);
+        float angleRadians = glm::radians(angleDegrees);
+        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), angleRadians, axis);
+        transform *= rot;
+    }
+
+    transform = glm::scale(transform, scale);
+
     return transform;
 }

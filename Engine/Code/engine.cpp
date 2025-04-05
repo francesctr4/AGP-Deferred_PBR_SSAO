@@ -16,8 +16,8 @@
 
 App::App()
 {
-    int gridSizeX = 10;  // Number of columns (X-axis)
-    int gridSizeZ = 10;  // Number of rows (Z-axis)
+    int gridSizeX = 2;  // Number of columns (X-axis)
+    int gridSizeZ = 2;  // Number of rows (Z-axis)
     float minX = -5.0f; // Start X range
     float maxX = 5.0f;  // End X range
     float minZ = -5.0f; // Start Z range
@@ -432,10 +432,18 @@ void App::Init(App* app)
 
     // - textures
     app->diceTexIdx = LoadTexture2D(app, "dice.png");
+
     app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
     app->blackTexIdx = LoadTexture2D(app, "color_black.png");
     app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
     app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+
+    app->lightBlueTexIdx = LoadTexture2D(app, "color_light_blue.png");
+    app->greenTexIdx = LoadTexture2D(app, "color_green.png");
+    app->purpleTexIdx = LoadTexture2D(app, "color_purple.png");
+    app->blueTexIdx = LoadTexture2D(app, "color_blue.png");
+    app->lightGreenTexIdx = LoadTexture2D(app, "color_light_green.png");
+    app->orangeTexIdx = LoadTexture2D(app, "color_orange.png");
 
     // Patrick Program
 
@@ -449,6 +457,11 @@ void App::Init(App* app)
     
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
     app->planeIdx = LoadModel(app, "Patrick/plane.obj");
+    app->coneIdx = LoadModel(app, "Patrick/Cone.obj");
+    app->cubeIdx = LoadModel(app, "Patrick/Cube.obj");
+    app->cylinderIdx = LoadModel(app, "Patrick/Cylinder.obj");
+    app->sphereIdx = LoadModel(app, "Patrick/Sphere.obj");
+    app->torusIdx = LoadModel(app, "Patrick/Torus.obj");
 
     // Camera Configuration
 
@@ -484,18 +497,13 @@ void App::Init(App* app)
     //Buffer& entityUBO = app->entityUBO;
 
     MapBuffer(app->entityUBO, GL_WRITE_ONLY);
-    //glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
-
-    for (int z = -2; z <= 2; ++z) 
-    {
-        for (int x = -2; x <= 2; ++x) 
-        {
-            CreateEntity(app, app->patrickIdx, TransformPositionScale(glm::vec3(x * 6.0f, 0.0f, z * 6.0f), glm::vec3(1.0f)));
-        }
-    }
-
-    CreateEntity(app, app->planeIdx, TransformPositionScale(glm::vec3(0.0f), glm::vec3(1.0f)));
-
+    CreateEntity(app, app->patrickIdx, 0, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    CreateEntity(app, app->planeIdx, app->lightGreenTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    CreateEntity(app, app->coneIdx, app->purpleTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    CreateEntity(app, app->cubeIdx, app->blueTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    CreateEntity(app, app->cylinderIdx, app->orangeTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    CreateEntity(app, app->sphereIdx, app->greenTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+    CreateEntity(app, app->torusIdx, app->lightBlueTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
     UnmapBuffer(app->entityUBO);
 
     //app->mode = Mode_Deferred_Rendering;
@@ -505,19 +513,20 @@ void App::Init(App* app)
     app->needsReinit = false;
 }
 
-void App::CreateEntity(App* app, const u32 aModelIdx, const glm::mat4& aWorldMatrix)
+void App::CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix)
 {
     Entity entity;
     AlignHead(app->entityUBO, app->uniformBlockAlignment);
     entity.entityBufferOffset = app->entityUBO.head;
 
     entity.worldMatrix = aWorldMatrix;
-    entity.modelIndex = aModelIdx;
+    entity.modelIdx = aModelIdx;
+    entity.textureIdx = aTextureIdx;
 
     // Only push world matrix during creation
     PushMat4(app->entityUBO, entity.worldMatrix);
     // Reserve space for MVP (will be updated later)
-    PushMat4(app->entityUBO, glm::mat4(1.0f));
+    PushMat4(app->entityUBO, glm::identity<glm::mat4>());
 
     entity.entityBufferSize = app->entityUBO.head - entity.entityBufferOffset;
     app->entities.push_back(entity);
@@ -628,7 +637,7 @@ void App::Gui(App* app)
 
         // Add rendering mode toggle
         ImGui::Separator();
-        ImGui::Text("Rendering Mode: (7)");
+        ImGui::Text("Rendering Mode:");
 
         ImGui::Text("Forward");
         ImGui::SameLine();
@@ -851,9 +860,21 @@ void App::Update(App* app)
     }
 #endif
 
+    for (auto& entity : app->entities)
+    {
+        if (entity.modelIdx == app->patrickIdx)
+        {
+            float rotationSpeed = glm::radians(45.0f); // 45 degrees per second
+            float angle = rotationSpeed * app->deltaTime;
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+            entity.worldMatrix = entity.worldMatrix * rotation; // Apply local rotation
+        }
+    }
+
     //TestFunction();
 
     CameraMovement(app);
+    UpdateLights(app);
 
     // Debug keys
     if (app->input.keys[K_1] == BUTTON_PRESS) app->gBufferDebugMode = 0;
@@ -862,11 +883,6 @@ void App::Update(App* app)
     if (app->input.keys[K_4] == BUTTON_PRESS) app->gBufferDebugMode = 3;
     if (app->input.keys[K_5] == BUTTON_PRESS) app->gBufferDebugMode = 4;
     if (app->input.keys[K_6] == BUTTON_PRESS) app->gBufferDebugMode = 5; // Add this
-
-    if (app->input.keys[K_7] == BUTTON_PRESS)
-    {
-        app->mode = (app->mode == Mode_Forward_Rendering) ? Mode_Deferred_Rendering : Mode_Forward_Rendering;
-    }
 
     // Handle rendering mode changes
     if (app->needsReinit)
@@ -897,7 +913,7 @@ void App::Render(App* app)
         {
             // TODO: Draw your textured quad here!
             // - clear the framebuffer
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             // - set the viewport
@@ -918,9 +934,9 @@ void App::Render(App* app)
             {
                 // UNIFORM BUFFER:
                 // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
+                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, entity.entityBufferSize);
 
-                Model& model = app->models[app->patrickIdx];
+                Model& model = app->models[entity.modelIdx];
                 Mesh& mesh = app->meshes[model.meshIdx];
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i)
@@ -931,30 +947,26 @@ void App::Render(App* app)
                     u32 submeshMaterialIdx = model.materialIdx[i];
                     Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
+                    if (submeshMaterial.albedoTextureIdx > 0)
+                    {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
+                    }
+                    else 
+                    {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[entity.textureIdx].handle);
+                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
+                    }
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                    glBindVertexArray(0);
                 }
             }
-
-            Model& model = app->models[app->planeIdx];
-            Mesh& mesh = app->meshes[model.meshIdx];
-
-            GLuint vao = FindVAO(mesh, 0, texturedMeshProgram);
-            glBindVertexArray(vao);
-
-            u32 submeshMaterialIdx = model.materialIdx[0];
-            Material& submeshMaterial = app->materials[submeshMaterialIdx];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->textures[app->whiteTexIdx].handle);
-            glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
-
-            Submesh& submesh = mesh.submeshes[0];
-            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
 
             break;
         }
@@ -969,7 +981,8 @@ void App::Render(App* app)
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            // ==================== GEOMETRY PASS ====================
+            // ----------------------------------- Geometry Pass ----------------------------------- //
+
             glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.handle);
 
             std::vector<GLuint> drawBuffers;
@@ -994,7 +1007,7 @@ void App::Render(App* app)
                 // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
                 glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, entity.entityBufferSize);
 
-                Model& model = app->models[app->patrickIdx];
+                Model& model = app->models[entity.modelIdx];
                 Mesh& mesh = app->meshes[model.meshIdx];
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i)
@@ -1005,9 +1018,18 @@ void App::Render(App* app)
                     u32 submeshMaterialIdx = model.materialIdx[i];
                     Material& submeshMaterial = app->materials[submeshMaterialIdx];
 
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->patrickProgramUniformTexture, 0);
+                    if (submeshMaterial.albedoTextureIdx > 0)
+                    {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
+                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
+                    }
+                    else
+                    {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, app->textures[entity.textureIdx].handle);
+                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
+                    }
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
@@ -1018,28 +1040,10 @@ void App::Render(App* app)
                 }
             }
 
-            Model& model = app->models[app->planeIdx];
-            Mesh& mesh = app->meshes[model.meshIdx];
-
-            GLuint vao = FindVAO(mesh, 0, geometryProgram);
-            glBindVertexArray(vao);
-
-            u32 submeshMaterialIdx = model.materialIdx[0];
-            Material& submeshMaterial = app->materials[submeshMaterialIdx];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->textures[app->whiteTexIdx].handle);
-            glUniform1i(app->patrickProgramUniformTexture, 0);
-
-            Submesh& submesh = mesh.submeshes[0];
-            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-
-            // Unbind after drawing
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindVertexArray(0);
             glUseProgram(0); // Unbind shader program
 
             // ----------------------------------- Lighting Pass ----------------------------------- //
+
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
