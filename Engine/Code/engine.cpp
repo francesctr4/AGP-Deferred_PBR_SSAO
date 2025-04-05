@@ -29,8 +29,10 @@ App::App()
     float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
 
     // Create grid of point lights
-    for (int i = 0; i < gridSizeX; ++i) {
-        for (int j = 0; j < gridSizeZ; ++j) {
+    for (int i = 0; i < gridSizeX; ++i) 
+    {
+        for (int j = 0; j < gridSizeZ; ++j) 
+        {
             // Calculate position
             float x = minX + i * stepX;
             float z = minZ + j * stepZ;
@@ -871,8 +873,6 @@ void App::Update(App* app)
         }
     }
 
-    //TestFunction();
-
     CameraMovement(app);
     UpdateLights(app);
 
@@ -1094,43 +1094,70 @@ void App::CleanUp(App* app)
 {
     ELOG("Cleaning Up Engine");
 
-    // TODO: Deinitialize your resources here!
-    
-    // - delete textures
+    // Delete textures
     for (auto& texture : app->textures)
     {
         glDeleteTextures(1, &texture.handle);
     }
+
     app->textures.clear();
 
-    // - delete shader programs
+    // Delete shader programs
     for (auto& program : app->programs)
     {
         glDeleteProgram(program.handle);
     }
     app->programs.clear();
 
-    // - delete vao
+    // Delete VAO
     if (app->vao != 0)
     {
         glDeleteVertexArrays(1, &app->vao);
         app->vao = 0;
     }
 
-    // - delete element/index buffers
+    // Delete element/index buffers
     if (app->embeddedElements != 0)
     {
         glDeleteBuffers(1, &app->embeddedElements);
         app->embeddedElements = 0;
     }
 
-    // - delete vertex buffers
+    // Delete vertex buffers
     if (app->embeddedVertices != 0)
     {
         glDeleteBuffers(1, &app->embeddedVertices);
         app->embeddedVertices = 0;
     }
 
+    // Clean up meshes (VBOs and IBOs)
+    for (auto& mesh : app->meshes)
+    {
+        glDeleteBuffers(1, &mesh.vertexBufferHandle);
+        glDeleteBuffers(1, &mesh.indexBufferHandle);
+    }
+    app->meshes.clear();
+
+    // Clean up models and materials
+    app->models.clear();
+    app->materials.clear();
+
+    // Clean up UBOs
+    if (app->globalUBO.handle != 0)
+    {
+        glDeleteBuffers(1, &app->globalUBO.handle);
+        app->globalUBO.handle = 0;
+    }
+    if (app->entityUBO.handle != 0)
+    {
+        glDeleteBuffers(1, &app->entityUBO.handle);
+        app->entityUBO.handle = 0;
+    }
+
+    // Clean up entities
+    app->entities.clear();
+
+    // Clean up FBO
     app->primaryFBO.Clean();
 }
 
