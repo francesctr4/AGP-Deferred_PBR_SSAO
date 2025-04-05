@@ -452,36 +452,39 @@ void App::Init(App* app)
 
     // Camera Configuration
 
-    app->worldCamera.SetPosition(glm::vec3(0.0f, 12.0f, 30.0f));
-    app->worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-    app->worldCamera.SetAspectRatio(static_cast<float>(app->displaySize.x) / static_cast<float>(app->displaySize.y));
-    app->worldCamera.SetNearFar(0.1f, 1000.0f);
-    app->worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-    app->worldCamera.SetVerticalFOV(60.0f);
+    if (!app->worldCamera.created)
+    {
+        app->worldCamera.SetPosition(glm::vec3(0.0f, 12.0f, 30.0f));
+        app->worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+        app->worldCamera.SetAspectRatio(static_cast<float>(app->displaySize.x) / static_cast<float>(app->displaySize.y));
+        app->worldCamera.SetNearFar(0.1f, 1000.0f);
+        app->worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+        app->worldCamera.SetVerticalFOV(60.0f);
 
-    glm::mat4 view = app->worldCamera.ViewMatrix();
-    glm::mat4 projection = app->worldCamera.ProjectionMatrix();
+        app->worldCamera.created = true;
+    }
+    
+    //glm::mat4 view = app->worldCamera.ViewMatrix();
+    //glm::mat4 projection = app->worldCamera.ProjectionMatrix();
 
-    glm::vec3 translation = glm::vec3(2.5f, 1.5f, -2.8f);
-    glm::vec3 scale = glm::vec3(0.45f);
+    //glm::vec3 translation = glm::vec3(2.5f, 1.5f, -2.8f);
+    //glm::vec3 scale = glm::vec3(0.45f);
 
-    glm::mat4 model = TransformPositionScale(translation, scale);
-    glm::mat4 MVP = projection * view * model;
+    //glm::mat4 model = TransformPositionScale(translation, scale);
+    //glm::mat4 MVP = projection * view * model;
 
     // Uniform Buffer
-
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
-
     app->globalUBO = CreateConstantBuffer(app->maxUniformBufferSize);
     app->entityUBO = CreateConstantBuffer(app->maxUniformBufferSize);
 
     UpdateLights(app);
 
-    Buffer& entityUBO = app->entityUBO;
+    //Buffer& entityUBO = app->entityUBO;
 
     MapBuffer(app->entityUBO, GL_WRITE_ONLY);
-    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
+    //glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
 
     for (int z = -2; z <= 2; ++z) 
     {
@@ -625,7 +628,7 @@ void App::Gui(App* app)
 
         // Add rendering mode toggle
         ImGui::Separator();
-        ImGui::Text("Rendering Mode:");
+        ImGui::Text("Rendering Mode: (7)");
 
         ImGui::Text("Forward");
         ImGui::SameLine();
@@ -773,7 +776,7 @@ void CameraMovement(App* app)
         app->worldCamera.SetTarget(position + forward);
     }
 
-    // WASD movement
+    // WASDEQ movement
     glm::vec3 position = app->worldCamera.GetPosition();
     float baseSpeed = 10.0f * app->deltaTime;
     float speed = baseSpeed;
@@ -813,13 +816,19 @@ void CameraMovement(App* app)
         position += up * speed;
     }
 
-    // Update camera position and target
+    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED) 
+    {
+        // Handle zoom using scroll wheel
+        float zoomSpeed = 50.0f;
+        position += forward * app->input.mouseScrollDeltaY * zoomSpeed * app->deltaTime;
+    }
+
     // Update camera position and target
     app->worldCamera.SetPosition(position);
     app->worldCamera.SetTarget(position + forward);
 
     // Only update existing entities' VP matrices
-    UpdateEntityUBO(app);  // Replace PushCameraUniforms with this
+    UpdateEntityUBO(app);
 }
 
 void App::Update(App* app)
@@ -846,12 +855,18 @@ void App::Update(App* app)
 
     CameraMovement(app);
 
+    // Debug keys
     if (app->input.keys[K_1] == BUTTON_PRESS) app->gBufferDebugMode = 0;
     if (app->input.keys[K_2] == BUTTON_PRESS) app->gBufferDebugMode = 1;
     if (app->input.keys[K_3] == BUTTON_PRESS) app->gBufferDebugMode = 2;
     if (app->input.keys[K_4] == BUTTON_PRESS) app->gBufferDebugMode = 3;
     if (app->input.keys[K_5] == BUTTON_PRESS) app->gBufferDebugMode = 4;
     if (app->input.keys[K_6] == BUTTON_PRESS) app->gBufferDebugMode = 5; // Add this
+
+    if (app->input.keys[K_7] == BUTTON_PRESS)
+    {
+        app->mode = (app->mode == Mode_Forward_Rendering) ? Mode_Deferred_Rendering : Mode_Forward_Rendering;
+    }
 
     // Handle rendering mode changes
     if (app->needsReinit)
@@ -1034,16 +1049,16 @@ void App::Render(App* app)
 
             static const struct GBufferTexture 
             {
-                const char* uniformName;
                 GLenum textureUnit;
                 GLuint textureID;
+                const char* uniformName;
             } gBufferTextures[] = 
             {
-                {"uAlbedo",    GL_TEXTURE0,     app->primaryFBO.GetTextureAttachment(0) },
-                {"uNormal",    GL_TEXTURE1,     app->primaryFBO.GetTextureAttachment(1) },
-                {"uPosition",  GL_TEXTURE2,     app->primaryFBO.GetTextureAttachment(2) },
-                {"uViewDir",   GL_TEXTURE3,     app->primaryFBO.GetTextureAttachment(3) },
-                {"uDepth",     GL_TEXTURE4,     app->primaryFBO.GetDepthAttachment()    }
+                { GL_TEXTURE0, app->primaryFBO.GetTextureAttachment(0), "uAlbedo"   },
+                { GL_TEXTURE1, app->primaryFBO.GetTextureAttachment(1), "uNormal"   },
+                { GL_TEXTURE2, app->primaryFBO.GetTextureAttachment(2), "uPosition" },
+                { GL_TEXTURE3, app->primaryFBO.GetTextureAttachment(3), "uViewDir"  },
+                { GL_TEXTURE4, app->primaryFBO.GetDepthAttachment(),    "uDepth"    }
             };
 
             // Bind all textures in a loop

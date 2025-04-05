@@ -67,7 +67,8 @@ void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
 
 void OnGlfwScrollEvent(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // Nothing do yet... maybe zoom in/out in the future?
+    App* app = (App*)glfwGetWindowUserPointer(window);
+    app->input.mouseScrollDeltaY += static_cast<float>(yoffset);
 }
 
 void OnGlfwKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -273,6 +274,7 @@ int main()
                 else if (app.input.mouseButtons[i] == BUTTON_RELEASE) app.input.mouseButtons[i] = BUTTON_IDLE;
 
         app.input.mouseDelta = glm::vec2(0.0f, 0.0f);
+        app.input.mouseScrollDeltaY = 0.0f;
 
         // Render
         app.Render(&app);

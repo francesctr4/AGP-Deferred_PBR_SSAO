@@ -28,6 +28,8 @@ public:
     // Update the projection matrix if necessary
     const glm::mat4& ProjectionMatrix() const;
 
+    bool created = false;
+
 private:
 
     glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);

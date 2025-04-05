@@ -54,9 +54,12 @@ enum ButtonState {
     BUTTON_RELEASE
 };
 
-struct Input {
+struct Input 
+{
     glm::vec2   mousePos;
     glm::vec2   mouseDelta;
+    float mouseScrollDeltaY;
+
     ButtonState mouseButtons[MOUSE_BUTTON_COUNT];
     ButtonState keys[KEY_COUNT];
 };
