@@ -26,31 +26,49 @@ App::App()
 {
     int gridSizeX = 20;  // Number of columns (X-axis)
     int gridSizeZ = 20;  // Number of rows (Z-axis)
-    float minX = -5.0f; // Start X range
-    float maxX = 5.0f;  // End X range
-    float minZ = -5.0f; // Start Z range
-    float maxZ = 5.0f;  // End Z range
-    float yPos = 0.0f;  // Fixed Y position
+    float minX = -15.0f; // Start X range
+    float maxX = 15.0f;  // End X range
+    float minZ = -15.0f; // Start Z range
+    float maxZ = 15.0f;  // End Z range
+    float yPos = 5.0f;   // Fixed Y position
 
-    // Calculate spacing between lights
+    // In App::App() constructor, before the grid light loop:
+    gridLightConstant = 1.0f;
+    gridLightLinear = 0.5f;
+    gridLightQuadratic = 0.5f;
+
     float stepX = (maxX - minX) / (gridSizeX - 1);
     float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
 
-    // Create grid of point lights
-    for (int i = 0; i < gridSizeX; ++i) 
-    {
-        for (int j = 0; j < gridSizeZ; ++j) 
-        {
+    for (int i = 0; i < gridSizeX; ++i) {
+        for (int j = 0; j < gridSizeZ; ++j) {
             // Calculate position
             float x = minX + i * stepX;
             float z = minZ + j * stepZ;
 
-            // Add point light to the scene
+            // --- Choose one color generation method below ---
+
+            // Gradient-Based Colors
+            float red = static_cast<float>(i) / (gridSizeX - 1) * 0.1f; 
+            float green = static_cast<float>(j) / (gridSizeZ - 1) * 0.1f;
+            float blue = (1.0f - red) * 0.1f;
+
+            // Sinusoidal Variation
+            // float red = (sin(i * 0.5f) + 1.0f) * 0.5f;
+            // float green = (cos(j * 0.5f) + 1.0f) * 0.5f;
+            // float blue = (sin((i + j) * 0.3f) + 1.0f) * 0.5f;
+
+            glm::vec3 lightColor(red, green, blue);
+
             gridLights.push_back({
                 LightType_Point,
-                glm::vec3(0.2f, 0.2f, 0.8f),
-                glm::vec3(0.0f, 0.0f, 0.0f), // Unused direction
-                glm::vec3(x, yPos, z)        // Position
+                lightColor,
+                glm::vec3(0.0f), // Unused direction
+                glm::vec3(x, yPos, z),
+                gridLightConstant,   // Constant attenuation for all grid lights
+                gridLightLinear,     // Linear attenuation for all grid lights
+                gridLightQuadratic,  // Quadratic attenuation for all grid lights
+                0.010f               // Specular strength
                 });
         }
     }
@@ -59,7 +77,22 @@ App::App()
         LightType_Directional,
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, -1.0f, 0.0f), // Direction (points downward)
-        glm::vec3(0.0f, 0.0f, 0.0f)   // Unused position
+        glm::vec3(0.0f, 0.0f, 0.0f),   // Unused position
+        1.0f,   // unused for directional
+        0.09f,  // unused
+        0.032f, // unused
+        0.5f    // specular strength
+        });
+
+    defaultLights.push_back({
+                LightType_Point,
+                glm::vec3(1.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f), // Unused direction
+                glm::vec3(0.0f, 10.0f, 0.0f),
+                1.0f,   // constant attenuation
+                0.1f,  // linear attenuation
+                0.010f, // quadratic attenuation
+                0.010f    // specular strength// Position
         });
 
     // Combine into lights based on flag
@@ -590,7 +623,33 @@ void App::Gui(App* app)
         prev = app->gridLightsEnabled;
     }
     ImGui::Text("Quanity of Lights: %d", static_cast<int>(app->lights.size()));
-    for (auto& light : app->lights) 
+
+    ImGui::Separator();
+    
+    bool attenuationChanged = false;
+
+    if (app->gridLightsEnabled)
+    {
+        ImGui::Text("Grid Light Attenuation");
+
+        attenuationChanged |= ImGui::DragFloat("Constant", &app->gridLightConstant, 0.01f, 0.0f, 5.0f);
+        attenuationChanged |= ImGui::DragFloat("Linear", &app->gridLightLinear, 0.001f, 0.0f, 5.0f);
+        attenuationChanged |= ImGui::DragFloat("Quadratic", &app->gridLightQuadratic, 0.0001f, 0.0f, 5.0f);
+    }
+
+    if (attenuationChanged)
+    {
+        // Update attenuation for all grid lights
+        for (auto& light : app->gridLights)
+        {
+            light.constant = app->gridLightConstant;
+            light.linear = app->gridLightLinear;
+            light.quadratic = app->gridLightQuadratic;
+        }
+        app->UpdateLightList(); // Refresh the combined lights list
+    }
+
+    for (auto& light : app->defaultLights) 
     {
         glm::vec3 checkVector;
         ImGui::PushID(&light);
@@ -624,6 +683,11 @@ void App::Gui(App* app)
             light.position = checkVector;
             lightChanged = true;
         }
+
+        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 0.1f);
+        ImGui::DragFloat("Quadratic", &light.quadratic, 0.0001f, 0.0f, 0.01f);
+        ImGui::DragFloat("Specular", &light.specularStrength, 0.01f, 0.0f, 1.0f);
 
         ImGui::PopID();
         ImGui::Separator();
@@ -1248,6 +1312,10 @@ void App::UpdateLights(App* app)
         PushVec3(app->globalUBO, light.color);
         PushVec3(app->globalUBO, light.direction);
         PushVec3(app->globalUBO, light.position);
+        PushFloat(app->globalUBO, light.constant);
+        PushFloat(app->globalUBO, light.linear);
+        PushFloat(app->globalUBO, light.quadratic);
+        PushFloat(app->globalUBO, light.specularStrength);
     }
     UnmapBuffer(app->globalUBO);
 }

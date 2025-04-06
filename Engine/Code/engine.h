@@ -105,6 +105,9 @@ public:
     std::vector<Light> gridLights;
     std::vector<Light> defaultLights;
     bool gridLightsEnabled = true;
+    float gridLightConstant;
+    float gridLightLinear;
+    float gridLightQuadratic;
 
     Framebuffer primaryFBO;
 

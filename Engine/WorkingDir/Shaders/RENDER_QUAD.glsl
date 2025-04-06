@@ -25,6 +25,11 @@ struct Light
 	vec3 color;
 	vec3 direction;
 	vec3 position;
+
+    float constant;
+    float linear;
+    float quadratic;
+    float specularStrength;
 };
 
 layout(binding = 0, std140) uniform globalUBO
@@ -58,7 +63,7 @@ vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
 
     vec3 ambient = aLight.color * 0.2;
     vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
-    vec3 specular = aLight.color * spec * 0.1;
+    vec3 specular = aLight.color * spec * aLight.specularStrength;
 
     return (ambient + diffuse + specular);
 }
@@ -73,16 +78,12 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
     float spec = pow(max(dot(aViewDir, reflectDir), 0.0), 2.0);
 
     float distance = length(aLight.position - aPosition);
-    
-	float constant = 1.0f;
-	float linear = 0.09f;
-	float quadratic = 0.032f;
 
-	float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));    
+	float attenuation = 1.0 / (aLight.constant + aLight.linear * distance + aLight.quadratic * (distance * distance)); 
 
     vec3 ambient = aLight.color * 0.2;
     vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
-    vec3 specular = aLight.color * spec * 0.1;
+    vec3 specular = aLight.color * spec * aLight.specularStrength;
 
     ambient *= attenuation;
     diffuse *= attenuation;
@@ -146,10 +147,10 @@ void main()
             lightResult += CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex);
         }
 
-        returnColor += lightResult * albedoTex;
+        returnColor += lightResult;
     }
 
-    oColor = vec4(returnColor, 1.0); // Multiply with albedo
+    oColor = vec4(returnColor, 1.0);
 }
 
 #endif

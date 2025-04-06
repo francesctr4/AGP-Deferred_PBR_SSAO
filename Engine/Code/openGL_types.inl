@@ -149,6 +149,11 @@ struct Light
 	glm::vec3 color;
 	glm::vec3 direction;
 	glm::vec3 position;
+
+	float constant;        // Attenuation parameters
+	float linear;
+	float quadratic;
+	float specularStrength; // Specular multiplier
 };
 
 struct Framebuffer 

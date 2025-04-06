@@ -18,6 +18,11 @@ struct Light
 	vec3 color;
 	vec3 direction;
 	vec3 position;
+
+	float constant;
+    float linear;
+    float quadratic;
+    float specularStrength;
 };
 
 layout(binding = 0, std140) uniform globalUBO
