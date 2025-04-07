@@ -24,8 +24,8 @@ void App::UpdateLightList()
 
 App::App()
 {
-    int gridSizeX = 20;  // Number of columns (X-axis)
-    int gridSizeZ = 20;  // Number of rows (Z-axis)
+    int gridSizeX = 50;  // Number of columns (X-axis)
+    int gridSizeZ = 50;  // Number of rows (Z-axis)
     float minX = -15.0f; // Start X range
     float maxX = 15.0f;  // End X range
     float minZ = -15.0f; // Start Z range
@@ -161,21 +161,17 @@ bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
     GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
     {
-        GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+        switch (framebufferStatus)
         {
-            switch (framebufferStatus)
-            {
-                case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
-                case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
-                case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
-                default: ELOG("Unknown framebuffer status error");
-            }
+            case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+            case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+            default: ELOG("Unknown framebuffer status error");
         }
     }
 
@@ -600,7 +596,7 @@ void App::Gui(App* app)
     Editor::DrawMainMenuBar(app);
 
     ImGui::Begin("Info");
-    ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
+    ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
     ImGui::Text(app->mOpenGLInfo.c_str());
     ImGui::End();
 
@@ -620,6 +616,7 @@ void App::Gui(App* app)
     if (prev != app->gridLightsEnabled)
     {
         app->UpdateLightList();
+        UpdateLights(app);
         prev = app->gridLightsEnabled;
     }
     ImGui::Text("Quanity of Lights: %d", static_cast<int>(app->lights.size()));
@@ -959,7 +956,6 @@ void App::Update(App* app)
     }
 
     CameraMovement(app);
-    UpdateLights(app);
 
     // Debug keys
     if (app->input.keys[K_1] == BUTTON_PRESS) app->gBufferDebugMode = 0;
