@@ -684,10 +684,10 @@ void App::Gui(App* app)
             lightChanged = true;
         }
 
-        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 0.1f);
-        ImGui::DragFloat("Quadratic", &light.quadratic, 0.0001f, 0.0f, 0.01f);
-        ImGui::DragFloat("Specular", &light.specularStrength, 0.01f, 0.0f, 1.0f);
+        lightChanged |= ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 1.0f);
+        lightChanged |= ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 0.1f);
+        lightChanged |= ImGui::DragFloat("Quadratic", &light.quadratic, 0.0001f, 0.0f, 0.01f);
+        lightChanged |= ImGui::DragFloat("Specular", &light.specularStrength, 0.01f, 0.0f, 1.0f);
 
         ImGui::PopID();
         ImGui::Separator();
@@ -696,6 +696,7 @@ void App::Gui(App* app)
     if (lightChanged) 
     {
         UpdateLights(app);
+        app->UpdateLightList();
     }
 
     ImGui::End();
