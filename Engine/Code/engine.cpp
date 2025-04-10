@@ -920,9 +920,9 @@ void CameraMovement(App* app)
     app->worldCamera.SetPosition(position);
     app->worldCamera.SetTarget(position + forward);
 
-    // Only update existing entities' VP matrices
-    UpdateEntityUBO(app);
-    app->UpdateLights(app);
+    //// Only update existing entities' VP matrices
+    //UpdateEntityUBO(app);
+    //app->UpdateLights(app);
 }
 
 void App::Update(App* app)
@@ -956,7 +956,23 @@ void App::Update(App* app)
         }
     }
 
+    // Store previous camera state
+    static glm::vec3 prevPosition = app->worldCamera.GetPosition();
+    static glm::vec3 prevTarget = app->worldCamera.GetTarget();
+
     CameraMovement(app);
+    UpdateEntityUBO(app);
+
+    // Check if camera changed
+    if (app->worldCamera.GetPosition() != prevPosition ||
+        app->worldCamera.GetTarget() != prevTarget)
+    {
+        app->UpdateLights(app);
+
+        // Store new state
+        prevPosition = app->worldCamera.GetPosition();
+        prevTarget = app->worldCamera.GetTarget();
+    }
 
     // Debug keys
     if (app->input.keys[K_1] == BUTTON_PRESS) app->gBufferDebugMode = 0;
