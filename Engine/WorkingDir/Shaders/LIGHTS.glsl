@@ -103,11 +103,12 @@ vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
 vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 {
     vec3 lightDir = normalize(aLight.position - aPosition);
+    vec3 viewDir = normalize(aViewDir);
 
     float diff = max(dot(aNormal, lightDir), 0.0);
 
     vec3 reflectDir = reflect(-lightDir, aNormal);
-    float spec = pow(max(dot(aViewDir, reflectDir), 0.0), 2.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 2.0);
 
     float distance = length(aLight.position - aPosition);
 

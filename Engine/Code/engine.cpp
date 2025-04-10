@@ -646,24 +646,21 @@ void App::Gui(App* app)
         app->UpdateLightList(); // Refresh the combined lights list
     }
 
-    for (auto& light : app->defaultLights) 
+    for (auto& light : app->defaultLights)
     {
-        glm::vec3 checkVector;
         ImGui::PushID(&light);
 
+        // Replace DragFloat3 with ColorEdit3 for color selection
         float color[3] = { light.color.x, light.color.y, light.color.z };
-        ImGui::DragFloat3("Color", color, 0.01, 0.0, 1.0);
-        checkVector = vec3(color[0], color[1], color[2]);
-
-        if (checkVector != light.color) 
+        if (ImGui::ColorEdit3("Color", color))
         {
-            light.color = checkVector;
+            light.color = glm::vec3(color[0], color[1], color[2]);
             lightChanged = true;
         }
 
         float direction[3] = { light.direction.x, light.direction.y, light.direction.z };
         ImGui::DragFloat3("Direction", direction, 0.01, -1.0, 1.0);
-        checkVector = vec3(direction[0], direction[1], direction[2]);
+        glm::vec3 checkVector = glm::vec3(direction[0], direction[1], direction[2]);
 
         if (checkVector != light.direction)
         {
@@ -673,7 +670,7 @@ void App::Gui(App* app)
 
         float position[3] = { light.position.x, light.position.y, light.position.z };
         ImGui::DragFloat3("Position", position, 0.1);
-        checkVector = vec3(position[0], position[1], position[2]);
+        checkVector = glm::vec3(position[0], position[1], position[2]);
 
         if (checkVector != light.position)
         {
@@ -954,6 +951,8 @@ void App::Update(App* app)
             entity.worldMatrix = entity.worldMatrix * rotation; // Apply local rotation
         }
     }
+
+    UpdateLights(app);
 
     CameraMovement(app);
 
