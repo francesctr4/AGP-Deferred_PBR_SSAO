@@ -73,3 +73,5 @@ void WriteBufferData(Buffer& buffer, u32 offset, const void* data, u32 size)
 #define PushVec4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 #define PushMat3(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 #define PushMat4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
+
+#define WriteData(buffer, offset, value) WriteBufferData(buffer, offset, value_ptr(value), sizeof(value))
