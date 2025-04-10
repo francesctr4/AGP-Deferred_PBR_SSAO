@@ -25,6 +25,7 @@ void MapBuffer(Buffer& buffer, GLenum access);
 void UnmapBuffer(Buffer& buffer);
 void AlignHead(Buffer& buffer, u32 alignment);
 void PushAlignedData(Buffer& buffer, const void* data, u32 size, u32 alignment);
+void WriteBufferData(Buffer& buffer, u32 offset, const void* data, u32 size);
 
 #define CreateConstantBuffer(size) CreateBuffer(size, GL_UNIFORM_BUFFER, GL_STREAM_DRAW)
 #define CreateStaticVertexBuffer(size) CreateBuffer(size, GL_ARRAY_BUFFER, GL_STATIC_DRAW)
@@ -37,3 +38,5 @@ void PushAlignedData(Buffer& buffer, const void* data, u32 size, u32 alignment);
 #define PushVec4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 #define PushMat3(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 #define PushMat4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
+
+#define WriteMat4(buffer, offset, value) WriteBufferData(buffer, offset, value_ptr(value), sizeof(value))

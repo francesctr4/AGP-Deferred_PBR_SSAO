@@ -832,8 +832,8 @@ void UpdateEntityUBO(App* app)
         glm::mat4 mvp = VP * entity.worldMatrix;
 
         // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
-        u8* bufferPtr = (u8*)app->entityUBO.data + entity.entityBufferOffset + sizeof(glm::mat4);
-        memcpy(bufferPtr, &mvp, sizeof(glm::mat4));
+        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
+        WriteMat4(app->entityUBO, mvpOffset, mvp);
     }
 
     UnmapBuffer(app->entityUBO);
