@@ -47,6 +47,7 @@ public:
     u32 renderQuadProgramIdx;
     u32 renderGeometryProgramIdx;
     u32 forwardRenderingProgramIdx;
+    u32 lightSphereProgramIdx;
 
     // texture indices
     u32 diceTexIdx;
@@ -125,11 +126,11 @@ public:
     void OnResize(int width, int height);
 
     void UpdateLightList();
+    void UpdateLights(App* app);
 
 private:
 
     GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
-    void UpdateLights(App* app);
     void CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix);
     void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program);
 };

@@ -160,5 +160,8 @@
     <None Include="WorkingDir\Shaders\LIGHTS.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
+    <None Include="WorkingDir\Shaders\LIGHT_SPHERE.glsl">
+      <Filter>Source Code\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

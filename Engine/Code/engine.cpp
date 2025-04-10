@@ -491,6 +491,8 @@ void App::Init(App* app)
     app->forwardRenderingProgramIdx = LoadProgram(app, "Shaders/LIGHTS.glsl", "LIGHTS");
     Program& forwardRenderingProgram = app->programs[app->forwardRenderingProgramIdx];
     app->fwdPatrickProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uTexture");
+
+    app->lightSphereProgramIdx = LoadProgram(app, "Shaders/LIGHT_SPHERE.glsl", "LIGHT_SPHERE");
     
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
     app->planeIdx = LoadModel(app, "Patrick/plane.obj");
@@ -920,6 +922,7 @@ void CameraMovement(App* app)
 
     // Only update existing entities' VP matrices
     UpdateEntityUBO(app);
+    app->UpdateLights(app);
 }
 
 void App::Update(App* app)
@@ -952,8 +955,6 @@ void App::Update(App* app)
             entity.worldMatrix = entity.worldMatrix * rotation; // Apply local rotation
         }
     }
-
-    UpdateLights(app);
 
     CameraMovement(app);
 
@@ -1047,6 +1048,53 @@ void App::Render(App* app)
                     glBindTexture(GL_TEXTURE_2D, 0);
                     glBindVertexArray(0);
                 }
+
+            }
+
+            // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
+
+            if (app->gBufferDebugMode == 0)
+            {
+                // Render light spheres
+                glDisable(GL_BLEND);
+
+                Program& lightSphereProgram = app->programs[app->lightSphereProgramIdx];
+                glUseProgram(lightSphereProgram.handle);
+
+                // Get camera matrices
+                glm::mat4 view = app->worldCamera.ViewMatrix();
+                glm::mat4 projection = app->worldCamera.ProjectionMatrix();
+
+                // Bind sphere model's VAO
+                Model& sphereModel = app->models[app->sphereIdx];
+                Mesh& sphereMesh = app->meshes[sphereModel.meshIdx];
+                Submesh& submesh = sphereMesh.submeshes[0];
+                GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
+                glBindVertexArray(vao);
+
+                for (const auto& light : app->lights)
+                {
+                    if (light.type != LightType_Point)
+                        continue;
+
+                    // Calculate model matrix
+                    glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+                    model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+                    glm::mat4 mvp = projection * view * model;
+
+                    // Set uniforms
+                    GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+                    GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+                    glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
+
+                    // Draw the sphere
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
+
+                glBindVertexArray(0);
+                glUseProgram(0);
             }
 
             break;
@@ -1123,6 +1171,16 @@ void App::Render(App* app)
 
             glUseProgram(0); // Unbind shader program
 
+            // ----------------------------------- Depth Blit ----------------------------------- //
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, app->primaryFBO.handle);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+            glBlitFramebuffer(
+                0, 0, app->displaySize.x, app->displaySize.y,
+                0, 0, app->displaySize.x, app->displaySize.y,
+                GL_DEPTH_BUFFER_BIT, GL_NEAREST
+            );
+
             // ----------------------------------- Lighting Pass ----------------------------------- //
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1165,6 +1223,56 @@ void App::Render(App* app)
             glBindVertexArray(0);
             glBindTexture(GL_TEXTURE_2D, 0); // Unbind last active texture
             glUseProgram(0); // Unbind shader program
+
+            // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
+
+            if (app->gBufferDebugMode == 0) 
+            {
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LEQUAL);
+                glDepthMask(GL_FALSE);  // Prevent overwriting depth buffer
+                glDisable(GL_BLEND);
+
+                Program& lightSphereProgram = app->programs[app->lightSphereProgramIdx];
+                glUseProgram(lightSphereProgram.handle);
+
+                // Get camera matrices
+                glm::mat4 view = app->worldCamera.ViewMatrix();
+                glm::mat4 projection = app->worldCamera.ProjectionMatrix();
+
+                // Bind sphere model's VAO
+                Model& sphereModel = app->models[app->sphereIdx];
+                Mesh& sphereMesh = app->meshes[sphereModel.meshIdx];
+                Submesh& submesh = sphereMesh.submeshes[0];
+                GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
+                glBindVertexArray(vao);
+
+                for (const auto& light : app->lights)
+                {
+                    if (light.type != LightType_Point)
+                        continue;
+
+                    // Calculate model matrix
+                    glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+                    model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+                    glm::mat4 mvp = projection * view * model;
+
+                    // Set uniforms
+                    GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+                    GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+                    glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
+
+                    // Draw the sphere
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                }
+
+                glBindVertexArray(0);
+                glUseProgram(0);
+
+                glDepthMask(GL_TRUE);
+            }
 
             break;
         }

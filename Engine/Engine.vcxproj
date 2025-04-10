@@ -61,6 +61,7 @@
   <ItemGroup>
     <None Include="Code\openGL_types.inl" />
     <None Include="WorkingDir\Shaders\LIGHTS.glsl" />
+    <None Include="WorkingDir\Shaders\LIGHT_SPHERE.glsl" />
     <None Include="WorkingDir\Shaders\RENDER_GEOMETRY.glsl" />
     <None Include="WorkingDir\Shaders\RENDER_QUAD.glsl" />
     <None Include="WorkingDir\Shaders\shaders.glsl" />
