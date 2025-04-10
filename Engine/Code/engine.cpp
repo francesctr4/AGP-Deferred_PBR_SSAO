@@ -1265,28 +1265,63 @@ void App::Render(App* app)
 
                 for (const auto& light : app->lights)
                 {
-                    if (light.type != LightType_Point)
-                        continue;
+                    if (light.type == LightType_Point) 
+                    {
+                        // Calculate model matrix
+                        glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+                        model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+                        glm::mat4 mvp = projection * view * model;
 
-                    // Calculate model matrix
-                    glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
-                    model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
-                    glm::mat4 mvp = projection * view * model;
+                        // Set uniforms
+                        GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+                        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-                    // Set uniforms
-                    GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
-                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+                        GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+                        glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
 
-                    GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
-                    glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
+                        // Draw the sphere
+                        glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                        glBindVertexArray(0);
+                    }
+                       
+                    //if (light.type == LightType_Directional)
+                    //{
+                    //    // Calculate quad position along the light's direction from the camera
+                    //        glm::vec3 lightDir = glm::normalize(light.direction);
+                    //    glm::vec3 quadPos = app->worldCamera.GetPosition() + lightDir * 5.0f;
 
-                    // Draw the sphere
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                    //    // Create rotation matrix to face light direction
+                    //    glm::mat4 rotation = glm::lookAt(
+                    //        glm::vec3(0.0f),        // Origin
+                    //        lightDir,                // Direction to look at
+                    //        glm::vec3(0.0f, 0.0f, 1.0f)  // Up vector (Z-axis for quad orientation)
+                    //    );
+
+                    //    glm::mat4 model = glm::translate(glm::mat4(1.0f), quadPos) *
+                    //        rotation *
+                    //        glm::scale(glm::vec3(0.01f)); // Changed from 0.5f to 0.1f
+                    //    glm::mat4 mvp = projection * view * model;
+
+                    //    // Set uniforms
+                    //    GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+                    //    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+                    //    GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+                    //    glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
+
+                    //    // Render quad using plane model
+                    //    Model& planeModel = app->models[app->planeIdx];
+                    //    Mesh& meshModel = app->meshes[planeModel.meshIdx];
+                    //    Submesh& submesh = meshModel.submeshes[0];
+                    //    GLuint vao = FindVAO(meshModel, 0, lightSphereProgram);
+
+                    //    glBindVertexArray(vao);
+                    //    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
+                    //    glBindVertexArray(0);
+                    //}
                 }
 
-                glBindVertexArray(0);
                 glUseProgram(0);
-
                 glDepthMask(GL_TRUE);
             }
 
