@@ -63,176 +63,213 @@ App::App()
     programUniformDebugMode(0),
     input({})
 {
-    worldCamera.created = false; // Ensure camera is marked uninitialized
+    worldCamera.created = false;
 }
 
-void App::Init(App* app)
+void App::Init()
 {
+    // 1. Core OpenGL state setup
     glEnable(GL_DEPTH_TEST);
 
-    // TODO: Initialize your resources here!
-
-    // - vertex buffers
-    glGenBuffers(1, &app->embeddedVertices);
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
+    // 2. Geometry Buffers Setup
+        // - Vertex Buffer Object
+    glGenBuffers(1, &embeddedVertices);
+    glBindBuffer(GL_ARRAY_BUFFER, embeddedVertices);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // - element/index buffers
-    glGenBuffers(1, &app->embeddedElements);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
+        // - Element Buffer Object
+    glGenBuffers(1, &embeddedElements);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, embeddedElements);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    // - vaos
-    glGenVertexArrays(1, &app->vao);
-    glBindVertexArray(app->vao);
+        // - Vertex Array Object
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
+    glBindBuffer(GL_ARRAY_BUFFER, embeddedVertices);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3UV2), (void*)offsetof(Vertex3UV2, pos));
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->embeddedElements);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, embeddedElements);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3UV2), (void*)offsetof(Vertex3UV2, uv));
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
 
-    // - programs (and retrieve uniform indices)
-    app->deferredRenderQuadProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
-    Program& renderQuadProgram = app->programs[app->deferredRenderQuadProgramIdx];
-    app->programUniformDebugMode = glGetUniformLocation(renderQuadProgram.handle, "uDebugMode");
+    // 3. Shader Programs Initialization
+        // Forward rendering program
+    forwardRenderProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/FORWARD_RENDER.glsl", "FORWARD_RENDER");
 
-    // - textures
-    app->diceTexIdx = ImageLoader::LoadTexture2D(app, "Textures/dice.png");
-    app->whiteTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_white.png");
-    app->blackTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_black.png");
-    app->normalTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_normal.png");
-    app->magentaTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_magenta.png");
-    app->lightBlueTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_light_blue.png");
-    app->greenTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_green.png");
-    app->purpleTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_purple.png");
-    app->blueTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_blue.png");
-    app->lightGreenTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_light_green.png");
-    app->orangeTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_orange.png");
+        // Deferred rendering programs
+    deferredRenderGeometryProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
 
-    // Patrick Program
+    deferredRenderQuadProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
 
-    app->deferredRenderGeometryProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
-    Program& renderGeometryProgram = app->programs[app->deferredRenderGeometryProgramIdx];
-    app->deferredRenderProgramUniformTexture = glGetUniformLocation(renderGeometryProgram.handle, "uAlbedo");
+        // Light Debug programs
+    pointLightSphereProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
 
-    app->forwardRenderProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/FORWARD_RENDER.glsl", "FORWARD_RENDER");
-    Program& forwardRenderingProgram = app->programs[app->forwardRenderProgramIdx];
-    app->forwardRenderProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uTexture");
+        // Cache uniform locations
+    Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
+    forwardRenderProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uAlbedo");
 
-    app->pointLightSphereProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
+    Program& renderGeometryProgram = programs[deferredRenderGeometryProgramIdx];
+    deferredRenderProgramUniformTexture = glGetUniformLocation(renderGeometryProgram.handle, "uAlbedo");
 
-    app->patrickIdx = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
-    app->planeIdx = ModelLoader::LoadModel(app, "Meshes/plane.obj");
-    app->coneIdx = ModelLoader::LoadModel(app, "Meshes/Cone.obj");
-    app->cubeIdx = ModelLoader::LoadModel(app, "Meshes/Cube.obj");
-    app->cylinderIdx = ModelLoader::LoadModel(app, "Meshes/Cylinder.obj");
-    app->sphereIdx = ModelLoader::LoadModel(app, "Meshes/Sphere.obj");
-    app->torusIdx = ModelLoader::LoadModel(app, "Meshes/Torus.obj");
+    Program& renderQuadProgram = programs[deferredRenderQuadProgramIdx];
+    programUniformDebugMode = glGetUniformLocation(renderQuadProgram.handle, "uDebugMode");
 
-    // Camera Configuration
-
-    if (!app->worldCamera.created)
+    // 4. Texture Resources Loading
+    const std::pair<GLuint&, const char*> textures[] = 
     {
-        app->worldCamera.SetPosition(glm::vec3(10.0f, 8.5f, 11.0f));
-        app->worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-        app->worldCamera.SetAspectRatio(static_cast<float>(app->displaySize.x) / static_cast<float>(app->displaySize.y));
-        app->worldCamera.SetNearFar(0.1f, 1000.0f);
-        app->worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-        app->worldCamera.SetVerticalFOV(60.0f);
+        {diceTexIdx, "Textures/dice.png"},
+        {whiteTexIdx, "Textures/color_white.png"},
+        {blackTexIdx, "Textures/color_black.png"},
+        {normalTexIdx, "Textures/color_normal.png"},
+        {magentaTexIdx, "Textures/color_magenta.png"},
+        {lightBlueTexIdx, "Textures/color_light_blue.png"},
+        {greenTexIdx, "Textures/color_green.png"},
+        {purpleTexIdx, "Textures/color_purple.png"},
+        {blueTexIdx, "Textures/color_blue.png"},
+        {lightGreenTexIdx, "Textures/color_light_green.png"},
+        {orangeTexIdx, "Textures/color_orange.png"}
+    };
 
-        app->worldCamera.created = true;
+    for (auto& [idx, path] : textures) 
+    {
+        idx = ImageLoader::LoadTexture2D(this, path);
     }
 
-    // Uniform Buffer
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
-    app->globalUBO = CreateConstantBuffer(app->maxUniformBufferSize);
-    app->entityUBO = CreateConstantBuffer(app->maxUniformBufferSize);
+    // 5. Model Assets Loading
+    const std::pair<GLuint&, const char*> models[] = 
+    {
+        {patrickIdx, "Patrick/Patrick.obj"},
+        {planeIdx, "Meshes/plane.obj"},
+        {coneIdx, "Meshes/Cone.obj"},
+        {cubeIdx, "Meshes/Cube.obj"},
+        {cylinderIdx, "Meshes/Cylinder.obj"},
+        {sphereIdx, "Meshes/Sphere.obj"},
+        {torusIdx, "Meshes/Torus.obj"}
+    };
 
+    for (auto& [idx, path] : models) 
+    {
+        idx = ModelLoader::LoadModel(this, path);
+    }
+
+    // 6. Camera System Initialization
+    if (!worldCamera.created) 
+    {
+        worldCamera.SetPosition(glm::vec3(10.0f, 8.5f, 11.0f));
+        worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+        worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / displaySize.y);
+        worldCamera.SetNearFar(0.1f, 1000.0f);
+        worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+        worldCamera.SetVerticalFOV(60.0f);
+        worldCamera.created = true;
+    }
+
+    // 7. Uniform Buffer Setup
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBufferSize);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniformBlockAlignment);
+
+    globalUBO = CreateConstantBuffer(maxUniformBufferSize);
+    entityUBO = CreateConstantBuffer(maxUniformBufferSize);
+    
+    // 8. Lights Setup
     CreateLights();
-    UpdateLights(app);
+    UpdateLights();
 
-    //Buffer& entityUBO = app->entityUBO;
+    // 9. Scene Entities Creation
+    MapBuffer(entityUBO, GL_WRITE_ONLY);
 
-    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
-    CreateEntity(app, app->patrickIdx, 0, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    CreateEntity(app, app->planeIdx, app->lightGreenTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    CreateEntity(app, app->coneIdx, app->purpleTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    CreateEntity(app, app->cubeIdx, app->blueTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    CreateEntity(app, app->cylinderIdx, app->orangeTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    CreateEntity(app, app->sphereIdx, app->greenTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    CreateEntity(app, app->torusIdx, app->lightBlueTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
-    UnmapBuffer(app->entityUBO);
+    const std::pair<GLuint, GLuint> entities[] = 
+    {
+        {patrickIdx, 0},
+        {planeIdx, lightGreenTexIdx},
+        {coneIdx, purpleTexIdx},
+        {cubeIdx, blueTexIdx},
+        {cylinderIdx, orangeTexIdx},
+        {sphereIdx, greenTexIdx},
+        {torusIdx, lightBlueTexIdx}
+    };
 
-    if (!app->primaryFBO.Create(4, app->displaySize))
+    for (auto& [modelIdx, texIdx] : entities) 
+    {
+        CreateEntity(modelIdx, texIdx, CreateTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+    }
+
+    UnmapBuffer(entityUBO);
+
+    // 10. Framebuffer Setup
+    if (!primaryFBO.Create(4, displaySize))
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
 }
 
-void App::Update(App* app)
+void App::Update()
 {
 #ifdef _DEBUG
-    ShaderLoader::ProgramHotReload(app);
+    ShaderLoader::ProgramHotReload(this);
 #endif
+
+    // Debug keys
+    if (input.keys[K_1] == BUTTON_PRESS) gBufferDebugMode = 0;
+    if (input.keys[K_2] == BUTTON_PRESS) gBufferDebugMode = 1;
+    if (input.keys[K_3] == BUTTON_PRESS) gBufferDebugMode = 2;
+    if (input.keys[K_4] == BUTTON_PRESS) gBufferDebugMode = 3;
+    if (input.keys[K_5] == BUTTON_PRESS) gBufferDebugMode = 4;
+    if (input.keys[K_6] == BUTTON_PRESS) gBufferDebugMode = 5; // Add this
+
+    // Handle rendering mode changes
+    if (needsReinit)
+    {
+        CleanUp();    // Release existing resources
+        Init();       // Re-initialize with new mode
+        needsReinit = false;
+    }
+
+    // Store previous camera state
+    static glm::vec3 prevPosition = worldCamera.GetPosition();
+    static glm::vec3 prevTarget = worldCamera.GetTarget();
+
+    CameraMovement(input, worldCamera, deltaTime);
 
     {
         // Rotate Patrick
 
-        static Entity* entity = &app->entities[0];
+        static Entity* entity = &entities[0];
         static float rotationSpeed = glm::radians(45.0f); // 45 degrees per second
 
-        float angle = rotationSpeed * app->deltaTime;
+        float angle = rotationSpeed * deltaTime;
         glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
         entity->worldMatrix = entity->worldMatrix * rotation; // Apply local rotation
     }
 
-    // Store previous camera state
-    static glm::vec3 prevPosition = app->worldCamera.GetPosition();
-    static glm::vec3 prevTarget = app->worldCamera.GetTarget();
-
-    CameraMovement(app);
-    UpdateEntities(app);
+    UpdateEntities();
 
     // Check if camera changed
-    if (app->worldCamera.GetPosition() != prevPosition ||
-        app->worldCamera.GetTarget() != prevTarget)
+    if (worldCamera.GetPosition() != prevPosition ||
+        worldCamera.GetTarget() != prevTarget)
     {
-        app->UpdateLights(app);
+        UpdateLights();
 
         // Store new state
-        prevPosition = app->worldCamera.GetPosition();
-        prevTarget = app->worldCamera.GetTarget();
-    }
-
-    // Debug keys
-    if (app->input.keys[K_1] == BUTTON_PRESS) app->gBufferDebugMode = 0;
-    if (app->input.keys[K_2] == BUTTON_PRESS) app->gBufferDebugMode = 1;
-    if (app->input.keys[K_3] == BUTTON_PRESS) app->gBufferDebugMode = 2;
-    if (app->input.keys[K_4] == BUTTON_PRESS) app->gBufferDebugMode = 3;
-    if (app->input.keys[K_5] == BUTTON_PRESS) app->gBufferDebugMode = 4;
-    if (app->input.keys[K_6] == BUTTON_PRESS) app->gBufferDebugMode = 5; // Add this
-
-    // Handle rendering mode changes
-    if (app->needsReinit)
-    {
-        CleanUp(app);    // Release existing resources
-        Init(app);       // Re-initialize with new mode
-        app->needsReinit = false;
+        prevPosition = worldCamera.GetPosition();
+        prevTarget = worldCamera.GetTarget();
     }
 }
 
-void App::Render(App* app)
+void App::Render()
 {
-    switch (app->mode)
+    switch (mode)
     {
         case Mode_Forward_Rendering:
         {
@@ -242,20 +279,20 @@ void App::Render(App* app)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             // - set the viewport
-            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+            glViewport(0, 0, displaySize.x, displaySize.y);
 
             // - set the blending state
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            Program& texturedMeshProgram = app->programs[app->forwardRenderProgramIdx];
+            Program& texturedMeshProgram = programs[forwardRenderProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
             // UNIFORM BUFFER:
             // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->globalUBO.handle, 0, app->globalUBO.size);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (auto& entity : app->entities)
+            for (auto& entity : entities)
             {
                 RenderEntity(&entity, texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
@@ -267,7 +304,7 @@ void App::Render(App* app)
             // Render light spheres
             glDisable(GL_BLEND);
 
-            if (app->gBufferDebugMode == 0)  // TODO: should be a toggle in ImGui Lights window
+            if (gBufferDebugMode == 0 && enableLightDebug)
             {
                 RenderLightDebugGeometry();
             }
@@ -280,20 +317,20 @@ void App::Render(App* app)
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+            glViewport(0, 0, displaySize.x, displaySize.y);
 
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
-            glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_FRAMEBUFFER, primaryFBO.GetFramebufferHandle());
 
             std::vector<GLuint> drawBuffers;
 
-            for (size_t i = 0; i < app->primaryFBO.GetColorAttachmentCount(); ++i)
+            for (size_t i = 0; i < primaryFBO.GetColorAttachmentCount(); ++i)
             {
-                drawBuffers.push_back(app->primaryFBO.GetColorAttachment(i));
+                drawBuffers.push_back(primaryFBO.GetColorAttachment(i));
             }
 
             glDrawBuffers(drawBuffers.size(), drawBuffers.data());
@@ -301,13 +338,13 @@ void App::Render(App* app)
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            Program& geometryProgram = app->programs[app->deferredRenderGeometryProgramIdx];
+            Program& geometryProgram = programs[deferredRenderGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
 
             // Render all geometry to G-Buffer
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->globalUBO.handle, 0, app->globalUBO.size);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (auto& entity : app->entities)
+            for (auto& entity : entities)
             {
                 RenderEntity(&entity, geometryProgram, deferredRenderProgramUniformTexture);
             }
@@ -317,11 +354,11 @@ void App::Render(App* app)
             // ----------------------------------- Depth Blit ----------------------------------- //
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, app->primaryFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, primaryFBO.GetFramebufferHandle());
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             glBlitFramebuffer(
-                0, 0, app->displaySize.x, app->displaySize.y,
-                0, 0, app->displaySize.x, app->displaySize.y,
+                0, 0, displaySize.x, displaySize.y,
+                0, 0, displaySize.x, displaySize.y,
                 GL_DEPTH_BUFFER_BIT, GL_NEAREST
             );
 
@@ -331,7 +368,7 @@ void App::Render(App* app)
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
 
-            Program& quadProgram = app->programs[app->deferredRenderQuadProgramIdx];
+            Program& quadProgram = programs[deferredRenderQuadProgramIdx];
             glUseProgram(quadProgram.handle);
 
             static const struct GBufferTexture
@@ -341,11 +378,11 @@ void App::Render(App* app)
                 const char* uniformName;
             } gBufferTextures[] =
             {
-                { GL_TEXTURE0, app->primaryFBO.GetColorAttachment(0), "uAlbedo"   },
-                { GL_TEXTURE1, app->primaryFBO.GetColorAttachment(1), "uNormal"   },
-                { GL_TEXTURE2, app->primaryFBO.GetColorAttachment(2), "uPosition" },
-                { GL_TEXTURE3, app->primaryFBO.GetColorAttachment(3), "uViewDir"  },
-                { GL_TEXTURE4, app->primaryFBO.GetDepthAttachment(),  "uDepth"    }
+                { GL_TEXTURE0, primaryFBO.GetColorAttachment(0), "uAlbedo"   },
+                { GL_TEXTURE1, primaryFBO.GetColorAttachment(1), "uNormal"   },
+                { GL_TEXTURE2, primaryFBO.GetColorAttachment(2), "uPosition" },
+                { GL_TEXTURE3, primaryFBO.GetColorAttachment(3), "uViewDir"  },
+                { GL_TEXTURE4, primaryFBO.GetDepthAttachment(),  "uDepth"    }
             };
 
             // Bind all textures in a loop
@@ -357,10 +394,10 @@ void App::Render(App* app)
                     tex.textureUnit - GL_TEXTURE0); // Convert to 0-based index
             }
 
-            glUniform1i(app->programUniformDebugMode, (GLint)app->gBufferDebugMode);
+            glUniform1i(programUniformDebugMode, (GLint)gBufferDebugMode);
 
             // Render fullscreen quad
-            glBindVertexArray(app->vao);
+            glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
             // Unbind everything after lighting pass
@@ -375,7 +412,7 @@ void App::Render(App* app)
             glDepthMask(GL_FALSE);  // Prevent overwriting depth buffer
             glDisable(GL_BLEND);
 
-            if (app->gBufferDebugMode == 0) // TODO: should be a toggle in ImGui Lights window
+            if (gBufferDebugMode == 0 && enableLightDebug)
             {
                 RenderLightDebugGeometry();
             }
@@ -387,52 +424,52 @@ void App::Render(App* app)
     }
 }
 
-void App::Gui(App* app)
+void App::Gui()
 {
-    Editor::Draw(app);
+    Editor::Draw(this);
 }
 
-void App::CleanUp(App* app)
+void App::CleanUp()
 {
     ELOG("Cleaning Up Engine");
 
     // --- Delete Textures ---
-    for (auto& texture : app->textures)
+    for (auto& texture : textures)
     {
         glDeleteTextures(1, &texture.handle);
     }
-    app->textures.clear();
+    textures.clear();
 
     // --- Delete Shader Programs ---
-    for (auto& program : app->programs)
+    for (auto& program : programs)
     {
         glDeleteProgram(program.handle);
     }
-    app->programs.clear();
+    programs.clear();
 
     // --- Delete Main VAO ---
-    if (app->vao != 0)
+    if (vao != 0)
     {
-        glDeleteVertexArrays(1, &app->vao);
-        app->vao = 0;
+        glDeleteVertexArrays(1, &vao);
+        vao = 0;
     }
 
     // --- Delete Element/Index Buffers ---
-    if (app->embeddedElements != 0)
+    if (embeddedElements != 0)
     {
-        glDeleteBuffers(1, &app->embeddedElements);
-        app->embeddedElements = 0;
+        glDeleteBuffers(1, &embeddedElements);
+        embeddedElements = 0;
     }
 
     // --- Delete Vertex Buffers ---
-    if (app->embeddedVertices != 0)
+    if (embeddedVertices != 0)
     {
-        glDeleteBuffers(1, &app->embeddedVertices);
-        app->embeddedVertices = 0;
+        glDeleteBuffers(1, &embeddedVertices);
+        embeddedVertices = 0;
     }
 
     // --- Clean Up Meshes (VAOs, VBOs, and IBOs) ---
-    for (auto& mesh : app->meshes)
+    for (auto& mesh : meshes)
     {
         // Delete VAOs for each submesh
         for (auto& submesh : mesh.submeshes)
@@ -446,33 +483,33 @@ void App::CleanUp(App* app)
         glDeleteBuffers(1, &mesh.vertexBufferHandle);
         glDeleteBuffers(1, &mesh.indexBufferHandle);
     }
-    app->meshes.clear();
+    meshes.clear();
 
     // --- Clean Up Models and Materials ---
-    app->models.clear();
-    app->materials.clear();
+    models.clear();
+    materials.clear();
 
     // --- Clean Up Uniform Buffers ---
-    if (app->globalUBO.handle != 0)
+    if (globalUBO.handle != 0)
     {
-        glDeleteBuffers(1, &app->globalUBO.handle);
-        app->globalUBO.handle = 0;
+        glDeleteBuffers(1, &globalUBO.handle);
+        globalUBO.handle = 0;
     }
-    if (app->entityUBO.handle != 0)
+    if (entityUBO.handle != 0)
     {
-        glDeleteBuffers(1, &app->entityUBO.handle);
-        app->entityUBO.handle = 0;
+        glDeleteBuffers(1, &entityUBO.handle);
+        entityUBO.handle = 0;
     }
 
     // --- Clean Up Entities ---
-    app->entities.clear();
+    entities.clear();
 
     // --- Clean Up FBO ---
-    app->primaryFBO.Clear();
+    primaryFBO.Clear();
 
-    app->lights.clear();
-    app->gridLights.clear();
-    app->defaultLights.clear();
+    lights.clear();
+    gridLights.clear();
+    defaultLights.clear();
 }
 
 App::~App()
@@ -480,58 +517,23 @@ App::~App()
 
 }
 
+void App::OnResize(int width, int height)
+{
+    displaySize = vec2(width, height);
+
+    primaryFBO.Clear();
+    primaryFBO.Create(4, displaySize);
+
+    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
+
+    UpdateEntities();
+}
+
+// ------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------ //
 // ------------------------------------------------------------------------------------------------------------ //
 
-void App::UpdateLightList()
-{
-    lights.clear();
-    if (gridLightsEnabled)
-        lights.insert(lights.end(), gridLights.begin(), gridLights.end());
-    lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
-}
-
-void App::RenderLightDebugGeometry()
-{
-    Program& lightSphereProgram = programs[pointLightSphereProgramIdx];
-    glUseProgram(lightSphereProgram.handle);
-
-    // Get camera matrices
-    glm::mat4 view = worldCamera.ViewMatrix();
-    glm::mat4 projection = worldCamera.ProjectionMatrix();
-
-    // Bind sphere model's VAO
-    Model& sphereModel = models[sphereIdx];
-    Mesh& sphereMesh = meshes[sphereModel.meshIdx];
-    Submesh& submesh = sphereMesh.submeshes[0];
-    GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
-    glBindVertexArray(vao);
-
-    for (const auto& light : lights)
-    {
-        if (light.type == LightType_Point)
-        {
-            // Calculate model matrix
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
-            model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
-            glm::mat4 mvp = projection * view * model;
-
-            // Set uniforms
-            GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
-            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-
-            GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
-            glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
-
-            // Draw the sphere
-            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-        }
-    }
-
-    glBindVertexArray(0);
-    glUseProgram(0);
-}
-
-void App::CreateLights() 
+void App::CreateLights()
 {
     // Clear existing lights to prevent duplication
     gridLights.clear();
@@ -614,99 +616,139 @@ void App::CreateLights()
     UpdateLightList();
 }
 
-void App::CameraMovement(App* app)
+void App::UpdateLightList()
 {
-    // Camera rotation with right mouse button
-    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
-    {
-        float sensitivity = 0.1f;
-        float deltaX = app->input.mouseDelta.x * sensitivity;
-        float deltaY = app->input.mouseDelta.y * sensitivity;
-
-        glm::vec3 position = app->worldCamera.GetPosition();
-        glm::vec3 target = app->worldCamera.GetTarget();
-        glm::vec3 up = app->worldCamera.GetUpVector();
-
-        glm::vec3 forward = glm::normalize(target - position);
-        glm::vec3 right = glm::normalize(glm::cross(forward, up));
-
-        // Rotate forward vector based on mouse delta
-        glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
-        forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
-
-        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaY), right);
-        forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
-
-        // Update target
-        app->worldCamera.SetTarget(position + forward);
-    }
-
-    // WASDEQ movement
-    glm::vec3 position = app->worldCamera.GetPosition();
-    float baseSpeed = 10.0f * app->deltaTime;
-    float speed = baseSpeed;
-
-    glm::vec3 forward = glm::normalize(app->worldCamera.GetTarget() - position);
-    glm::vec3 right = glm::normalize(glm::cross(forward, app->worldCamera.GetUpVector()));
-    glm::vec3 up = app->worldCamera.GetUpVector();
-
-    if (app->input.keys[K_W] == BUTTON_PRESSED)
-    {
-        position += forward * speed;
-    }
-    if (app->input.keys[K_S] == BUTTON_PRESSED)
-    {
-        position -= forward * speed;
-    }
-
-    if (app->input.keys[K_A] == BUTTON_PRESSED)
-    {
-        position -= right * speed;
-    }
-
-    if (app->input.keys[K_D] == BUTTON_PRESSED)
-    {
-        position += right * speed;
-    }
-
-    if (app->input.keys[K_Q] == BUTTON_PRESSED)
-    {
-        // Move down
-        position -= up * speed;
-    }
-
-    if (app->input.keys[K_E] == BUTTON_PRESSED)
-    {
-        // Move up
-        position += up * speed;
-    }
-
-    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED) 
-    {
-        // Handle zoom using scroll wheel
-        float zoomSpeed = 50.0f;
-        position += forward * app->input.mouseScrollDeltaY * zoomSpeed * app->deltaTime;
-    }
-
-    // Update camera position and target
-    app->worldCamera.SetPosition(position);
-    app->worldCamera.SetTarget(position + forward);
-
-    //// Only update existing entities' VP matrices
-    //UpdateEntityUBO(app);
-    //app->UpdateLights(app);
+    lights.clear();
+    if (gridLightsEnabled)
+        lights.insert(lights.end(), gridLights.begin(), gridLights.end());
+    lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
 }
 
-void App::OnResize(int width, int height)
+void App::UpdateLights()
 {
-    displaySize = vec2(width, height);
+    MapBuffer(globalUBO, GL_WRITE_ONLY);
+    PushVec3(globalUBO, worldCamera.GetPosition());
+    PushUInt(globalUBO, lights.size());
+    for (size_t i = 0; i < lights.size(); i++)
+    {
+        AlignHead(globalUBO, sizeof(vec4));
+        Light& light = lights[i];
+        PushUInt(globalUBO, static_cast<unsigned int>(light.type));
+        PushVec3(globalUBO, light.color);
+        PushVec3(globalUBO, light.direction);
+        PushVec3(globalUBO, light.position);
+        PushFloat(globalUBO, light.constant);
+        PushFloat(globalUBO, light.linear);
+        PushFloat(globalUBO, light.quadratic);
+        PushFloat(globalUBO, light.specularStrength);
+    }
+    UnmapBuffer(globalUBO);
+}
 
-    primaryFBO.Clear();
-    primaryFBO.Create(4, displaySize);
+void App::RenderLightDebugGeometry()
+{
+    Program& lightSphereProgram = programs[pointLightSphereProgramIdx];
+    glUseProgram(lightSphereProgram.handle);
 
-    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
+    // Get camera matrices
+    glm::mat4 view = worldCamera.ViewMatrix();
+    glm::mat4 projection = worldCamera.ProjectionMatrix();
 
-    UpdateEntities(this);
+    // Bind sphere model's VAO
+    Model& sphereModel = models[sphereIdx];
+    Mesh& sphereMesh = meshes[sphereModel.meshIdx];
+    Submesh& submesh = sphereMesh.submeshes[0];
+    GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
+    glBindVertexArray(vao);
+
+    for (const auto& light : lights)
+    {
+        if (light.type == LightType_Point)
+        {
+            // Calculate model matrix
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+            model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+            glm::mat4 mvp = projection * view * model;
+
+            // Set uniforms
+            GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+            GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+            glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
+
+            // Draw the sphere
+            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+        }
+    }
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+// ---------------------------------------------------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------------------------------- //
+
+glm::mat4 App::CreateTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale)
+{
+    glm::mat4 transform = glm::identity<glm::mat4>();
+
+    transform = glm::translate(transform, translation);
+
+    // Axis-angle rotation
+    float angleDegrees = glm::length(rotation);
+
+    if (angleDegrees > 0.0001f)
+    {
+        glm::vec3 axis = glm::normalize(rotation);
+        float angleRadians = glm::radians(angleDegrees);
+        glm::mat4 rot = glm::rotate(glm::mat4(1.0f), angleRadians, axis);
+        transform *= rot;
+    }
+
+    transform = glm::scale(transform, scale);
+
+    return transform;
+}
+
+void App::CreateEntity(const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix)
+{
+    Entity entity{};
+    AlignHead(entityUBO, uniformBlockAlignment);
+    entity.entityBufferOffset = entityUBO.head;
+
+    entity.worldMatrix = aWorldMatrix;
+    entity.modelIdx = aModelIdx;
+    entity.textureIdx = aTextureIdx;
+
+    // Only push world matrix during creation
+    PushMat4(entityUBO, entity.worldMatrix);
+    // Reserve space for MVP (will be updated later)
+    PushMat4(entityUBO, glm::identity<glm::mat4>());
+
+    entity.entityBufferSize = entityUBO.head - entity.entityBufferOffset;
+    entities.push_back(entity);
+}
+
+void App::UpdateEntities()
+{
+    MapBuffer(entityUBO, GL_WRITE_ONLY);
+
+    glm::mat4 VP = worldCamera.ProjectionMatrix() * worldCamera.ViewMatrix();
+
+    for (auto& entity : entities)
+    {
+        // Calculate new MVP
+        glm::mat4 mvp = VP * entity.worldMatrix;
+
+        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
+        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
+
+        WriteData(entityUBO, mvpOffset, mvp);
+    }
+
+    UnmapBuffer(entityUBO);
 }
 
 GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
@@ -761,68 +803,6 @@ GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     submesh.vaos.push_back(vao);
 
     return vaoHandle;
-}
-
-void App::UpdateLights(App* app)
-{
-    MapBuffer(app->globalUBO, GL_WRITE_ONLY);
-    PushVec3(app->globalUBO, app->worldCamera.GetPosition());
-    PushUInt(app->globalUBO, app->lights.size());
-    for (size_t i = 0; i < app->lights.size(); i++)
-    {
-        AlignHead(app->globalUBO, sizeof(vec4));
-        Light& light = app->lights[i];
-        PushUInt(app->globalUBO, static_cast<unsigned int>(light.type));
-        PushVec3(app->globalUBO, light.color);
-        PushVec3(app->globalUBO, light.direction);
-        PushVec3(app->globalUBO, light.position);
-        PushFloat(app->globalUBO, light.constant);
-        PushFloat(app->globalUBO, light.linear);
-        PushFloat(app->globalUBO, light.quadratic);
-        PushFloat(app->globalUBO, light.specularStrength);
-    }
-    UnmapBuffer(app->globalUBO);
-}
-
-// ---------------------------------------------------------------------------------------------------------- //
-
-void App::CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix)
-{
-    Entity entity{};
-    AlignHead(app->entityUBO, app->uniformBlockAlignment);
-    entity.entityBufferOffset = app->entityUBO.head;
-
-    entity.worldMatrix = aWorldMatrix;
-    entity.modelIdx = aModelIdx;
-    entity.textureIdx = aTextureIdx;
-
-    // Only push world matrix during creation
-    PushMat4(app->entityUBO, entity.worldMatrix);
-    // Reserve space for MVP (will be updated later)
-    PushMat4(app->entityUBO, glm::identity<glm::mat4>());
-
-    entity.entityBufferSize = app->entityUBO.head - entity.entityBufferOffset;
-    app->entities.push_back(entity);
-}
-
-void App::UpdateEntities(App* app)
-{
-    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
-
-    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
-
-    for (auto& entity : app->entities)
-    {
-        // Calculate new MVP
-        glm::mat4 mvp = VP * entity.worldMatrix;
-
-        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
-        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
-
-        WriteData(app->entityUBO, mvpOffset, mvp);
-    }
-
-    UnmapBuffer(app->entityUBO);
 }
 
 void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTexture)

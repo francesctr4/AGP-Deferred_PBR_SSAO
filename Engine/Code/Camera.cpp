@@ -2,10 +2,22 @@
 
 // Update the view matrix if necessary
 
+#include "engine.h"
+
 Camera::Camera()
+    : position(0.0f, 0.0f, 0.0f),
+    target(0.0f, 0.0f, -1.0f),
+    aspectRatio(16.0f / 9.0f),
+    znear(0.1f),
+    zfar(1000.0f),
+    upVector(0.0f, 1.0f, 0.0f),
+    verticalFOV(60.0f),
+    cachedViewMatrix(glm::mat4(0.0f)),
+    cachedProjectionMatrix(glm::mat4(0.0f)),
+    isViewDirty(true),
+    isProjectionDirty(true)
 {
-    cachedProjectionMatrix = glm::zero<glm::mat4>();
-    cachedViewMatrix = glm::zero<glm::mat4>();
+
 }
 
 Camera::~Camera()
@@ -21,6 +33,52 @@ void Camera::SetPosition(const glm::vec3& newPosition)
     isViewDirty = true; 
 }
 
+void Camera::SetTarget(const glm::vec3& newTarget) 
+{ 
+    target = newTarget;
+    isViewDirty = true; 
+}
+
+void Camera::SetUpVector(const glm::vec3& newUpVector) 
+{ 
+    upVector = newUpVector; 
+    isViewDirty = true; 
+}
+
+void Camera::SetAspectRatio(float newAspectRatio) 
+{ 
+    aspectRatio = newAspectRatio; 
+    isProjectionDirty = true; 
+}
+
+void Camera::SetVerticalFOV(float newFOV) 
+{ 
+    verticalFOV = newFOV; 
+    isProjectionDirty = true; 
+}
+
+void Camera::SetNearFar(float newZnear, float newZfar) 
+{ 
+    znear = newZnear; 
+    zfar = newZfar; 
+    isProjectionDirty = true; 
+}
+
+const glm::vec3& Camera::GetPosition() const 
+{ 
+    return position; 
+}
+
+const glm::vec3& Camera::GetTarget() const 
+{ 
+    return target; 
+}
+
+const glm::vec3& Camera::GetUpVector() const 
+{ 
+    return upVector; 
+}
+
 const glm::mat4& Camera::ViewMatrix() const
 {
     if (isViewDirty)
@@ -31,8 +89,6 @@ const glm::mat4& Camera::ViewMatrix() const
     return cachedViewMatrix;
 }
 
-// Update the projection matrix if necessary
-
 const glm::mat4& Camera::ProjectionMatrix() const
 {
     if (isProjectionDirty)
@@ -41,4 +97,83 @@ const glm::mat4& Camera::ProjectionMatrix() const
         isProjectionDirty = false;
     }
     return cachedProjectionMatrix;
+}
+
+void CameraMovement(Input& input, Camera& camera, f32 deltaTime)
+{
+    // Camera rotation with right mouse button
+    if (input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+    {
+        float sensitivity = 0.1f;
+        float deltaX = input.mouseDelta.x * sensitivity;
+        float deltaY = input.mouseDelta.y * sensitivity;
+
+        glm::vec3 position = camera.GetPosition();
+        glm::vec3 target = camera.GetTarget();
+        glm::vec3 up = camera.GetUpVector();
+
+        glm::vec3 forward = glm::normalize(target - position);
+        glm::vec3 right = glm::normalize(glm::cross(forward, up));
+
+        // Rotate forward vector based on mouse delta
+        glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
+        forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
+
+        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaY), right);
+        forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
+
+        // Update target
+        camera.SetTarget(position + forward);
+    }
+
+    // WASDEQ movement
+    glm::vec3 position = camera.GetPosition();
+    float baseSpeed = 10.0f * deltaTime;
+    float speed = baseSpeed;
+
+    glm::vec3 forward = glm::normalize(camera.GetTarget() - position);
+    glm::vec3 right = glm::normalize(glm::cross(forward, camera.GetUpVector()));
+    glm::vec3 up = camera.GetUpVector();
+
+    if (input.keys[K_W] == BUTTON_PRESSED)
+    {
+        position += forward * speed;
+    }
+    if (input.keys[K_S] == BUTTON_PRESSED)
+    {
+        position -= forward * speed;
+    }
+
+    if (input.keys[K_A] == BUTTON_PRESSED)
+    {
+        position -= right * speed;
+    }
+
+    if (input.keys[K_D] == BUTTON_PRESSED)
+    {
+        position += right * speed;
+    }
+
+    if (input.keys[K_Q] == BUTTON_PRESSED)
+    {
+        // Move down
+        position -= up * speed;
+    }
+
+    if (input.keys[K_E] == BUTTON_PRESSED)
+    {
+        // Move up
+        position += up * speed;
+    }
+
+    if (input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+    {
+        // Handle zoom using scroll wheel
+        float zoomSpeed = 50.0f;
+        position += forward * input.mouseScrollDeltaY * zoomSpeed * deltaTime;
+    }
+
+    // Update camera position and target
+    camera.SetPosition(position);
+    camera.SetTarget(position + forward);
 }

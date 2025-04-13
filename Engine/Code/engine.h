@@ -18,32 +18,28 @@ public:
     App();
     ~App();
 
-    void Init(App* app);
-    void Update(App* app);
-    void Render(App* app);
-    void Gui(App* app);
-    void CleanUp(App* app);
+    void Init();
+    void Update();
+    void Render();
+    void Gui();
+    void CleanUp();
 
     void OnResize(int width, int height);
 
-    // ====================
-    // Lighting Management
-    // ====================
-    void CreateLights();
-    void UpdateLights(App* app);
+    // ------------------------------------------------------------- //
+
     void UpdateLightList();
-    void RenderLightDebugGeometry();
+    void UpdateLights();
 
 private:
 
-    // ====================
-    // Rendering Internals
-    // ====================
-    void CameraMovement(App* app);
-    GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+    void CreateLights();
+    void RenderLightDebugGeometry();
 
-    void CreateEntity(App* app, u32 modelIdx, u32 textureIdx, const glm::mat4& worldMatrix);
-    void UpdateEntities(App* app);
+    glm::mat4 CreateTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale);
+    void CreateEntity(u32 modelIdx, u32 textureIdx, const glm::mat4& worldMatrix);
+    void UpdateEntities();
+    GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
     void RenderEntity(Entity* entity, Program& program, u32 programUniformTexture);
 
 public:
@@ -97,6 +93,7 @@ public:
     std::vector<Light> defaultLights;
 
     bool gridLightsEnabled = true;
+    bool enableLightDebug = false;
     float gridLightConstant;
     float gridLightLinear;
     float gridLightQuadratic;

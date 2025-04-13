@@ -17,6 +17,10 @@ void Editor::DrawLightsWindow(App* app)
     static bool prevGridState = app->gridLightsEnabled;
     ImGuiUtils::ToggleButton("Idx", (bool*)&app->gridLightsEnabled);
 
+    ImGui::Text("Debug Geometry");
+    ImGui::SameLine();
+    ImGuiUtils::ToggleButton("DebugGeometryIdx", (bool*)&app->enableLightDebug);
+
     // Handle grid light toggle
     if (prevGridState != app->gridLightsEnabled) {
         lightListDirty = true;
@@ -88,12 +92,14 @@ void Editor::DrawLightsWindow(App* app)
     ImGui::End();
 
     // Batched updates at the end
-    if (lightListDirty) {
+    if (lightListDirty) 
+    {
         app->UpdateLightList();
         lightsDirty = true; // Ensure shader update after list changes
     }
 
-    if (lightsDirty) {
-        app->UpdateLights(app);
+    if (lightsDirty) 
+    {
+        app->UpdateLights();
     }
 }
