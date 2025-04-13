@@ -12,7 +12,7 @@ struct Buffer
     u32 size = 0;
     GLenum type = 0;
     GLuint handle = 0;
-    u64 head = 0;
+    u32 head = 0;
     u8* data = nullptr;
 };
 

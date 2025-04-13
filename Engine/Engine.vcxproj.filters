@@ -102,6 +102,9 @@
     <ClCompile Include="Code\ImageLoader.cpp">
       <Filter>Source Code\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Code\ShaderLoader.cpp">
+      <Filter>Source Code\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">
@@ -165,6 +168,9 @@
       <Filter>Source Code</Filter>
     </ClInclude>
     <ClInclude Include="Code\ImageLoader.h">
+      <Filter>Source Code\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ShaderLoader.h">
       <Filter>Source Code\Utils</Filter>
     </ClInclude>
   </ItemGroup>

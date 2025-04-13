@@ -1,6 +1,6 @@
 #pragma once
 
-struct App;
+class App;
 
 namespace Editor 
 {

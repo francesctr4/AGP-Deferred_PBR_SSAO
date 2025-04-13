@@ -7,371 +7,63 @@
 
 #include "engine.h"
 #include "OpenGLErrorGuard.h"
-#include "ModelLoader.h"
 
-#include <stb_image.h>
-#include <stb_image_write.h>
+#include "ImageLoader.h"
+#include "ModelLoader.h"
+#include "ShaderLoader.h"
+
 #include <format>
 #include "Editor.h"
 
-void App::UpdateLightList()
-{
-    lights.clear();
-    if (gridLightsEnabled)
-        lights.insert(lights.end(), gridLights.begin(), gridLights.end());
-    lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
-}
-
-void App::CreateLights() 
-{
-    // Clear existing lights to prevent duplication
-    gridLights.clear();
-    defaultLights.clear();
-
-    int gridSizeX = 40;  // Number of columns (X-axis)
-    int gridSizeZ = 40;  // Number of rows (Z-axis)
-    float minX = -15.0f; // Start X range
-    float maxX = 15.0f;  // End X range
-    float minZ = -15.0f; // Start Z range
-    float maxZ = 15.0f;  // End Z range
-    float yPos = 5.0f;   // Fixed Y position
-
-    // In App::App() constructor, before the grid light loop:
-    gridLightConstant = 1.0f;
-    gridLightLinear = 0.5f;
-    gridLightQuadratic = 0.5f;
-
-    float stepX = (maxX - minX) / (gridSizeX - 1);
-    float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
-
-    for (int i = 0; i < gridSizeX; ++i) {
-        for (int j = 0; j < gridSizeZ; ++j) {
-            // Calculate position
-            float x = minX + i * stepX;
-            float z = minZ + j * stepZ;
-
-            // --- Choose one color generation method below ---
-
-            // Gradient-Based Colors
-            float red = static_cast<float>(i) / (gridSizeX - 1) * 0.1f;
-            float green = static_cast<float>(j) / (gridSizeZ - 1) * 0.1f;
-            float blue = (1.0f - red) * 0.1f;
-
-            // Sinusoidal Variation
-            // float red = (sin(i * 0.5f) + 1.0f) * 0.5f;
-            // float green = (cos(j * 0.5f) + 1.0f) * 0.5f;
-            // float blue = (sin((i + j) * 0.3f) + 1.0f) * 0.5f;
-
-            glm::vec3 lightColor(red, green, blue);
-
-            gridLights.push_back({
-                LightType_Point,
-                lightColor,
-                glm::vec3(0.0f), // Unused direction
-                glm::vec3(x, yPos, z),
-                gridLightConstant,   // Constant attenuation for all grid lights
-                gridLightLinear,     // Linear attenuation for all grid lights
-                gridLightQuadratic,  // Quadratic attenuation for all grid lights
-                0.010f               // Specular strength
-                });
-        }
-    }
-
-    defaultLights.push_back({
-        LightType_Directional,
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, -1.0f, 0.0f), // Direction (points downward)
-        glm::vec3(0.0f, 0.0f, 0.0f),   // Unused position
-        1.0f,   // unused for directional
-        0.09f,  // unused
-        0.032f, // unused
-        0.5f    // specular strength
-        });
-
-    defaultLights.push_back({
-                LightType_Point,
-                glm::vec3(1.0f, 0.0f, 0.0f),
-                glm::vec3(0.0f, 0.0f, 0.0f), // Unused direction
-                glm::vec3(0.0f, 10.0f, 0.0f),
-                1.0f,   // constant attenuation
-                0.1f,  // linear attenuation
-                0.010f, // quadratic attenuation
-                0.010f    // specular strength// Position
-        });
-
-    // Combine into lights based on flag
-    gridLightsEnabled = false;
-
-    UpdateLightList();
-}
-
 App::App()
+    : isRunning(true),
+    deltaTime(0.0f),
+    mode(Mode_Deferred_Rendering),
+    needsReinit(false),
+    displaySize(0, 0),
+    embeddedVertices(0),
+    embeddedElements(0),
+    vao(0),
+    maxUniformBufferSize(0),
+    uniformBlockAlignment(0),
+    gridLightsEnabled(false),
+    gridLightConstant(0.0f),
+    gridLightLinear(0.0f),
+    gridLightQuadratic(0.0f),
+    gBufferDebugMode(0),
+    showShaderErrors(false),
+    // Texture Indices
+    diceTexIdx(0),
+    whiteTexIdx(0),
+    blackTexIdx(0),
+    normalTexIdx(0),
+    magentaTexIdx(0),
+    lightBlueTexIdx(0),
+    greenTexIdx(0),
+    purpleTexIdx(0),
+    blueTexIdx(0),
+    lightGreenTexIdx(0),
+    orangeTexIdx(0),
+    // Model Indices
+    patrickIdx(0),
+    planeIdx(0),
+    coneIdx(0),
+    cubeIdx(0),
+    cylinderIdx(0),
+    sphereIdx(0),
+    torusIdx(0),
+    // Shader Program Indices
+    deferredRenderQuadProgramIdx(0),
+    deferredRenderGeometryProgramIdx(0),
+    forwardRenderProgramIdx(0),
+    pointLightSphereProgramIdx(0),
+    // Uniform Locations
+    deferredRenderProgramUniformTexture(0),
+    forwardRenderProgramUniformTexture(0),
+    programUniformDebugMode(0),
+    input({})
 {
-    this->mode = Mode_Deferred_Rendering;
-}
-
-App::~App()
-{
-
-}
-
-void UpdateEntityUBO(App* app)
-{
-    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
-
-    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
-
-    for (auto& entity : app->entities)
-    {
-        // Calculate new MVP
-        glm::mat4 mvp = VP * entity.worldMatrix;
-
-        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
-        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
-
-        WriteData(app->entityUBO, mvpOffset, mvp);
-    }
-
-    UnmapBuffer(app->entityUBO);
-}
-
-GLuint CreateProgramFromSource(App* app, String programSource, const char* shaderName)
-{
-    app->shaderErrors.clear();
-
-    GLchar  infoLogBuffer[1024] = {};
-    GLsizei infoLogBufferSize = sizeof(infoLogBuffer);
-    GLsizei infoLogSize;
-    GLint   success;
-
-    char versionString[] = "#version 430\n";
-    char shaderNameDefine[128];
-    sprintf(shaderNameDefine, "#define %s\n", shaderName);
-    char vertexShaderDefine[] = "#define VERTEX\n";
-    char fragmentShaderDefine[] = "#define FRAGMENT\n";
-
-    const GLchar* vertexShaderSource[] = {
-        versionString,
-        shaderNameDefine,
-        vertexShaderDefine,
-        programSource.str
-    };
-    const GLint vertexShaderLengths[] = {
-        (GLint) strlen(versionString),
-        (GLint) strlen(shaderNameDefine),
-        (GLint) strlen(vertexShaderDefine),
-        (GLint) programSource.len
-    };
-    const GLchar* fragmentShaderSource[] = {
-        versionString,
-        shaderNameDefine,
-        fragmentShaderDefine,
-        programSource.str
-    };
-    const GLint fragmentShaderLengths[] = {
-        (GLint) strlen(versionString),
-        (GLint) strlen(shaderNameDefine),
-        (GLint) strlen(fragmentShaderDefine),
-        (GLint) programSource.len
-    };
-
-    GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vshader, ARRAY_COUNT(vertexShaderSource), vertexShaderSource, vertexShaderLengths);
-    glCompileShader(vshader);
-    glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vshader, infoLogBufferSize, &infoLogSize, infoLogBuffer);
-
-        app->shaderErrors.push_back(std::format(
-            "glCompileShader() failed with vertex shader '{}'\nReported message:\n{}\n",
-            shaderName, infoLogBuffer));
-
-        ELOG("glCompileShader() failed with vertex shader %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
-    }
-
-    GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fshader, ARRAY_COUNT(fragmentShaderSource), fragmentShaderSource, fragmentShaderLengths);
-    glCompileShader(fshader);
-    glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fshader, infoLogBufferSize, &infoLogSize, infoLogBuffer);
-
-        app->shaderErrors.push_back(std::format(
-            "glCompileShader() failed with fragment shader '{}'\nReported message:\n{}\n",
-            shaderName, infoLogBuffer));
-
-        ELOG("glCompileShader() failed with fragment shader %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
-    }
-
-    GLuint programHandle = glCreateProgram();
-    glAttachShader(programHandle, vshader);
-    glAttachShader(programHandle, fshader);
-    glLinkProgram(programHandle);
-    glGetProgramiv(programHandle, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(programHandle, infoLogBufferSize, &infoLogSize, infoLogBuffer);
-
-        app->shaderErrors.push_back(std::format(
-            "glLinkProgram() failed with program '{}'\nReported message:\n{}\n",
-            shaderName, infoLogBuffer));
-
-        ELOG("glLinkProgram() failed with program %s\nReported message:\n%s\n", shaderName, infoLogBuffer);
-    }
-
-    glUseProgram(0);
-
-    glDetachShader(programHandle, vshader);
-    glDetachShader(programHandle, fshader);
-    glDeleteShader(vshader);
-    glDeleteShader(fshader);
-
-    return programHandle;
-}
-
-u32 LoadProgram(App* app, const char* filepath, const char* programName)
-{
-    String programSource = ReadTextFile(filepath);
-
-    Program program = {};
-    program.handle = CreateProgramFromSource(app, programSource, programName);
-    program.filepath = filepath;
-    program.programName = programName;
-    program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
-
-    if (program.handle != 0) 
-    {
-        GLint attributeCount = 0UL;
-        glGetProgramiv(program.handle, GL_ACTIVE_ATTRIBUTES, &attributeCount);
-
-        for (size_t i = 0; i < attributeCount; ++i) 
-        {
-            GLchar attributeName[248];
-            GLsizei attributeNameLength = 0UL;
-            GLsizei attributeSize = 0UL;
-            GLenum attributeType = 0UL;
-
-            glGetActiveAttrib(program.handle, i, ARRAY_COUNT(attributeName),
-                &attributeNameLength, &attributeSize, &attributeType, attributeName);
-
-            GLuint attibuteLocation = glGetAttribLocation(program.handle, attributeName);
-
-            program.vertexInputLayout.attributes.push_back(
-                VertexShaderAttribute(static_cast<u8>(attibuteLocation), static_cast<u8>(attributeSize)));
-        }
-    }
-
-    app->programs.push_back(program);
-
-    return app->programs.size() - 1;
-}
-
-Image LoadImage(const char* filename)
-{
-    Image img = {};
-    stbi_set_flip_vertically_on_load(true);
-    img.pixels = stbi_load(filename, &img.size.x, &img.size.y, &img.nchannels, 0);
-    if (img.pixels)
-    {
-        img.stride = img.size.x * img.nchannels;
-    }
-    else
-    {
-        ELOG("Could not open file %s", filename);
-    }
-    return img;
-}
-
-void FreeImage(Image image)
-{
-    stbi_image_free(image.pixels);
-}
-
-GLuint CreateTexture2DFromImage(Image image)
-{
-    GLenum internalFormat = GL_RGB8;
-    GLenum dataFormat     = GL_RGB;
-    GLenum dataType       = GL_UNSIGNED_BYTE;
-
-    switch (image.nchannels)
-    {
-        case 3: dataFormat = GL_RGB; internalFormat = GL_RGB8; break;
-        case 4: dataFormat = GL_RGBA; internalFormat = GL_RGBA8; break;
-        default: ELOG("LoadTexture2D() - Unsupported number of channels");
-    }
-
-    GLuint texHandle;
-    glGenTextures(1, &texHandle);
-    glBindTexture(GL_TEXTURE_2D, texHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.size.x, image.size.y, 0, dataFormat, dataType, image.pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    return texHandle;
-}
-
-u32 App::LoadTexture2D(App* app, const char* filepath)
-{
-    for (u32 texIdx = 0; texIdx < app->textures.size(); ++texIdx)
-        if (app->textures[texIdx].filepath == filepath)
-            return texIdx;
-
-    Image image = LoadImage(filepath);
-
-    if (image.pixels)
-    {
-        Texture tex = {};
-        tex.handle = CreateTexture2DFromImage(image);
-        tex.filepath = filepath;
-
-        u32 texIdx = app->textures.size();
-        app->textures.push_back(tex);
-
-        FreeImage(image);
-        return texIdx;
-    }
-    else
-    {
-        return UINT32_MAX;
-    }
-}
-
-void RenderScreenFillQuad(App* app, const Framebuffer& aFBO) 
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    Program& programTexturedGeometry = app->programs[app->renderQuadProgramIdx];
-    glUseProgram(programTexturedGeometry.handle);
-
-    glBindVertexArray(app->vao);
-
-    const char* uniformNames[] = { "uAlbedo", "uNormal", "uPosition", "uViewDir" };
-    for (size_t i = 0; i < aFBO.GetColorAttachmentCount(); ++i)
-    {
-        GLint uniformLoc = glGetUniformLocation(programTexturedGeometry.handle, uniformNames[i]);
-        glUniform1i(uniformLoc, i); // Use iteration index instead of 0
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, aFBO.GetColorAttachment(i));
-    }
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-    glBindVertexArray(0);
-    glUseProgram(0);
+    worldCamera.created = false; // Ensure camera is marked uninitialized
 }
 
 void App::Init(App* app)
@@ -379,7 +71,7 @@ void App::Init(App* app)
     glEnable(GL_DEPTH_TEST);
 
     // TODO: Initialize your resources here!
-    
+
     // - vertex buffers
     glGenBuffers(1, &app->embeddedVertices);
     glBindBuffer(GL_ARRAY_BUFFER, app->embeddedVertices);
@@ -407,45 +99,42 @@ void App::Init(App* app)
     glBindVertexArray(0);
 
     // - programs (and retrieve uniform indices)
-    app->renderQuadProgramIdx = LoadProgram(app, "Shaders/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
-    Program& renderQuadProgram = app->programs[app->renderQuadProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(renderQuadProgram.handle, "uAlbedo");
+    app->deferredRenderQuadProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
+    Program& renderQuadProgram = app->programs[app->deferredRenderQuadProgramIdx];
     app->programUniformDebugMode = glGetUniformLocation(renderQuadProgram.handle, "uDebugMode");
 
     // - textures
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
-
-    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
-
-    app->lightBlueTexIdx = LoadTexture2D(app, "color_light_blue.png");
-    app->greenTexIdx = LoadTexture2D(app, "color_green.png");
-    app->purpleTexIdx = LoadTexture2D(app, "color_purple.png");
-    app->blueTexIdx = LoadTexture2D(app, "color_blue.png");
-    app->lightGreenTexIdx = LoadTexture2D(app, "color_light_green.png");
-    app->orangeTexIdx = LoadTexture2D(app, "color_orange.png");
+    app->diceTexIdx = ImageLoader::LoadTexture2D(app, "Textures/dice.png");
+    app->whiteTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_white.png");
+    app->blackTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_black.png");
+    app->normalTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_normal.png");
+    app->magentaTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_magenta.png");
+    app->lightBlueTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_light_blue.png");
+    app->greenTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_green.png");
+    app->purpleTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_purple.png");
+    app->blueTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_blue.png");
+    app->lightGreenTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_light_green.png");
+    app->orangeTexIdx = ImageLoader::LoadTexture2D(app, "Textures/color_orange.png");
 
     // Patrick Program
 
-    app->renderGeometryProgramIdx = LoadProgram(app, "Shaders/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
-    Program& renderGeometryProgram = app->programs[app->renderGeometryProgramIdx];
-    app->patrickProgramUniformTexture = glGetUniformLocation(renderGeometryProgram.handle, "uAlbedo");
+    app->deferredRenderGeometryProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
+    Program& renderGeometryProgram = app->programs[app->deferredRenderGeometryProgramIdx];
+    app->deferredRenderProgramUniformTexture = glGetUniformLocation(renderGeometryProgram.handle, "uAlbedo");
 
-    app->forwardRenderingProgramIdx = LoadProgram(app, "Shaders/FORWARD_RENDER.glsl", "FORWARD_RENDER");
-    Program& forwardRenderingProgram = app->programs[app->forwardRenderingProgramIdx];
-    app->fwdPatrickProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uTexture");
+    app->forwardRenderProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/FORWARD_RENDER.glsl", "FORWARD_RENDER");
+    Program& forwardRenderingProgram = app->programs[app->forwardRenderProgramIdx];
+    app->forwardRenderProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uTexture");
 
-    app->lightSphereProgramIdx = LoadProgram(app, "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
-    
-    app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
-    app->planeIdx = LoadModel(app, "Patrick/plane.obj");
-    app->coneIdx = LoadModel(app, "Patrick/Cone.obj");
-    app->cubeIdx = LoadModel(app, "Patrick/Cube.obj");
-    app->cylinderIdx = LoadModel(app, "Patrick/Cylinder.obj");
-    app->sphereIdx = LoadModel(app, "Patrick/Sphere.obj");
-    app->torusIdx = LoadModel(app, "Patrick/Torus.obj");
+    app->pointLightSphereProgramIdx = ShaderLoader::LoadProgram(app, "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
+
+    app->patrickIdx = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
+    app->planeIdx = ModelLoader::LoadModel(app, "Meshes/plane.obj");
+    app->coneIdx = ModelLoader::LoadModel(app, "Meshes/Cone.obj");
+    app->cubeIdx = ModelLoader::LoadModel(app, "Meshes/Cube.obj");
+    app->cylinderIdx = ModelLoader::LoadModel(app, "Meshes/Cylinder.obj");
+    app->sphereIdx = ModelLoader::LoadModel(app, "Meshes/Sphere.obj");
+    app->torusIdx = ModelLoader::LoadModel(app, "Meshes/Torus.obj");
 
     // Camera Configuration
 
@@ -460,15 +149,6 @@ void App::Init(App* app)
 
         app->worldCamera.created = true;
     }
-    
-    //glm::mat4 view = app->worldCamera.ViewMatrix();
-    //glm::mat4 projection = app->worldCamera.ProjectionMatrix();
-
-    //glm::vec3 translation = glm::vec3(2.5f, 1.5f, -2.8f);
-    //glm::vec3 scale = glm::vec3(0.45f);
-
-    //glm::mat4 model = TransformPositionScale(translation, scale);
-    //glm::mat4 MVP = projection * view * model;
 
     // Uniform Buffer
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
@@ -491,147 +171,16 @@ void App::Init(App* app)
     CreateEntity(app, app->torusIdx, app->lightBlueTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
     UnmapBuffer(app->entityUBO);
 
-    if (!app->primaryFBO.Create(4, app->displaySize)) 
+    if (!app->primaryFBO.Create(4, app->displaySize))
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
-
-    app->needsReinit = false;
-}
-
-void App::CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix)
-{
-    Entity entity;
-    AlignHead(app->entityUBO, app->uniformBlockAlignment);
-    entity.entityBufferOffset = app->entityUBO.head;
-
-    entity.worldMatrix = aWorldMatrix;
-    entity.modelIdx = aModelIdx;
-    entity.textureIdx = aTextureIdx;
-
-    // Only push world matrix during creation
-    PushMat4(app->entityUBO, entity.worldMatrix);
-    // Reserve space for MVP (will be updated later)
-    PushMat4(app->entityUBO, glm::identity<glm::mat4>());
-
-    entity.entityBufferSize = app->entityUBO.head - entity.entityBufferOffset;
-    app->entities.push_back(entity);
-}
-
-void App::Gui(App* app)
-{
-    Editor::Draw(app);
-}
-
-void TestFunction()
-{
-    OpenGLErrorGuard guard("TestFunction");
-
-    // Trigger GL_INVALID_VALUE (0x0501) - Passing an out-of-range value
-    // glPointSize(-10.0f); // Negative size is not allowed
-}
-
-void CameraMovement(App* app)
-{
-    // Camera rotation with right mouse button
-    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
-    {
-        float sensitivity = 0.1f;
-        float deltaX = app->input.mouseDelta.x * sensitivity;
-        float deltaY = app->input.mouseDelta.y * sensitivity;
-
-        glm::vec3 position = app->worldCamera.GetPosition();
-        glm::vec3 target = app->worldCamera.GetTarget();
-        glm::vec3 up = app->worldCamera.GetUpVector();
-
-        glm::vec3 forward = glm::normalize(target - position);
-        glm::vec3 right = glm::normalize(glm::cross(forward, up));
-
-        // Rotate forward vector based on mouse delta
-        glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
-        forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
-
-        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaY), right);
-        forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
-
-        // Update target
-        app->worldCamera.SetTarget(position + forward);
-    }
-
-    // WASDEQ movement
-    glm::vec3 position = app->worldCamera.GetPosition();
-    float baseSpeed = 10.0f * app->deltaTime;
-    float speed = baseSpeed;
-
-    glm::vec3 forward = glm::normalize(app->worldCamera.GetTarget() - position);
-    glm::vec3 right = glm::normalize(glm::cross(forward, app->worldCamera.GetUpVector()));
-    glm::vec3 up = app->worldCamera.GetUpVector();
-
-    if (app->input.keys[K_W] == BUTTON_PRESSED)
-    {
-        position += forward * speed;
-    }
-    if (app->input.keys[K_S] == BUTTON_PRESSED)
-    {
-        position -= forward * speed;
-    }
-
-    if (app->input.keys[K_A] == BUTTON_PRESSED)
-    {
-        position -= right * speed;
-    }
-
-    if (app->input.keys[K_D] == BUTTON_PRESSED)
-    {
-        position += right * speed;
-    }
-
-    if (app->input.keys[K_Q] == BUTTON_PRESSED)
-    {
-        // Move down
-        position -= up * speed;
-    }
-
-    if (app->input.keys[K_E] == BUTTON_PRESSED)
-    {
-        // Move up
-        position += up * speed;
-    }
-
-    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED) 
-    {
-        // Handle zoom using scroll wheel
-        float zoomSpeed = 50.0f;
-        position += forward * app->input.mouseScrollDeltaY * zoomSpeed * app->deltaTime;
-    }
-
-    // Update camera position and target
-    app->worldCamera.SetPosition(position);
-    app->worldCamera.SetTarget(position + forward);
-
-    //// Only update existing entities' VP matrices
-    //UpdateEntityUBO(app);
-    //app->UpdateLights(app);
 }
 
 void App::Update(App* app)
 {
 #ifdef _DEBUG
-    // Shader Hot Reload
-    // You can handle app->input keyboard/mouse here
-    for (u64 i = 0; i < app->programs.size(); ++i)
-    {
-        Program& program = app->programs[i];
-        u64 currentTimestamp = GetFileLastWriteTimestamp(program.filepath.c_str());
-        if (currentTimestamp > program.lastWriteTimestamp)
-        {
-            glDeleteProgram(program.handle);
-            String programSource = ReadTextFile(program.filepath.c_str());
-            const char* programName = program.programName.c_str();
-            program.handle = CreateProgramFromSource(app, programSource, programName);
-            program.lastWriteTimestamp = currentTimestamp;
-        }
-    }
+    ShaderLoader::ProgramHotReload(app);
 #endif
 
     {
@@ -651,7 +200,7 @@ void App::Update(App* app)
     static glm::vec3 prevTarget = app->worldCamera.GetTarget();
 
     CameraMovement(app);
-    UpdateEntityUBO(app);
+    UpdateEntities(app);
 
     // Check if camera changed
     if (app->worldCamera.GetPosition() != prevPosition ||
@@ -681,18 +230,6 @@ void App::Update(App* app)
     }
 }
 
-void App::OnResize(int width, int height)
-{
-    displaySize = vec2(width, height);
-
-    primaryFBO.Clear();
-    primaryFBO.Create(4, displaySize);
-
-    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
-
-    UpdateEntityUBO(this);
-}
-
 void App::Render(App* app)
 {
     switch (app->mode)
@@ -711,97 +248,28 @@ void App::Render(App* app)
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            Program& texturedMeshProgram = app->programs[app->forwardRenderingProgramIdx];
+            Program& texturedMeshProgram = app->programs[app->forwardRenderProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
             // UNIFORM BUFFER:
             // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->globalUBO.handle, 0, app->globalUBO.size);
 
-            for (const auto& entity : app->entities)
+            for (auto& entity : app->entities)
             {
-                // UNIFORM BUFFER:
-                // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, entity.entityBufferSize);
-
-                Model& model = app->models[entity.modelIdx];
-                Mesh& mesh = app->meshes[model.meshIdx];
-
-                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
-                {
-                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                    glBindVertexArray(vao);
-
-                    u32 submeshMaterialIdx = model.materialIdx[i];
-                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
-
-                    if (submeshMaterial.albedoTextureIdx > 0)
-                    {
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
-                    }
-                    else 
-                    {
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, app->textures[entity.textureIdx].handle);
-                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
-                    }
-
-                    Submesh& submesh = mesh.submeshes[i];
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                    glBindVertexArray(0);
-                }
-
+                RenderEntity(&entity, texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
+
+            glUseProgram(0); // Unbind shader program
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 
-            if (app->gBufferDebugMode == 0)
+            // Render light spheres
+            glDisable(GL_BLEND);
+
+            if (app->gBufferDebugMode == 0)  // TODO: should be a toggle in ImGui Lights window
             {
-                // Render light spheres
-                glDisable(GL_BLEND);
-
-                Program& lightSphereProgram = app->programs[app->lightSphereProgramIdx];
-                glUseProgram(lightSphereProgram.handle);
-
-                // Get camera matrices
-                glm::mat4 view = app->worldCamera.ViewMatrix();
-                glm::mat4 projection = app->worldCamera.ProjectionMatrix();
-
-                // Bind sphere model's VAO
-                Model& sphereModel = app->models[app->sphereIdx];
-                Mesh& sphereMesh = app->meshes[sphereModel.meshIdx];
-                Submesh& submesh = sphereMesh.submeshes[0];
-                GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
-                glBindVertexArray(vao);
-
-                for (const auto& light : app->lights)
-                {
-                    if (light.type == LightType_Point)
-                    {
-                        // Calculate model matrix
-                        glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
-                        model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
-                        glm::mat4 mvp = projection * view * model;
-
-                        // Set uniforms
-                        GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
-                        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-
-                        GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
-                        glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
-
-                        // Draw the sphere
-                        glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-                        glBindVertexArray(0);
-                    }
-                }
-
-                glBindVertexArray(0);
-                glUseProgram(0);
+                RenderLightDebugGeometry();
             }
 
             break;
@@ -833,49 +301,15 @@ void App::Render(App* app)
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            Program& geometryProgram = app->programs[app->renderGeometryProgramIdx];
+            Program& geometryProgram = app->programs[app->deferredRenderGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
 
             // Render all geometry to G-Buffer
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, app->globalUBO.handle, 0, app->globalUBO.size);
 
-            for (const auto& entity : app->entities)
+            for (auto& entity : app->entities)
             {
-                // UNIFORM BUFFER:
-                // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-                glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, entity.entityBufferSize);
-
-                Model& model = app->models[entity.modelIdx];
-                Mesh& mesh = app->meshes[model.meshIdx];
-
-                for (u32 i = 0; i < mesh.submeshes.size(); ++i)
-                {
-                    GLuint vao = FindVAO(mesh, i, geometryProgram);
-                    glBindVertexArray(vao);
-
-                    u32 submeshMaterialIdx = model.materialIdx[i];
-                    Material& submeshMaterial = app->materials[submeshMaterialIdx];
-
-                    if (submeshMaterial.albedoTextureIdx > 0)
-                    {
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, app->textures[submeshMaterial.albedoTextureIdx].handle);
-                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
-                    }
-                    else
-                    {
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, app->textures[entity.textureIdx].handle);
-                        glUniform1i(app->fwdPatrickProgramUniformTexture, 0);
-                    }
-
-                    Submesh& submesh = mesh.submeshes[i];
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-                    
-                    // Unbind texture & VAO after drawing
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                    glBindVertexArray(0);
-                }
+                RenderEntity(&entity, geometryProgram, deferredRenderProgramUniformTexture);
             }
 
             glUseProgram(0); // Unbind shader program
@@ -897,25 +331,25 @@ void App::Render(App* app)
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
 
-            Program& quadProgram = app->programs[app->renderQuadProgramIdx];
+            Program& quadProgram = app->programs[app->deferredRenderQuadProgramIdx];
             glUseProgram(quadProgram.handle);
 
-            static const struct GBufferTexture 
+            static const struct GBufferTexture
             {
                 GLenum textureUnit;
                 GLuint textureID;
                 const char* uniformName;
-            } gBufferTextures[] = 
+            } gBufferTextures[] =
             {
                 { GL_TEXTURE0, app->primaryFBO.GetColorAttachment(0), "uAlbedo"   },
                 { GL_TEXTURE1, app->primaryFBO.GetColorAttachment(1), "uNormal"   },
                 { GL_TEXTURE2, app->primaryFBO.GetColorAttachment(2), "uPosition" },
                 { GL_TEXTURE3, app->primaryFBO.GetColorAttachment(3), "uViewDir"  },
-                { GL_TEXTURE4, app->primaryFBO.GetDepthAttachment(),    "uDepth"    }
+                { GL_TEXTURE4, app->primaryFBO.GetDepthAttachment(),  "uDepth"    }
             };
 
             // Bind all textures in a loop
-            for (const auto& tex : gBufferTextures) 
+            for (const auto& tex : gBufferTextures)
             {
                 glActiveTexture(tex.textureUnit);
                 glBindTexture(GL_TEXTURE_2D, tex.textureID);
@@ -936,56 +370,26 @@ void App::Render(App* app)
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 
-            if (app->gBufferDebugMode == 0) 
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LEQUAL);
+            glDepthMask(GL_FALSE);  // Prevent overwriting depth buffer
+            glDisable(GL_BLEND);
+
+            if (app->gBufferDebugMode == 0) // TODO: should be a toggle in ImGui Lights window
             {
-                glEnable(GL_DEPTH_TEST);
-                glDepthFunc(GL_LEQUAL);
-                glDepthMask(GL_FALSE);  // Prevent overwriting depth buffer
-                glDisable(GL_BLEND);
-
-                Program& lightSphereProgram = app->programs[app->lightSphereProgramIdx];
-                glUseProgram(lightSphereProgram.handle);
-
-                // Get camera matrices
-                glm::mat4 view = app->worldCamera.ViewMatrix();
-                glm::mat4 projection = app->worldCamera.ProjectionMatrix();
-
-                // Bind sphere model's VAO
-                Model& sphereModel = app->models[app->sphereIdx];
-                Mesh& sphereMesh = app->meshes[sphereModel.meshIdx];
-                Submesh& submesh = sphereMesh.submeshes[0];
-                GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
-                glBindVertexArray(vao);
-
-                for (const auto& light : app->lights)
-                {
-                    if (light.type == LightType_Point) 
-                    {
-                        // Calculate model matrix
-                        glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
-                        model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
-                        glm::mat4 mvp = projection * view * model;
-
-                        // Set uniforms
-                        GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
-                        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-
-                        GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
-                        glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
-
-                        // Draw the sphere
-                        glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-                        glBindVertexArray(0);
-                    }
-                }
-
-                glUseProgram(0);
-                glDepthMask(GL_TRUE);
+                RenderLightDebugGeometry();
             }
+
+            glDepthMask(GL_TRUE);
 
             break;
         }
     }
+}
+
+void App::Gui(App* app)
+{
+    Editor::Draw(app);
 }
 
 void App::CleanUp(App* app)
@@ -1071,6 +475,240 @@ void App::CleanUp(App* app)
     app->defaultLights.clear();
 }
 
+App::~App()
+{
+
+}
+
+// ------------------------------------------------------------------------------------------------------------ //
+
+void App::UpdateLightList()
+{
+    lights.clear();
+    if (gridLightsEnabled)
+        lights.insert(lights.end(), gridLights.begin(), gridLights.end());
+    lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
+}
+
+void App::RenderLightDebugGeometry()
+{
+    Program& lightSphereProgram = programs[pointLightSphereProgramIdx];
+    glUseProgram(lightSphereProgram.handle);
+
+    // Get camera matrices
+    glm::mat4 view = worldCamera.ViewMatrix();
+    glm::mat4 projection = worldCamera.ProjectionMatrix();
+
+    // Bind sphere model's VAO
+    Model& sphereModel = models[sphereIdx];
+    Mesh& sphereMesh = meshes[sphereModel.meshIdx];
+    Submesh& submesh = sphereMesh.submeshes[0];
+    GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
+    glBindVertexArray(vao);
+
+    for (const auto& light : lights)
+    {
+        if (light.type == LightType_Point)
+        {
+            // Calculate model matrix
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+            model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+            glm::mat4 mvp = projection * view * model;
+
+            // Set uniforms
+            GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+            GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+            glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
+
+            // Draw the sphere
+            glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+        }
+    }
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+void App::CreateLights() 
+{
+    // Clear existing lights to prevent duplication
+    gridLights.clear();
+    defaultLights.clear();
+
+    int gridSizeX = 40;  // Number of columns (X-axis)
+    int gridSizeZ = 40;  // Number of rows (Z-axis)
+    float minX = -15.0f; // Start X range
+    float maxX = 15.0f;  // End X range
+    float minZ = -15.0f; // Start Z range
+    float maxZ = 15.0f;  // End Z range
+    float yPos = 5.0f;   // Fixed Y position
+
+    // In App::App() constructor, before the grid light loop:
+    gridLightConstant = 1.0f;
+    gridLightLinear = 0.5f;
+    gridLightQuadratic = 0.5f;
+
+    float stepX = (maxX - minX) / (gridSizeX - 1);
+    float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
+
+    for (int i = 0; i < gridSizeX; ++i) {
+        for (int j = 0; j < gridSizeZ; ++j) {
+            // Calculate position
+            float x = minX + i * stepX;
+            float z = minZ + j * stepZ;
+
+            // --- Choose one color generation method below ---
+
+            // Gradient-Based Colors
+            float red = static_cast<float>(i) / (gridSizeX - 1) * 0.1f;
+            float green = static_cast<float>(j) / (gridSizeZ - 1) * 0.1f;
+            float blue = (1.0f - red) * 0.1f;
+
+            // Sinusoidal Variation
+            // float red = (sin(i * 0.5f) + 1.0f) * 0.5f;
+            // float green = (cos(j * 0.5f) + 1.0f) * 0.5f;
+            // float blue = (sin((i + j) * 0.3f) + 1.0f) * 0.5f;
+
+            glm::vec3 lightColor(red, green, blue);
+
+            gridLights.push_back({
+                LightType_Point,
+                lightColor,
+                glm::vec3(0.0f), // Unused direction
+                glm::vec3(x, yPos, z),
+                gridLightConstant,   // Constant attenuation for all grid lights
+                gridLightLinear,     // Linear attenuation for all grid lights
+                gridLightQuadratic,  // Quadratic attenuation for all grid lights
+                0.010f               // Specular strength
+                });
+        }
+    }
+
+    defaultLights.push_back({
+        LightType_Directional,
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, -1.0f, 0.0f), // Direction (points downward)
+        glm::vec3(0.0f, 0.0f, 0.0f),   // Unused position
+        1.0f,   // unused for directional
+        0.09f,  // unused
+        0.032f, // unused
+        0.5f    // specular strength
+        });
+
+    defaultLights.push_back({
+                LightType_Point,
+                glm::vec3(1.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f), // Unused direction
+                glm::vec3(0.0f, 10.0f, 0.0f),
+                1.0f,   // constant attenuation
+                0.1f,  // linear attenuation
+                0.010f, // quadratic attenuation
+                0.010f    // specular strength// Position
+        });
+
+    // Combine into lights based on flag
+    gridLightsEnabled = false;
+
+    UpdateLightList();
+}
+
+void App::CameraMovement(App* app)
+{
+    // Camera rotation with right mouse button
+    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED)
+    {
+        float sensitivity = 0.1f;
+        float deltaX = app->input.mouseDelta.x * sensitivity;
+        float deltaY = app->input.mouseDelta.y * sensitivity;
+
+        glm::vec3 position = app->worldCamera.GetPosition();
+        glm::vec3 target = app->worldCamera.GetTarget();
+        glm::vec3 up = app->worldCamera.GetUpVector();
+
+        glm::vec3 forward = glm::normalize(target - position);
+        glm::vec3 right = glm::normalize(glm::cross(forward, up));
+
+        // Rotate forward vector based on mouse delta
+        glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
+        forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
+
+        glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaY), right);
+        forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
+
+        // Update target
+        app->worldCamera.SetTarget(position + forward);
+    }
+
+    // WASDEQ movement
+    glm::vec3 position = app->worldCamera.GetPosition();
+    float baseSpeed = 10.0f * app->deltaTime;
+    float speed = baseSpeed;
+
+    glm::vec3 forward = glm::normalize(app->worldCamera.GetTarget() - position);
+    glm::vec3 right = glm::normalize(glm::cross(forward, app->worldCamera.GetUpVector()));
+    glm::vec3 up = app->worldCamera.GetUpVector();
+
+    if (app->input.keys[K_W] == BUTTON_PRESSED)
+    {
+        position += forward * speed;
+    }
+    if (app->input.keys[K_S] == BUTTON_PRESSED)
+    {
+        position -= forward * speed;
+    }
+
+    if (app->input.keys[K_A] == BUTTON_PRESSED)
+    {
+        position -= right * speed;
+    }
+
+    if (app->input.keys[K_D] == BUTTON_PRESSED)
+    {
+        position += right * speed;
+    }
+
+    if (app->input.keys[K_Q] == BUTTON_PRESSED)
+    {
+        // Move down
+        position -= up * speed;
+    }
+
+    if (app->input.keys[K_E] == BUTTON_PRESSED)
+    {
+        // Move up
+        position += up * speed;
+    }
+
+    if (app->input.mouseButtons[RIGHT] == BUTTON_PRESSED) 
+    {
+        // Handle zoom using scroll wheel
+        float zoomSpeed = 50.0f;
+        position += forward * app->input.mouseScrollDeltaY * zoomSpeed * app->deltaTime;
+    }
+
+    // Update camera position and target
+    app->worldCamera.SetPosition(position);
+    app->worldCamera.SetTarget(position + forward);
+
+    //// Only update existing entities' VP matrices
+    //UpdateEntityUBO(app);
+    //app->UpdateLights(app);
+}
+
+void App::OnResize(int width, int height)
+{
+    displaySize = vec2(width, height);
+
+    primaryFBO.Clear();
+    primaryFBO.Create(4, displaySize);
+
+    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
+
+    UpdateEntities(this);
+}
+
 GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 {
     Submesh& submesh = mesh.submeshes[submeshIndex];
@@ -1146,26 +784,82 @@ void App::UpdateLights(App* app)
     UnmapBuffer(app->globalUBO);
 }
 
-void App::RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program)
+// ---------------------------------------------------------------------------------------------------------- //
+
+void App::CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix)
 {
-    glBindBufferRange(GL_UNIFORM_BUFFER, 1, app->entityUBO.handle, entity.entityBufferOffset, app->entityUBO.size);
+    Entity entity{};
+    AlignHead(app->entityUBO, app->uniformBlockAlignment);
+    entity.entityBufferOffset = app->entityUBO.head;
 
-    Model& model = app->models[entityIdx];
-    Mesh& mesh = app->meshes[model.meshIdx];
+    entity.worldMatrix = aWorldMatrix;
+    entity.modelIdx = aModelIdx;
+    entity.textureIdx = aTextureIdx;
 
-    for (u32 i = 0; i < mesh.submeshes.size(); ++i) 
+    // Only push world matrix during creation
+    PushMat4(app->entityUBO, entity.worldMatrix);
+    // Reserve space for MVP (will be updated later)
+    PushMat4(app->entityUBO, glm::identity<glm::mat4>());
+
+    entity.entityBufferSize = app->entityUBO.head - entity.entityBufferOffset;
+    app->entities.push_back(entity);
+}
+
+void App::UpdateEntities(App* app)
+{
+    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
+
+    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
+
+    for (auto& entity : app->entities)
     {
-        GLuint vao = FindVAO(mesh, 0, program);
+        // Calculate new MVP
+        glm::mat4 mvp = VP * entity.worldMatrix;
+
+        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
+        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
+
+        WriteData(app->entityUBO, mvpOffset, mvp);
+    }
+
+    UnmapBuffer(app->entityUBO);
+}
+
+void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTexture)
+{
+    // UNIFORM BUFFER:
+    // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle, entity->entityBufferOffset, entity->entityBufferSize);
+
+    Model& model = models[entity->modelIdx];
+    Mesh& mesh = meshes[model.meshIdx];
+
+    for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+    {
+        GLuint vao = FindVAO(mesh, i, program);
         glBindVertexArray(vao);
 
-        u32 submeshMaterialIdx = model.materialIdx[0];
-        Material& submeshMaterial = app->materials[submeshMaterialIdx];
+        u32 submeshMaterialIdx = model.materialIdx[i];
+        Material& submeshMaterial = materials[submeshMaterialIdx];
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, app->textures[textureIdx].handle);
-        glUniform1i(textureProgramUniform, 0);
+        if (submeshMaterial.albedoTextureIdx > 0)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[submeshMaterial.albedoTextureIdx].handle);
+            glUniform1i(programUniformTexture, 0);
+        }
+        else
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[entity->textureIdx].handle);
+            glUniform1i(programUniformTexture, 0);
+        }
 
-        Submesh& submesh = mesh.submeshes[0];
+        Submesh& submesh = mesh.submeshes[i];
         glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+
+        // Unbind texture & VAO after drawing
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindVertexArray(0);
     }
 }

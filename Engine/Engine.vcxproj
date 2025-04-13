@@ -33,6 +33,7 @@
     <ClCompile Include="Code\OpenGLErrorGuard.cpp" />
     <ClCompile Include="Code\OpenGL_Framebuffer.cpp" />
     <ClCompile Include="Code\platform.cpp" />
+    <ClCompile Include="Code\ShaderLoader.cpp" />
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui_demo.cpp" />
@@ -54,6 +55,7 @@
     <ClInclude Include="Code\OpenGLErrorGuard.h" />
     <ClInclude Include="Code\OpenGL_Framebuffer.h" />
     <ClInclude Include="Code\platform.h" />
+    <ClInclude Include="Code\ShaderLoader.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />
@@ -175,6 +177,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)\ThirdParty\glfw\include;$(ProjectDir)\ThirdParty\glad\include;$(ProjectDir)\ThirdParty\glm\include;$(ProjectDir)\ThirdParty\imgui-docking;$(ProjectDir)\ThirdParty\stb;$(ProjectDir)\ThirdParty\Assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

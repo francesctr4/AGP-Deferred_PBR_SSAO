@@ -4,7 +4,8 @@
 
 Camera::Camera()
 {
-
+    cachedProjectionMatrix = glm::zero<glm::mat4>();
+    cachedViewMatrix = glm::zero<glm::mat4>();
 }
 
 Camera::~Camera()

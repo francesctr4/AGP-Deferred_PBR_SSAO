@@ -35,7 +35,9 @@ bool Framebuffer::Create(u8 colorAttachmentsCount, glm::vec2 displaySize)
         glBindTexture(GL_TEXTURE_2D, colorAttachment);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
-            displaySize.x, displaySize.y, 0, GL_RGBA, GL_FLOAT, NULL);
+            static_cast<GLsizei>(displaySize.x),
+            static_cast<GLsizei>(displaySize.y),
+            0, GL_RGBA, GL_FLOAT, NULL);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -53,8 +55,9 @@ bool Framebuffer::Create(u8 colorAttachmentsCount, glm::vec2 displaySize)
     glBindTexture(GL_TEXTURE_2D, mDepthAttachment);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 
-        displaySize.x, displaySize.y, 0, GL_DEPTH_COMPONENT, 
-        GL_UNSIGNED_INT, NULL);
+        static_cast<GLsizei>(displaySize.x), 
+        static_cast<GLsizei>(displaySize.y), 
+        0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

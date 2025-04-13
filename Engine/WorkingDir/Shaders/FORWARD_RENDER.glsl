@@ -80,7 +80,7 @@ in vec3 vNormal;
 in vec2 vTexCoord;
 in vec3 vViewDir;
 
-uniform sampler2D uTexture;
+uniform sampler2D uAlbedo;
 
 layout(location=0) out vec4 oColor;
 
@@ -95,7 +95,7 @@ vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 2.0);
 
     vec3 ambient = aLight.color * 0.2;
-    vec3 diffuse = texture(uTexture, vTexCoord).xyz * diff;
+    vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
     vec3 specular = aLight.color * spec * aLight.specularStrength;
 
     return (ambient + diffuse + specular);
@@ -116,7 +116,7 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 	float attenuation = 1.0 / (aLight.constant + aLight.linear * distance + aLight.quadratic * (distance * distance));    
 
     vec3 ambient = aLight.color * 0.2;
-    vec3 diffuse = texture(uTexture, vTexCoord).xyz * diff;
+    vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
     vec3 specular = aLight.color * spec * aLight.specularStrength;
 
     ambient *= attenuation;
