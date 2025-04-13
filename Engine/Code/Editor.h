@@ -1,8 +1,6 @@
 #pragma once
 
-#include "engine.h"
-
-#include <imgui.h>
+struct App;
 
 namespace Editor 
 {
@@ -12,5 +10,14 @@ namespace Editor
     void DrawLightsWindow(App* app);
     void DrawShaderErrorsWindow(App* app);
     void DrawGBufferDebugWindow(App* app);
-    void DrawFBOTexturesWindow(App* app);
+
+    inline void Draw(App* app)
+    {
+        DrawDockspace(app);
+        DrawMainMenuBar(app);
+        DrawInfoWindow(app);
+        DrawLightsWindow(app);
+        DrawShaderErrorsWindow(app);
+        DrawGBufferDebugWindow(app);
+    }
 }

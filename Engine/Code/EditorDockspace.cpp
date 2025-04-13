@@ -1,5 +1,8 @@
 #include "Editor.h"
 
+#include "engine.h"
+#include "imgui.h"
+
 void Editor::DrawDockspace(App* app) 
 {
     // Set DockSpace Invisible Window Flags

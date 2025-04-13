@@ -22,10 +22,14 @@ void App::UpdateLightList()
     lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
 }
 
-App::App()
+void App::CreateLights() 
 {
-    int gridSizeX = 50;  // Number of columns (X-axis)
-    int gridSizeZ = 50;  // Number of rows (Z-axis)
+    // Clear existing lights to prevent duplication
+    gridLights.clear();
+    defaultLights.clear();
+
+    int gridSizeX = 40;  // Number of columns (X-axis)
+    int gridSizeZ = 40;  // Number of rows (Z-axis)
     float minX = -15.0f; // Start X range
     float maxX = 15.0f;  // End X range
     float minZ = -15.0f; // Start Z range
@@ -49,7 +53,7 @@ App::App()
             // --- Choose one color generation method below ---
 
             // Gradient-Based Colors
-            float red = static_cast<float>(i) / (gridSizeX - 1) * 0.1f; 
+            float red = static_cast<float>(i) / (gridSizeX - 1) * 0.1f;
             float green = static_cast<float>(j) / (gridSizeZ - 1) * 0.1f;
             float blue = (1.0f - red) * 0.1f;
 
@@ -99,7 +103,10 @@ App::App()
     gridLightsEnabled = false;
 
     UpdateLightList();
+}
 
+App::App()
+{
     this->mode = Mode_Deferred_Rendering;
 }
 
@@ -108,83 +115,24 @@ App::~App()
 
 }
 
-bool Framebuffer::CreateFBO(GLuint aAttachments, glm::vec2 displaySize)
+void UpdateEntityUBO(App* app)
 {
-    for (int i = 0; i < aAttachments; ++i)
+    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
+
+    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
+
+    for (auto& entity : app->entities)
     {
-        // Color Attachment
-        GLuint colorAttachment;
-        glGenTextures(1, &colorAttachment);
-        glBindTexture(GL_TEXTURE_2D, colorAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
-            displaySize.x, displaySize.y, 0, GL_RGBA, GL_FLOAT, NULL);
+        // Calculate new MVP
+        glm::mat4 mvp = VP * entity.worldMatrix;
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
+        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        attachments.push_back({ GL_COLOR_ATTACHMENT0 + i, colorAttachment });
+        WriteData(app->entityUBO, mvpOffset, mvp);
     }
 
-    // Depth Attachment
-    GLuint depthAttachment;
-    glGenTextures(1, &depthAttachment);
-    glBindTexture(GL_TEXTURE_2D, depthAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, // Use DEPTH_COMPONENT
-        displaySize.x, displaySize.y, 0,
-        GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // Adjust format/type
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    depthHandle = depthAttachment;
-
-    glGenFramebuffers(1, &handle);
-    glBindFramebuffer(GL_FRAMEBUFFER, handle);
-
-    for (auto& attachment : attachments)
-    {
-        glFramebufferTexture(GL_FRAMEBUFFER, attachment.first, attachment.second, 0);
-    }
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthHandle, 0);
-
-    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
-    {
-        switch (framebufferStatus)
-        {
-            case GL_FRAMEBUFFER_UNDEFINED: ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
-            case GL_FRAMEBUFFER_UNSUPPORTED: ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
-            case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
-            default: ELOG("Unknown framebuffer status error");
-        }
-    }
-
-    std::vector<GLenum> drawBuffers;
-    for (auto& [attachment, handle] : attachments) 
-    {
-        drawBuffers.push_back(attachment);
-    }
-    glDrawBuffers(drawBuffers.size(), drawBuffers.data());
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    return true;
+    UnmapBuffer(app->entityUBO);
 }
 
 GLuint CreateProgramFromSource(App* app, String programSource, const char* shaderName)
@@ -411,16 +359,13 @@ void RenderScreenFillQuad(App* app, const Framebuffer& aFBO)
 
     glBindVertexArray(app->vao);
 
-    size_t iteration = 0;
     const char* uniformNames[] = { "uAlbedo", "uNormal", "uPosition", "uViewDir" };
-    for (const auto& texture : aFBO.attachments)
+    for (size_t i = 0; i < aFBO.GetColorAttachmentCount(); ++i)
     {
-        GLint uniformLoc = glGetUniformLocation(programTexturedGeometry.handle, uniformNames[iteration]);
-        glUniform1i(uniformLoc, iteration); // Use iteration index instead of 0
-        glActiveTexture(GL_TEXTURE0 + iteration);
-        glBindTexture(GL_TEXTURE_2D, texture.second);
-
-        ++iteration;
+        GLint uniformLoc = glGetUniformLocation(programTexturedGeometry.handle, uniformNames[i]);
+        glUniform1i(uniformLoc, i); // Use iteration index instead of 0
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, aFBO.GetColorAttachment(i));
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -462,7 +407,7 @@ void App::Init(App* app)
     glBindVertexArray(0);
 
     // - programs (and retrieve uniform indices)
-    app->renderQuadProgramIdx = LoadProgram(app, "Shaders/RENDER_QUAD.glsl", "RENDER_QUAD");
+    app->renderQuadProgramIdx = LoadProgram(app, "Shaders/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
     Program& renderQuadProgram = app->programs[app->renderQuadProgramIdx];
     app->programUniformTexture = glGetUniformLocation(renderQuadProgram.handle, "uAlbedo");
     app->programUniformDebugMode = glGetUniformLocation(renderQuadProgram.handle, "uDebugMode");
@@ -484,15 +429,15 @@ void App::Init(App* app)
 
     // Patrick Program
 
-    app->renderGeometryProgramIdx = LoadProgram(app, "Shaders/RENDER_GEOMETRY.glsl", "RENDER_GEOMETRY");
+    app->renderGeometryProgramIdx = LoadProgram(app, "Shaders/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
     Program& renderGeometryProgram = app->programs[app->renderGeometryProgramIdx];
     app->patrickProgramUniformTexture = glGetUniformLocation(renderGeometryProgram.handle, "uAlbedo");
 
-    app->forwardRenderingProgramIdx = LoadProgram(app, "Shaders/LIGHTS.glsl", "LIGHTS");
+    app->forwardRenderingProgramIdx = LoadProgram(app, "Shaders/FORWARD_RENDER.glsl", "FORWARD_RENDER");
     Program& forwardRenderingProgram = app->programs[app->forwardRenderingProgramIdx];
     app->fwdPatrickProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uTexture");
 
-    app->lightSphereProgramIdx = LoadProgram(app, "Shaders/LIGHT_SPHERE.glsl", "LIGHT_SPHERE");
+    app->lightSphereProgramIdx = LoadProgram(app, "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
     
     app->patrickIdx = LoadModel(app, "Patrick/Patrick.obj");
     app->planeIdx = LoadModel(app, "Patrick/plane.obj");
@@ -531,6 +476,7 @@ void App::Init(App* app)
     app->globalUBO = CreateConstantBuffer(app->maxUniformBufferSize);
     app->entityUBO = CreateConstantBuffer(app->maxUniformBufferSize);
 
+    CreateLights();
     UpdateLights(app);
 
     //Buffer& entityUBO = app->entityUBO;
@@ -545,9 +491,10 @@ void App::Init(App* app)
     CreateEntity(app, app->torusIdx, app->lightBlueTexIdx, CreateTransform(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
     UnmapBuffer(app->entityUBO);
 
-    //app->mode = Mode_Deferred_Rendering;
-
-    app->primaryFBO.CreateFBO(4, app->displaySize);
+    if (!app->primaryFBO.Create(4, app->displaySize)) 
+    {
+        ELOG("[ERROR] The framebuffer was not created correctly.");
+    }
 
     app->needsReinit = false;
 }
@@ -571,246 +518,9 @@ void App::CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, con
     app->entities.push_back(entity);
 }
 
-void ToggleButton(const char* str_id, bool* v)
-{
-    ImVec2 p = ImGui::GetCursorScreenPos();
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
-    float height = ImGui::GetFrameHeight();
-    float width = height * 1.55f;
-    float radius = height * 0.50f;
-
-    if (ImGui::InvisibleButton(str_id, ImVec2(width, height)))
-        *v = !*v;
-    ImU32 col_bg;
-    if (ImGui::IsItemHovered())
-        col_bg = *v ? IM_COL32(145 + 20, 211, 68 + 20, 255) : IM_COL32(218 - 20, 218 - 20, 218 - 20, 255);
-    else
-        col_bg = *v ? IM_COL32(145, 211, 68, 255) : IM_COL32(218, 218, 218, 255);
-
-    draw_list->AddRectFilled(p, ImVec2(p.x + width, p.y + height), col_bg, height * 0.5f);
-    draw_list->AddCircleFilled(ImVec2(*v ? (p.x + width - radius) : (p.x + radius), p.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
-}
-
 void App::Gui(App* app)
-{    
-    Editor::DrawDockspace(app);
-    Editor::DrawMainMenuBar(app);
-
-    ImGui::Begin("Info");
-    ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-    ImGui::Text(app->mOpenGLInfo.c_str());
-    ImGui::End();
-
-    //ImGui::Begin("CameraPos");
-    //ImGui::Text("%f, %f, %f", worldCamera.GetPosition().x, worldCamera.GetPosition().y, worldCamera.GetPosition().z);
-    //ImGui::End();
-
-    ImGui::Separator();
-
-    ImGui::Begin("Lights");
-    bool lightChanged = false;
-    ImGui::Text("Stress Test");
-    ImGui::SameLine();
-    static bool prev = app->gridLightsEnabled;
-    ToggleButton("Idx", (bool*)&app->gridLightsEnabled);
-    // Toggle grid lights with 'L' key
-    if (prev != app->gridLightsEnabled)
-    {
-        app->UpdateLightList();
-        UpdateLights(app);
-        prev = app->gridLightsEnabled;
-    }
-    ImGui::Text("Quanity of Lights: %d", static_cast<int>(app->lights.size()));
-
-    ImGui::Separator();
-    
-    bool attenuationChanged = false;
-
-    if (app->gridLightsEnabled)
-    {
-        ImGui::Text("Grid Light Attenuation");
-
-        attenuationChanged |= ImGui::DragFloat("Constant", &app->gridLightConstant, 0.01f, 0.0f, 5.0f);
-        attenuationChanged |= ImGui::DragFloat("Linear", &app->gridLightLinear, 0.001f, 0.0f, 5.0f);
-        attenuationChanged |= ImGui::DragFloat("Quadratic", &app->gridLightQuadratic, 0.0001f, 0.0f, 5.0f);
-    }
-
-    if (attenuationChanged)
-    {
-        // Update attenuation for all grid lights
-        for (auto& light : app->gridLights)
-        {
-            light.constant = app->gridLightConstant;
-            light.linear = app->gridLightLinear;
-            light.quadratic = app->gridLightQuadratic;
-        }
-        app->UpdateLightList(); // Refresh the combined lights list
-    }
-
-    for (auto& light : app->defaultLights)
-    {
-        ImGui::PushID(&light);
-
-        // Replace DragFloat3 with ColorEdit3 for color selection
-        float color[3] = { light.color.x, light.color.y, light.color.z };
-        if (ImGui::ColorEdit3("Color", color))
-        {
-            light.color = glm::vec3(color[0], color[1], color[2]);
-            lightChanged = true;
-        }
-
-        float direction[3] = { light.direction.x, light.direction.y, light.direction.z };
-        ImGui::DragFloat3("Direction", direction, 0.01, -1.0, 1.0);
-        glm::vec3 checkVector = glm::vec3(direction[0], direction[1], direction[2]);
-
-        if (checkVector != light.direction)
-        {
-            light.direction = checkVector;
-            lightChanged = true;
-        }
-
-        float position[3] = { light.position.x, light.position.y, light.position.z };
-        ImGui::DragFloat3("Position", position, 0.1);
-        checkVector = glm::vec3(position[0], position[1], position[2]);
-
-        if (checkVector != light.position)
-        {
-            light.position = checkVector;
-            lightChanged = true;
-        }
-
-        lightChanged |= ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 1.0f);
-        lightChanged |= ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 0.1f);
-        lightChanged |= ImGui::DragFloat("Quadratic", &light.quadratic, 0.0001f, 0.0f, 0.01f);
-        lightChanged |= ImGui::DragFloat("Specular", &light.specularStrength, 0.01f, 0.0f, 1.0f);
-
-        ImGui::PopID();
-        ImGui::Separator();
-    }
-
-    if (lightChanged) 
-    {
-        UpdateLights(app);
-        app->UpdateLightList();
-    }
-
-    ImGui::End();
-
-    // Error display window
-    ImGui::Begin("Shader Errors", &app->showShaderErrors);
-    {
-        ImGui::SameLine();
-        ImGui::Text("%d error(s)", static_cast<int>(app->shaderErrors.size()));
-
-        ImGui::BeginChild("ErrorScroll");
-        for (const auto& error : app->shaderErrors)
-        {
-            ImGui::TextUnformatted(error.c_str());
-            ImGui::Separator();
-        }
-        ImGui::EndChild();
-    }
-    ImGui::End();
-
-    ImGui::Begin("GBuffer Debug View");
-    {
-        // Store previous mode
-        static Mode prevMode = app->mode;
-
-        // Add rendering mode toggle
-        ImGui::Separator();
-        ImGui::Text("Rendering Mode:");
-
-        ImGui::Text("Forward");
-        ImGui::SameLine();
-        ToggleButton("Rendering Mode", (bool*)&app->mode);
-        ImGui::SameLine();
-        ImGui::Text("Deferred");
-
-        // Detect mode change
-        if (app->mode != prevMode)
-        {
-            app->needsReinit = true;
-            prevMode = app->mode;
-        }
-
-        static const char* debugModes[] = 
-        {
-            "Final Render",
-            "Albedo",
-            "Normal",
-            "Position",
-            "View Direction",
-            "Depth"
-        };
-
-        if (app->mode == Mode_Deferred_Rendering) 
-        {
-            ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
-
-            // Optional: Add a separator and some help text
-            ImGui::Separator();
-            ImGui::Text("DEBUG KEYS -> 1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth");
-        }
-    }
-    ImGui::End();
-
-    //ImGui::Begin("FBO Textures");
-
-    //// Get the texture handles from your FBO
-    //GLuint albedoTexture = app->primaryFBO.GetTextureAttachment(0);
-    //GLuint normalTexture = app->primaryFBO.GetTextureAttachment(1);
-    //GLuint positionTexture = app->primaryFBO.GetTextureAttachment(2);
-    //GLuint viewDirTexture = app->primaryFBO.GetTextureAttachment(3);
-    //GLuint depthTexture = app->primaryFBO.GetDepthAttachment();
-
-    // Display each texture in a separate ImGui window/tab
-    //if (ImGui::BeginTabBar("FBO Textures")) {
-
-    //    float windowWidth = ImGui::GetWindowWidth();
-    //    float aspectRatio = (float)app->displaySize.y / (float)app->displaySize.x;
-    //    float displayHeight = windowWidth * aspectRatio;
-
-    //    if (ImGui::BeginTabItem("Albedo")) {
-    //        ImGui::Image((void*)(intptr_t)albedoTexture,
-    //            ImVec2(windowWidth, displayHeight),
-    //            ImVec2(0, 1), ImVec2(1, 0)); // Flip UVs if needed
-    //        ImGui::EndTabItem();
-    //    }
-
-    //    if (ImGui::BeginTabItem("Normal")) {
-    //        ImGui::Image((void*)(intptr_t)normalTexture,
-    //            ImVec2(windowWidth, displayHeight),
-    //            ImVec2(0, 1), ImVec2(1, 0));
-    //        ImGui::EndTabItem();
-    //    }
-
-    //    if (ImGui::BeginTabItem("Position")) {
-    //        ImGui::Image((void*)(intptr_t)positionTexture,
-    //            ImVec2(windowWidth, displayHeight),
-    //            ImVec2(0, 1), ImVec2(1, 0));
-    //        ImGui::EndTabItem();
-    //    }
-
-    //    if (ImGui::BeginTabItem("ViewDir")) {
-    //        ImGui::Image((void*)(intptr_t)viewDirTexture,
-    //            ImVec2(windowWidth, displayHeight),
-    //            ImVec2(0, 1), ImVec2(1, 0));
-    //        ImGui::EndTabItem();
-    //    }
-
-    //    if (ImGui::BeginTabItem("Depth")) {
-    //        ImGui::Image((void*)(intptr_t)depthTexture,
-    //            ImVec2(windowWidth, displayHeight),
-    //            ImVec2(0, 1), ImVec2(1, 0));
-    //        ImGui::EndTabItem();
-    //    }
-
-    //    ImGui::EndTabBar();
-    //}
-
-    //ImGui::End();
+{
+    Editor::Draw(app);
 }
 
 void TestFunction()
@@ -819,27 +529,6 @@ void TestFunction()
 
     // Trigger GL_INVALID_VALUE (0x0501) - Passing an out-of-range value
     // glPointSize(-10.0f); // Negative size is not allowed
-}
-
-void UpdateEntityUBO(App* app)
-{
-    MapBuffer(app->entityUBO, GL_WRITE_ONLY);
-
-    glm::mat4 VP = app->worldCamera.ProjectionMatrix() * app->worldCamera.ViewMatrix();
-
-    // Update existing entities' VP matrices
-    for (auto& entity : app->entities)
-    {
-        // Calculate new MVP
-        glm::mat4 mvp = VP * entity.worldMatrix;
-
-        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
-        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
-
-        WriteData(app->entityUBO, mvpOffset, mvp);
-    }
-
-    UnmapBuffer(app->entityUBO);
 }
 
 void CameraMovement(App* app)
@@ -945,15 +634,16 @@ void App::Update(App* app)
     }
 #endif
 
-    for (auto& entity : app->entities)
     {
-        if (entity.modelIdx == app->patrickIdx)
-        {
-            float rotationSpeed = glm::radians(45.0f); // 45 degrees per second
-            float angle = rotationSpeed * app->deltaTime;
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-            entity.worldMatrix = entity.worldMatrix * rotation; // Apply local rotation
-        }
+        // Rotate Patrick
+
+        static Entity* entity = &app->entities[0];
+        static float rotationSpeed = glm::radians(45.0f); // 45 degrees per second
+
+        float angle = rotationSpeed * app->deltaTime;
+        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        entity->worldMatrix = entity->worldMatrix * rotation; // Apply local rotation
     }
 
     // Store previous camera state
@@ -995,8 +685,8 @@ void App::OnResize(int width, int height)
 {
     displaySize = vec2(width, height);
 
-    primaryFBO.Clean();
-    primaryFBO.CreateFBO(4, displaySize);
+    primaryFBO.Clear();
+    primaryFBO.Create(4, displaySize);
 
     worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
 
@@ -1090,23 +780,24 @@ void App::Render(App* app)
 
                 for (const auto& light : app->lights)
                 {
-                    if (light.type != LightType_Point)
-                        continue;
+                    if (light.type == LightType_Point)
+                    {
+                        // Calculate model matrix
+                        glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+                        model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+                        glm::mat4 mvp = projection * view * model;
 
-                    // Calculate model matrix
-                    glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
-                    model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
-                    glm::mat4 mvp = projection * view * model;
+                        // Set uniforms
+                        GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
+                        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-                    // Set uniforms
-                    GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
-                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+                        GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
+                        glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
 
-                    GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
-                    glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
-
-                    // Draw the sphere
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                        // Draw the sphere
+                        glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                        glBindVertexArray(0);
+                    }
                 }
 
                 glBindVertexArray(0);
@@ -1128,13 +819,15 @@ void App::Render(App* app)
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
-            glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.handle);
+            glBindFramebuffer(GL_FRAMEBUFFER, app->primaryFBO.GetFramebufferHandle());
 
             std::vector<GLuint> drawBuffers;
-            for (auto& [attachment, handle] : app->primaryFBO.attachments)
+
+            for (size_t i = 0; i < app->primaryFBO.GetColorAttachmentCount(); ++i)
             {
-                drawBuffers.push_back(handle);
+                drawBuffers.push_back(app->primaryFBO.GetColorAttachment(i));
             }
+
             glDrawBuffers(drawBuffers.size(), drawBuffers.data());
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -1188,8 +881,9 @@ void App::Render(App* app)
             glUseProgram(0); // Unbind shader program
 
             // ----------------------------------- Depth Blit ----------------------------------- //
+
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, app->primaryFBO.handle);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, app->primaryFBO.GetFramebufferHandle());
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             glBlitFramebuffer(
                 0, 0, app->displaySize.x, app->displaySize.y,
@@ -1213,10 +907,10 @@ void App::Render(App* app)
                 const char* uniformName;
             } gBufferTextures[] = 
             {
-                { GL_TEXTURE0, app->primaryFBO.GetTextureAttachment(0), "uAlbedo"   },
-                { GL_TEXTURE1, app->primaryFBO.GetTextureAttachment(1), "uNormal"   },
-                { GL_TEXTURE2, app->primaryFBO.GetTextureAttachment(2), "uPosition" },
-                { GL_TEXTURE3, app->primaryFBO.GetTextureAttachment(3), "uViewDir"  },
+                { GL_TEXTURE0, app->primaryFBO.GetColorAttachment(0), "uAlbedo"   },
+                { GL_TEXTURE1, app->primaryFBO.GetColorAttachment(1), "uNormal"   },
+                { GL_TEXTURE2, app->primaryFBO.GetColorAttachment(2), "uPosition" },
+                { GL_TEXTURE3, app->primaryFBO.GetColorAttachment(3), "uViewDir"  },
                 { GL_TEXTURE4, app->primaryFBO.GetDepthAttachment(),    "uDepth"    }
             };
 
@@ -1283,42 +977,6 @@ void App::Render(App* app)
                         glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
                         glBindVertexArray(0);
                     }
-                       
-                    //if (light.type == LightType_Directional)
-                    //{
-                    //    // Calculate quad position along the light's direction from the camera
-                    //        glm::vec3 lightDir = glm::normalize(light.direction);
-                    //    glm::vec3 quadPos = app->worldCamera.GetPosition() + lightDir * 5.0f;
-
-                    //    // Create rotation matrix to face light direction
-                    //    glm::mat4 rotation = glm::lookAt(
-                    //        glm::vec3(0.0f),        // Origin
-                    //        lightDir,                // Direction to look at
-                    //        glm::vec3(0.0f, 0.0f, 1.0f)  // Up vector (Z-axis for quad orientation)
-                    //    );
-
-                    //    glm::mat4 model = glm::translate(glm::mat4(1.0f), quadPos) *
-                    //        rotation *
-                    //        glm::scale(glm::vec3(0.01f)); // Changed from 0.5f to 0.1f
-                    //    glm::mat4 mvp = projection * view * model;
-
-                    //    // Set uniforms
-                    //    GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
-                    //    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-
-                    //    GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
-                    //    glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
-
-                    //    // Render quad using plane model
-                    //    Model& planeModel = app->models[app->planeIdx];
-                    //    Mesh& meshModel = app->meshes[planeModel.meshIdx];
-                    //    Submesh& submesh = meshModel.submeshes[0];
-                    //    GLuint vao = FindVAO(meshModel, 0, lightSphereProgram);
-
-                    //    glBindVertexArray(vao);
-                    //    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
-                    //    glBindVertexArray(0);
-                    //}
                 }
 
                 glUseProgram(0);
@@ -1334,55 +992,63 @@ void App::CleanUp(App* app)
 {
     ELOG("Cleaning Up Engine");
 
-    // Delete textures
+    // --- Delete Textures ---
     for (auto& texture : app->textures)
     {
         glDeleteTextures(1, &texture.handle);
     }
-
     app->textures.clear();
 
-    // Delete shader programs
+    // --- Delete Shader Programs ---
     for (auto& program : app->programs)
     {
         glDeleteProgram(program.handle);
     }
     app->programs.clear();
 
-    // Delete VAO
+    // --- Delete Main VAO ---
     if (app->vao != 0)
     {
         glDeleteVertexArrays(1, &app->vao);
         app->vao = 0;
     }
 
-    // Delete element/index buffers
+    // --- Delete Element/Index Buffers ---
     if (app->embeddedElements != 0)
     {
         glDeleteBuffers(1, &app->embeddedElements);
         app->embeddedElements = 0;
     }
 
-    // Delete vertex buffers
+    // --- Delete Vertex Buffers ---
     if (app->embeddedVertices != 0)
     {
         glDeleteBuffers(1, &app->embeddedVertices);
         app->embeddedVertices = 0;
     }
 
-    // Clean up meshes (VBOs and IBOs)
+    // --- Clean Up Meshes (VAOs, VBOs, and IBOs) ---
     for (auto& mesh : app->meshes)
     {
+        // Delete VAOs for each submesh
+        for (auto& submesh : mesh.submeshes)
+        {
+            for (auto& vao : submesh.vaos)
+            {
+                glDeleteVertexArrays(1, &vao.handle);
+            }
+            submesh.vaos.clear();
+        }
         glDeleteBuffers(1, &mesh.vertexBufferHandle);
         glDeleteBuffers(1, &mesh.indexBufferHandle);
     }
     app->meshes.clear();
 
-    // Clean up models and materials
+    // --- Clean Up Models and Materials ---
     app->models.clear();
     app->materials.clear();
 
-    // Clean up UBOs
+    // --- Clean Up Uniform Buffers ---
     if (app->globalUBO.handle != 0)
     {
         glDeleteBuffers(1, &app->globalUBO.handle);
@@ -1394,11 +1060,15 @@ void App::CleanUp(App* app)
         app->entityUBO.handle = 0;
     }
 
-    // Clean up entities
+    // --- Clean Up Entities ---
     app->entities.clear();
 
-    // Clean up FBO
-    app->primaryFBO.Clean();
+    // --- Clean Up FBO ---
+    app->primaryFBO.Clear();
+
+    app->lights.clear();
+    app->gridLights.clear();
+    app->defaultLights.clear();
 }
 
 GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)

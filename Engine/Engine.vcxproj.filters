@@ -28,6 +28,9 @@
     <Filter Include="Source Code\Editor">
       <UniqueIdentifier>{75aae78f-ce50-4409-a5a8-15dc989cedf0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Core">
+      <UniqueIdentifier>{9d698ccc-5061-4bbe-b228-2560c51ba0c0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -54,12 +57,6 @@
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c">
       <Filter>External\Glad</Filter>
     </ClCompile>
-    <ClCompile Include="Code\engine.cpp">
-      <Filter>Source Code</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\platform.cpp">
-      <Filter>Source Code</Filter>
-    </ClCompile>
     <ClCompile Include="ThirdParty\stb\stb.cpp">
       <Filter>External\Stb</Filter>
     </ClCompile>
@@ -75,11 +72,35 @@
     <ClCompile Include="Code\Camera.cpp">
       <Filter>Source Code</Filter>
     </ClCompile>
-    <ClCompile Include="Code\EditorMenuBar.cpp">
+    <ClCompile Include="Code\EditorMainMenuBar.cpp">
       <Filter>Source Code\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Code\EditorDockspace.cpp">
       <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\EditorInfoWindow.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\EditorLightsWindow.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\EditorShaderErrorsWindow.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\EditorGBufferDebugWindow.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\engine.cpp">
+      <Filter>Source Code</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\platform.cpp">
+      <Filter>Source Code\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\OpenGL_Framebuffer.cpp">
+      <Filter>Source Code</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\ImageLoader.cpp">
+      <Filter>Source Code\Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,17 +128,11 @@
     <ClInclude Include="ThirdParty\imgui-docking\imstb_truetype.h">
       <Filter>External\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Code\engine.h">
-      <Filter>Source Code</Filter>
-    </ClInclude>
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h">
       <Filter>External\Glad</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h">
       <Filter>External\Glad</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\platform.h">
-      <Filter>Source Code</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\stb\stb_image.h">
       <Filter>External\Stb</Filter>
@@ -140,28 +155,40 @@
     <ClInclude Include="Code\Editor.h">
       <Filter>Source Code\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Code\engine.h">
+      <Filter>Source Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\platform.h">
+      <Filter>Source Code\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\OpenGL_Framebuffer.h">
+      <Filter>Source Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\ImageLoader.h">
+      <Filter>Source Code\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Code\openGL_types.inl">
       <Filter>Source Code</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\RENDER_GEOMETRY.glsl">
+    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\RENDER_QUAD.glsl">
+    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\shaders.glsl">
+    <None Include="WorkingDir\Shaders\shader_template.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\UNIFORM_BUFFER.glsl">
+    <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\LIGHTS.glsl">
+    <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\LIGHT_SPHERE.glsl">
-      <Filter>Source Code\Shaders</Filter>
+    <None Include="Code\ImGuiUtils.inl">
+      <Filter>Source Code\Editor</Filter>
     </None>
   </ItemGroup>
 </Project>

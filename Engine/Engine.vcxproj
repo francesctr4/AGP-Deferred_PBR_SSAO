@@ -22,10 +22,16 @@
     <ClCompile Include="Code\BufferManagement.cpp" />
     <ClCompile Include="Code\Camera.cpp" />
     <ClCompile Include="Code\EditorDockspace.cpp" />
-    <ClCompile Include="Code\EditorMenuBar.cpp" />
+    <ClCompile Include="Code\EditorGBufferDebugWindow.cpp" />
+    <ClCompile Include="Code\EditorInfoWindow.cpp" />
+    <ClCompile Include="Code\EditorLightsWindow.cpp" />
+    <ClCompile Include="Code\EditorMainMenuBar.cpp" />
+    <ClCompile Include="Code\EditorShaderErrorsWindow.cpp" />
     <ClCompile Include="Code\engine.cpp" />
+    <ClCompile Include="Code\ImageLoader.cpp" />
     <ClCompile Include="Code\ModelLoader.cpp" />
     <ClCompile Include="Code\OpenGLErrorGuard.cpp" />
+    <ClCompile Include="Code\OpenGL_Framebuffer.cpp" />
     <ClCompile Include="Code\platform.cpp" />
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp" />
@@ -42,9 +48,11 @@
     <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\Editor.h" />
     <ClInclude Include="Code\engine.h" />
+    <ClInclude Include="Code\ImageLoader.h" />
     <ClInclude Include="Code\ModelLoader.h" />
     <ClInclude Include="Code\OpenGLDebugCallback.h" />
     <ClInclude Include="Code\OpenGLErrorGuard.h" />
+    <ClInclude Include="Code\OpenGL_Framebuffer.h" />
     <ClInclude Include="Code\platform.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
@@ -59,13 +67,13 @@
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Code\ImGuiUtils.inl" />
     <None Include="Code\openGL_types.inl" />
-    <None Include="WorkingDir\Shaders\LIGHTS.glsl" />
-    <None Include="WorkingDir\Shaders\LIGHT_SPHERE.glsl" />
-    <None Include="WorkingDir\Shaders\RENDER_GEOMETRY.glsl" />
-    <None Include="WorkingDir\Shaders\RENDER_QUAD.glsl" />
-    <None Include="WorkingDir\Shaders\shaders.glsl" />
-    <None Include="WorkingDir\Shaders\UNIFORM_BUFFER.glsl" />
+    <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
+    <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl" />
+    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl" />
+    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl" />
+    <None Include="WorkingDir\Shaders\shader_template.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

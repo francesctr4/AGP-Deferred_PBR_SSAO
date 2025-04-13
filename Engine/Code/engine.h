@@ -1,57 +1,58 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#ifndef _ENGINE_H_
+#define _ENGINE_H_
 
 //
-// engine.h: This file contains the types and functions relative to the engine.
+// engine.h: Engine types and core functionality
 //
 
 #include "openGL_types.inl"
+#include "OpenGL_Framebuffer.h"
 #include "BufferManagement.h"
 #include "Camera.h"
-
 #include <vector>
-
-typedef glm::vec2  vec2;
-typedef glm::vec3  vec3;
-typedef glm::vec4  vec4;
-typedef glm::ivec2 ivec2;
-typedef glm::ivec3 ivec3;
-typedef glm::ivec4 ivec4;
 
 class App
 {
 public:
-
+    // =====================
+    // Core Application State
+    // =====================
     App();
     ~App();
 
-    // Loop
-    f32  deltaTime;
     bool isRunning;
-
-    // Input
+    f32  deltaTime;
     Input input;
-
-    // Graphics
-    std::string mOpenGLInfo;
+    Mode mode;
+    bool needsReinit;
 
     ivec2 displaySize;
+    void OnResize(int width, int height);
 
-    std::vector<Texture>    textures;
-    std::vector<Material>   materials;
-    std::vector<Mesh>       meshes;
-    std::vector<Model>      models;
-    std::vector<Program>    programs;
+    // ====================
+    // Graphics Resources
+    // ====================
+    std::string mOpenGLInfo;
 
-    // program indices
+    // Resource pools
+    std::vector<Texture>  textures;
+    std::vector<Material> materials;
+    std::vector<Mesh>     meshes;
+    std::vector<Model>    models;
+    std::vector<Program>  programs;
+
+    // ========================
+    // Shader Program Indices
+    // ========================
     u32 renderQuadProgramIdx;
     u32 renderGeometryProgramIdx;
     u32 forwardRenderingProgramIdx;
     u32 lightSphereProgramIdx;
 
-    // texture indices
+    // ====================
+    // Texture Indices
+    // ====================
     u32 diceTexIdx;
-
     u32 whiteTexIdx;
     u32 blackTexIdx;
     u32 normalTexIdx;
@@ -63,7 +64,9 @@ public:
     u32 lightGreenTexIdx;
     u32 orangeTexIdx;
 
-    // models
+    // ==================
+    // Model Indices
+    // ==================
     u32 patrickIdx;
     u32 planeIdx;
     u32 coneIdx;
@@ -72,29 +75,26 @@ public:
     u32 sphereIdx;
     u32 torusIdx;
 
-    u32 patrickProgramUniformTexture;
-    u32 fwdPatrickProgramUniformTexture;
+    // ================
+    // Rendering State
+    // ================
+    Camera worldCamera;
+    Framebuffer primaryFBO;
 
-    // Mode
-    Mode mode;
-    bool needsReinit;
-
-    // Embedded geometry (in-editor simple meshes such as
-    // a screen filling quad, a cube, a sphere...)
+    // Embedded geometry
     GLuint embeddedVertices;
     GLuint embeddedElements;
-
-    // Location of the texture uniform in the textured quad shader
-    GLuint programUniformTexture;
-
-    int gBufferDebugMode = 0;
-    GLuint programUniformDebugMode;
-
-    // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
 
-    Camera worldCamera;
+    // Uniform locations
+    u32 patrickProgramUniformTexture;
+    u32 fwdPatrickProgramUniformTexture;
+    GLuint programUniformTexture;
+    GLuint programUniformDebugMode;
 
+    // ====================
+    // Buffers and UBOs
+    // ====================
     GLint maxUniformBufferSize;
     GLint uniformBlockAlignment;
 
@@ -102,37 +102,51 @@ public:
     Buffer entityUBO;
     std::vector<Entity> entities;
 
+    // ============
+    // Lighting
+    // ============
     std::vector<Light> lights;
     std::vector<Light> gridLights;
     std::vector<Light> defaultLights;
+
     bool gridLightsEnabled = true;
     float gridLightConstant;
     float gridLightLinear;
     float gridLightQuadratic;
 
-    Framebuffer primaryFBO;
-
+    // ====================
+    // Debug/UI State
+    // ====================
+    int gBufferDebugMode = 0;
     std::vector<std::string> shaderErrors;
     bool showShaderErrors = false;
 
-    static u32 LoadTexture2D(App* app, const char* filepath);
-
+    // ================
+    // Core Methods
+    // ================
     void Init(App* app);
     void Update(App* app);
     void Render(App* app);
     void Gui(App* app);
     void CleanUp(App* app);
 
-    void OnResize(int width, int height);
+    static u32 LoadTexture2D(App* app, const char* filepath);
 
+    // ====================
+    // Lighting Management
+    // ====================
     void UpdateLightList();
+    void CreateLights();
     void UpdateLights(App* app);
 
 private:
-
+    // ====================
+    // Rendering Internals
+    // ====================
     GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
-    void CreateEntity(App* app, const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix);
-    void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx, u32 textureProgramUniform, Program program);
+    void CreateEntity(App* app, u32 modelIdx, u32 textureIdx, const glm::mat4& worldMatrix);
+    void RenderEntity(App* app, Entity entity, u32 entityIdx, u32 textureIdx,
+        u32 textureProgramUniform, Program program);
 };
 
-#endif // ENGINE_H
+#endif // _ENGINE_H_

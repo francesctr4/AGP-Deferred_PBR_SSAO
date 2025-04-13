@@ -1,5 +1,8 @@
 #include "Editor.h"
 
+#include "engine.h"
+#include "imgui.h"
+
 void Editor::DrawMainMenuBar(App* app) 
 {
     if (ImGui::BeginMainMenuBar())

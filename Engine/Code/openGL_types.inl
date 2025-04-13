@@ -3,8 +3,6 @@
 #include "platform.h"
 #include <glad/glad.h>
 
-struct App;
-
 struct Vertex3UV2
 {
     glm::vec3 pos;
@@ -154,52 +152,4 @@ struct Light
 	float linear;
 	float quadratic;
 	float specularStrength; // Specular multiplier
-};
-
-struct Framebuffer 
-{
-	GLuint handle;
-	GLuint depthHandle;
-	std::vector<std::pair<GLenum, GLuint>> attachments;
-
-	bool CreateFBO(GLuint aAttachments, glm::vec2 displaySize);
-
-	void Clean() 
-	{
-		// Unbind primaryFBO to safely modify it
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// Delete all color attachments
-		for (auto& [attachment, handle] : attachments)
-		{
-			glDeleteTextures(1, &handle);
-		}
-		attachments.clear();
-
-		// Delete depth attachment (if it exists)
-		if (depthHandle != 0)
-		{
-			glDeleteTextures(1, &depthHandle);
-			depthHandle = 0;
-		}
-
-		// Delete the framebuffer itself
-		if (handle != 0)
-		{
-			glDeleteFramebuffers(1, &handle);
-			handle = 0;
-		}
-	}
-
-	GLuint GetTextureAttachment(int index) {
-		if (index >= 0 && index < attachments.size()) {
-			return attachments[index].second;
-		}
-		return 0;
-	}
-
-	// Returns the depth texture handle
-	GLuint GetDepthAttachment() {
-		return depthHandle;
-	}
 };
