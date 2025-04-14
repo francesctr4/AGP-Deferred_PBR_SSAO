@@ -15,14 +15,11 @@ void Editor::DrawLightsWindow(App* app)
     ImGui::Begin("Lights Configuration");
 
     // ====== Section: Global Controls ======
-
-    // Stress Test & Debug Geometry in a horizontal group
     ImGui::BeginGroup();
     {
         ImGui::Text("Stress Test:");
         ImGui::SameLine();
 
-        // Modified section: Use return value directly
         if (ImGuiUtils::ToggleButton("Grid Lights", &app->gridLightsEnabled))
         {
             lightsDirty = true;

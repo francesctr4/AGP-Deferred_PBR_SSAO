@@ -1,9 +1,5 @@
 #include "Camera.h"
 
-// Update the view matrix if necessary
-
-#include "engine.h"
-
 Camera::Camera()
     : position(0.0f, 0.0f, 0.0f),
     target(0.0f, 0.0f, -1.0f),
@@ -24,8 +20,6 @@ Camera::~Camera()
 {
 
 }
-
-// Mark matrices as dirty when camera properties change
 
 void Camera::SetPosition(const glm::vec3& newPosition) 
 { 
@@ -101,7 +95,6 @@ const glm::mat4& Camera::ProjectionMatrix() const
 
 void CameraMovement(Input& input, Camera& camera, f32 deltaTime)
 {
-    // Camera rotation with right mouse button
     if (input.mouseButtons[RIGHT] == BUTTON_PRESSED)
     {
         float sensitivity = 0.1f;
@@ -115,18 +108,15 @@ void CameraMovement(Input& input, Camera& camera, f32 deltaTime)
         glm::vec3 forward = glm::normalize(target - position);
         glm::vec3 right = glm::normalize(glm::cross(forward, up));
 
-        // Rotate forward vector based on mouse delta
         glm::mat4 yawRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaX), up);
         forward = glm::vec3(yawRot * glm::vec4(forward, 0.0f));
 
         glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), glm::radians(-deltaY), right);
         forward = glm::vec3(pitchRot * glm::vec4(forward, 0.0f));
 
-        // Update target
         camera.SetTarget(position + forward);
     }
 
-    // WASDEQ movement
     glm::vec3 position = camera.GetPosition();
     float baseSpeed = 10.0f * deltaTime;
     float speed = baseSpeed;
@@ -156,24 +146,21 @@ void CameraMovement(Input& input, Camera& camera, f32 deltaTime)
 
     if (input.keys[K_Q] == BUTTON_PRESSED)
     {
-        // Move down
         position -= up * speed;
     }
 
     if (input.keys[K_E] == BUTTON_PRESSED)
     {
-        // Move up
         position += up * speed;
     }
 
+    // Scroll
     if (input.mouseButtons[RIGHT] == BUTTON_PRESSED)
     {
-        // Handle zoom using scroll wheel
         float zoomSpeed = 50.0f;
         position += forward * input.mouseScrollDeltaY * zoomSpeed * deltaTime;
     }
 
-    // Update camera position and target
     camera.SetPosition(position);
     camera.SetTarget(position + forward);
 }

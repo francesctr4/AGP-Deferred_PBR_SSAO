@@ -47,7 +47,6 @@ uniform sampler2D uPosition;
 uniform sampler2D uViewDir;
 uniform sampler2D uDepth;
 
-// Debug mode switch (0 = Final Render, 1 = Albedo, 2 = Normal, 3 = Position, 4 = ViewDir)
 uniform int uDebugMode;
 
 layout(location=0) out vec4 oColor;
@@ -97,11 +96,11 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 float linearizeDepth(float depth, float near, float far) 
 {
     // Convert depth to view-space Z
-    float z = depth * 2.0 - 1.0; // Back to NDC 
+    float z = depth * 2.0 - 1.0; 
     float viewZ = (2.0 * near * far) / (far + near - z * (far - near));
     
-    // Normalize to [0,1] range and invert
-    return 1.0 - ((viewZ - near) / (far - near)); // White=close, Black=far
+    // Normalize to [0,1] range and invert. White=close, Black=far
+    return 1.0 - ((viewZ - near) / (far - near));
 }
 
 void main()
@@ -113,28 +112,27 @@ void main()
     float depthTex = texture(uDepth, vTexCoord).r;
 
     switch(uDebugMode)
-{
-    case 1: // Albedo
-        oColor = vec4(albedoTex, 1.0);
-        return;
-    case 2: // Normal
-        oColor = vec4(normalTex, 1.0);
-        return;
-    case 3: // Position
-        oColor = vec4(positionTex, 1.0);
-        return;
-    case 4: // View Direction
-        oColor = vec4(viewDirTex, 1.0);
-        return;
-    case 5: // Depth (new case)
-        float linDepth = linearizeDepth(depthTex, 0.1f, 10.0f);
-        oColor = vec4(vec3(linDepth), 1.0f);
-        return;
-    default: // Final render
-        break;
-}
+    {
+        case 1: // Albedo
+            oColor = vec4(albedoTex, 1.0);
+            return;
+        case 2: // Normal
+            oColor = vec4(normalTex, 1.0);
+            return;
+        case 3: // Position
+            oColor = vec4(positionTex, 1.0);
+            return;
+        case 4: // View Direction
+            oColor = vec4(viewDirTex, 1.0);
+            return;
+        case 5: // Depth
+            float linDepth = linearizeDepth(depthTex, 0.1f, 10.0f);
+            oColor = vec4(vec3(linDepth), 1.0f);
+            return;
+        default: // Final render
+            break;
+    }
 
-    // Standard deferred shading (final render)
     vec3 returnColor = vec3(0.0);
     for(int i = 0; i < uLightCount; ++i)
     {

@@ -1,155 +1,187 @@
 #pragma once
-
 #include "platform.h"
 #include <glad/glad.h>
 
+// --- Vertex Data Structures ---
+// Defines a vertex with 3D position and 2D UV coordinates
 struct Vertex3UV2
 {
-    glm::vec3 pos;
-    glm::vec2 uv;
+    glm::vec3 pos;  // Vertex position in 3D space
+    glm::vec2 uv;   // Texture coordinates
 };
 
-const Vertex3UV2 vertices[] = {
-    { glm::vec3(-1.0, -1.0, 0.0), glm::vec2(0.0, 0.0) }, // bottom-left vertex
-    { glm::vec3(1.0, -1.0, 0.0), glm::vec2(1.0, 0.0) }, // bottom-right vertex
-    { glm::vec3(1.0,  1.0, 0.0), glm::vec2(1.0, 1.0) }, // top-right vertex
-    { glm::vec3(-1.0,  1.0, 0.0), glm::vec2(0.0, 1.0) }  // top-left vertex
+// Quad vertices for a full-screen rectangle (NDC coordinates)
+const Vertex3UV2 vertices[] = 
+{
+    { glm::vec3(-1.0, -1.0, 0.0), glm::vec2(0.0, 0.0) }, // Bottom-left
+    { glm::vec3(1.0, -1.0, 0.0), glm::vec2(1.0, 0.0) },  // Bottom-right
+    { glm::vec3(1.0,  1.0, 0.0), glm::vec2(1.0, 1.0) },  // Top-right
+    { glm::vec3(-1.0,  1.0, 0.0), glm::vec2(0.0, 1.0) }  // Top-left
 };
 
-const u16 indices[] = {
-    0, 1, 2,  
-    0, 2, 3   
+// Triangle indices for quad rendering (two triangles)
+const u16 indices[] = 
+{
+    0, 1, 2,  // First triangle
+    0, 2, 3   // Second triangle
 };
 
+// --- Texture/Image Handling ---
+// Raw image data container
 struct Image
 {
-    void* pixels;
-    glm::ivec2 size;
-    i32   nchannels;
-    i32   stride;
+    void* pixels;       // Pixel data pointer
+    glm::ivec2 size;    // Image dimensions (width, height)
+    i32 nchannels;      // Color channels (e.g., 3 for RGB, 4 for RGBA)
+    i32 stride;         // Row pitch in bytes
 };
 
+// GL texture resource
 struct Texture
 {
-    GLuint      handle;
-    std::string filepath;
+    GLuint handle;         // OpenGL texture ID
+    std::string filepath;  // Source texture path
 };
 
+// --- Shader Configuration ---
+// Attribute description for vertex shader input
 struct VertexShaderAttribute
 {
-    u8 location;
-    u8 componentCount;
+    u8 location;         // Shader location (layout = X)
+    u8 componentCount;   // Components per attribute (e.g., 3 for vec3)
 
     VertexShaderAttribute(u8 location, u8 componentCount)
         : location(location), componentCount(componentCount) {}
 };
 
+// Complete vertex input layout for a shader program
 struct VertexShaderLayout
 {
-    std::vector<VertexShaderAttribute> attributes;
+    std::vector<VertexShaderAttribute> attributes;  // All input attributes
 };
 
+// Shader program container
 struct Program
 {
-    GLuint             handle;
-    std::string        filepath;
-    std::string        programName;
-    u64                lastWriteTimestamp; // What is this for?
-    VertexShaderLayout vertexInputLayout;
+    GLuint handle;                           // OpenGL program ID
+    std::string filepath;                    // Source shader path
+    std::string programName;                 // Human-readable identifier
+    u64 lastWriteTimestamp;                  // For hot-reloading shaders
+    VertexShaderLayout vertexInputLayout;    // Expected vertex format
 };
 
+// --- Rendering Pipeline ---
+// Rendering mode selector
 enum Mode
 {
-	Mode_Forward_Rendering = 0,
-	Mode_Deferred_Rendering = 1,
+    Mode_Forward_Rendering = 0,   // Forward shading pipeline
+    Mode_Deferred_Rendering = 1,  // Deferred shading pipeline
 };
 
+// --- Material System ---
+// Surface material properties
 struct Material
 {
-	std::string name;
-	glm::vec3 albedo;
-	glm::vec3 emissive;
-	f32 smoothness;
+    std::string name;           // Material identifier
+    glm::vec3 albedo;           // Base color
+    glm::vec3 emissive;         // Self-illumination color
+    f32 smoothness;             // Surface smoothness (0-1)
 
-	u32 albedoTextureIdx;
-	u32 emissiveTextureIdx;
-	u32 specularTextureIdx;
-	u32 normalsTextureIdx;
-	u32 bumpTextureIdx;
+    // Texture indices in global texture array
+    u32 albedoTextureIdx;       // Albedo/diffuse texture
+    u32 emissiveTextureIdx;     // Emission texture
+    u32 specularTextureIdx;     // Specular map
+    u32 normalsTextureIdx;      // Normal map
+    u32 bumpTextureIdx;         // Height/Bump map
 };
 
+// --- Vertex Buffers & Attributes ---
+// Vertex buffer attribute description
 struct VertexBufferAttribute
 {
-	u8 location;    // Location in the shader
-	u8 componentCount;     // Number of components (e.g., 3 for vec3)
-	u8 offset;   // Byte offset in the buffer layout
+    u8 location;        // Shader location binding
+    u8 componentCount;  // Number of components (1-4)
+    u8 offset;          // Byte offset within vertex structure
 
-	VertexBufferAttribute(u32 location, u32 componentCount, u32 offset)
-		: location(location), componentCount(componentCount), offset(offset) {}
+    VertexBufferAttribute(u32 location, u32 componentCount, u32 offset)
+        : location(location), componentCount(componentCount), offset(offset) {}
 };
 
+// Complete vertex buffer layout
 struct VertexBufferLayout
 {
-	std::vector<VertexBufferAttribute> attributes;
-	u8 stride;
+    std::vector<VertexBufferAttribute> attributes;  // Attribute list
+    u8 stride;                                      // Total size of one vertex in bytes
 };
 
+// --- Mesh System ---
+// Vertex Array Object container
 struct VAO
 {
-	GLuint handle;
-	GLuint programHandle;
+    GLuint handle;          // OpenGL VAO ID
+    GLuint programHandle;   // Linked shader program
 };
 
+// Mesh subset with own rendering parameters
 struct Submesh
 {
-	VertexBufferLayout vertexBufferLayout;
-	std::vector<f32> vertices;
-	std::vector<u32> indices;
-	u32 vertexOffset;
-	u32 indexOffset;
+    VertexBufferLayout vertexBufferLayout;  // Vertex format description
+    std::vector<f32> vertices;              // Raw vertex data
+    std::vector<u32> indices;               // Index data
+    u32 vertexOffset;                       // Offset in vertex buffer
+    u32 indexOffset;                        // Offset in index buffer
 
-	std::vector<VAO> vaos;
+    std::vector<VAO> vaos;                  // VAOs for different shader programs
 };
 
+// Complete mesh container
 struct Mesh
 {
-	std::vector<Submesh> submeshes;
-	GLuint vertexBufferHandle;
-	GLuint indexBufferHandle;
+    std::vector<Submesh> submeshes;  // Mesh components
+    GLuint vertexBufferHandle;       // GL buffer for vertices
+    GLuint indexBufferHandle;        // GL buffer for indices
 };
 
+// --- Scene Entities ---
+// Reference to mesh and materials
 struct Model
 {
-	u32 meshIdx;
-	std::vector<u32> materialIdx;
+    u32 meshIdx;                   // Index in global mesh array
+    std::vector<u32> materialIdx;  // Associated materials
 };
 
+// Scene entity with transform
 struct Entity
 {
-	u32 modelIdx;
-	u32 textureIdx;
+    u32 modelIdx;           // Reference to Model
+    u32 textureIdx;         // Main texture index
 
-	u32 entityBufferOffset;
-	u32 entityBufferSize;
+    u32 entityBufferOffset; // For instanced rendering
+    u32 entityBufferSize;   // Data size in instance buffer
 
-	glm::mat4 worldMatrix;
+    glm::mat4 worldMatrix;  // Model-to-world transform
 };
 
-enum LightType 
+// --- Lighting System ---
+// Light type enumeration
+enum LightType
 {
-	LightType_Directional,
-	LightType_Point
+    LightType_Directional,  // Infinite-direction light
+    LightType_Point         // Omnidirectional point light
 };
 
+// Light properties container
 struct Light
 {
-	LightType type;
-	glm::vec3 color;
-	glm::vec3 direction;
-	glm::vec3 position;
+    LightType type;         // Light classification
+    glm::vec3 color;        // RGB intensity
+    glm::vec3 direction;    // For directional lights
+    glm::vec3 position;     // For point lights
 
-	float constant;        // Attenuation parameters
-	float linear;
-	float quadratic;
-	float specularStrength; // Specular multiplier
+    // Attenuation parameters (point lights)
+    float constant;         // Constant attenuation
+    float linear;           // Linear attenuation
+    float quadratic;        // Quadratic attenuation
+
+    float specularStrength; // Specular intensity multiplier
 };

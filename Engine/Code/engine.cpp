@@ -6,14 +6,14 @@
 //
 
 #include "engine.h"
-#include "OpenGLErrorGuard.h"
 
 #include "ImageLoader.h"
 #include "ModelLoader.h"
 #include "ShaderLoader.h"
 
-#include <format>
 #include "Editor.h"
+
+#include <format>
 
 App::App()
     : isRunning(true),
@@ -224,13 +224,13 @@ void App::Update()
     if (input.keys[K_3] == BUTTON_PRESS) gBufferDebugMode = 2;
     if (input.keys[K_4] == BUTTON_PRESS) gBufferDebugMode = 3;
     if (input.keys[K_5] == BUTTON_PRESS) gBufferDebugMode = 4;
-    if (input.keys[K_6] == BUTTON_PRESS) gBufferDebugMode = 5; // Add this
+    if (input.keys[K_6] == BUTTON_PRESS) gBufferDebugMode = 5;
 
     // Handle rendering mode changes
     if (needsReinit)
     {
-        CleanUp();    // Release existing resources
-        Init();       // Re-initialize with new mode
+        CleanUp();
+        Init();
         needsReinit = false;
     }
 
@@ -244,17 +244,17 @@ void App::Update()
         // Rotate Patrick
 
         static Entity* entity = &entities[0];
-        static float rotationSpeed = glm::radians(45.0f); // 45 degrees per second
+        static float rotationSpeed = glm::radians(45.0f);
 
         float angle = rotationSpeed * deltaTime;
         glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        entity->worldMatrix = entity->worldMatrix * rotation; // Apply local rotation
+        entity->worldMatrix = entity->worldMatrix * rotation;
     }
 
     UpdateEntities();
 
-    // Check if camera changed
+    // Check if camera changed and update lights accordingly
     if (worldCamera.GetPosition() != prevPosition ||
         worldCamera.GetTarget() != prevTarget)
     {
@@ -294,13 +294,12 @@ void App::Render()
                 RenderEntity(&entity, texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
 
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0); // Unbind uniform buffer (binding index 0)
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
 
-            glUseProgram(0); // Unbind shader program
+            glUseProgram(0);
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 
-            // Render light spheres
             glDisable(GL_BLEND);
 
             if (gBufferDebugMode == 0 && enableLightDebug)
@@ -339,7 +338,6 @@ void App::Render()
             Program& geometryProgram = programs[deferredRenderGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
 
-            // Render all geometry to G-Buffer
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
             for (auto& entity : entities)
@@ -347,9 +345,10 @@ void App::Render()
                 RenderEntity(&entity, geometryProgram, deferredRenderProgramUniformTexture);
             }
 
-            glUseProgram(0); // Unbind shader program
+            glUseProgram(0);
 
             // ----------------------------------- Depth Blit ----------------------------------- //
+            // This is for keeping the depth test on the light debug geometry later.
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_READ_FRAMEBUFFER, primaryFBO.GetFramebufferHandle());
@@ -383,31 +382,29 @@ void App::Render()
                 { GL_TEXTURE4, primaryFBO.GetDepthAttachment(),  "uDepth"    }
             };
 
-            // Bind all textures in a loop
             for (const auto& tex : gBufferTextures)
             {
                 glActiveTexture(tex.textureUnit);
                 glBindTexture(GL_TEXTURE_2D, tex.textureID);
                 glUniform1i(glGetUniformLocation(quadProgram.handle, tex.uniformName),
-                    tex.textureUnit - GL_TEXTURE0); // Convert to 0-based index
+                    tex.textureUnit - GL_TEXTURE0);
             }
 
             glUniform1i(programUniformDebugMode, (GLint)gBufferDebugMode);
 
-            // Render fullscreen quad
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-            // Unbind everything after lighting pass
             glBindVertexArray(0);
-            glBindTexture(GL_TEXTURE_2D, 0); // Unbind last active texture
-            glUseProgram(0); // Unbind shader program
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glUseProgram(0);
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 
+            // Prevent overwriting depth buffer
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LEQUAL);
-            glDepthMask(GL_FALSE);  // Prevent overwriting depth buffer
+            glDepthMask(GL_FALSE);
             glDisable(GL_BLEND);
 
             if (gBufferDebugMode == 0 && enableLightDebug)
@@ -541,15 +538,13 @@ void App::CreateLights()
     float stepX = (gridConfig.maxX - gridConfig.minX) / (gridConfig.gridSizeX - 1);
     float stepZ = (gridConfig.maxZ - gridConfig.minZ) / (gridConfig.gridSizeZ - 1);
 
-    for (int i = 0; i < gridConfig.gridSizeX; ++i) {
-        for (int j = 0; j < gridConfig.gridSizeZ; ++j) {
-            // Calculate position
+    for (int i = 0; i < gridConfig.gridSizeX; ++i) 
+    {
+        for (int j = 0; j < gridConfig.gridSizeZ; ++j) 
+        {
             float x = gridConfig.minX + i * stepX;
             float z = gridConfig.minZ + j * stepZ;
 
-            // --- Choose one color generation method below ---
-
-            // Gradient-Based Colors
             float red = static_cast<float>(i) / (gridConfig.gridSizeX - 1);
             float green = static_cast<float>(j) / (gridConfig.gridSizeZ - 1);
             float blue = (1.0f - red);
@@ -561,10 +556,10 @@ void App::CreateLights()
                 lightColor,
                 glm::vec3(0.0f), // Unused direction
                 glm::vec3(x, gridConfig.yPos, z),
-                gridConfig.gridLightConstant,   // Constant attenuation for all grid lights
-                gridConfig.gridLightLinear,     // Linear attenuation for all grid lights
-                gridConfig.gridLightQuadratic,  // Quadratic attenuation for all grid lights
-                gridConfig.gridLightSpecularStrength              // Specular strength
+                gridConfig.gridLightConstant,
+                gridConfig.gridLightLinear,
+                gridConfig.gridLightQuadratic,
+                gridConfig.gridLightSpecularStrength
                 });
         }
     }
@@ -608,12 +603,16 @@ void App::UpdateLightList()
 void App::UpdateLights()
 {
     MapBuffer(globalUBO, GL_WRITE_ONLY);
+
     PushVec3(globalUBO, worldCamera.GetPosition());
     PushUInt(globalUBO, lights.size());
-    for (size_t i = 0; i < lights.size(); i++)
+
+    for (size_t i = 0; i < lights.size(); ++i)
     {
         AlignHead(globalUBO, sizeof(vec4));
+
         Light& light = lights[i];
+
         PushUInt(globalUBO, static_cast<unsigned int>(light.type));
         PushVec3(globalUBO, light.color);
         PushVec3(globalUBO, light.direction);
@@ -623,6 +622,7 @@ void App::UpdateLights()
         PushFloat(globalUBO, light.quadratic);
         PushFloat(globalUBO, light.specularStrength);
     }
+
     UnmapBuffer(globalUBO);
 }
 
@@ -631,34 +631,30 @@ void App::RenderLightDebugGeometry()
     Program& lightSphereProgram = programs[pointLightSphereProgramIdx];
     glUseProgram(lightSphereProgram.handle);
 
-    // Get camera matrices
     glm::mat4 view = worldCamera.ViewMatrix();
     glm::mat4 projection = worldCamera.ProjectionMatrix();
 
-    // Bind sphere model's VAO
     Model& sphereModel = models[debugSphereIdx];
     Mesh& sphereMesh = meshes[sphereModel.meshIdx];
     Submesh& submesh = sphereMesh.submeshes[0];
     GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
+
     glBindVertexArray(vao);
 
     for (const auto& light : lights)
     {
         if (light.type == LightType_Point)
         {
-            // Calculate model matrix
             glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
-            model = glm::scale(model, glm::vec3(0.1f)); // Adjust scale as needed
+            model = glm::scale(model, glm::vec3(0.1f));
             glm::mat4 mvp = projection * view * model;
 
-            // Set uniforms
             GLuint mvpLoc = glGetUniformLocation(lightSphereProgram.handle, "uMVP");
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
             GLuint colorLoc = glGetUniformLocation(lightSphereProgram.handle, "uColor");
             glUniform3fv(colorLoc, 1, glm::value_ptr(light.color));
 
-            // Draw the sphere
             glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
         }
     }
@@ -677,7 +673,6 @@ glm::mat4 App::CreateTransform(const glm::vec3& translation, const glm::vec3& ro
 
     transform = glm::translate(transform, translation);
 
-    // Axis-angle rotation
     float angleDegrees = glm::length(rotation);
 
     if (angleDegrees > 0.0001f)
@@ -722,8 +717,7 @@ void App::UpdateEntities()
     {
         // Calculate new MVP
         glm::mat4 mvp = VP * entity.worldMatrix;
-
-        // Seek to this entity's MVP offset (assuming MVP is at offset sizeof(glm::mat4))
+        // Seek to this entity's MVP offset (MVP is at offset sizeof(glm::mat4) on the shader)
         u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
 
         WriteData(entityUBO, mvpOffset, mvp);
@@ -737,8 +731,10 @@ GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     Submesh& submesh = mesh.submeshes[submeshIndex];
 
     // Try finding a VAO for this submesh/program
-    for (u32 i = 0; i < (u32)submesh.vaos.size(); ++i) {
-        if (submesh.vaos[i].programHandle == program.handle) {
+    for (u32 i = 0; i < (u32)submesh.vaos.size(); ++i) 
+    {
+        if (submesh.vaos[i].programHandle == program.handle) 
+        {
             return submesh.vaos[i].handle;
         }
     }
@@ -802,7 +798,6 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
         u32 submeshMaterialIdx = model.materialIdx[i];
         Material& submeshMaterial = materials[submeshMaterialIdx];
 
-        // Bind texture
         glActiveTexture(GL_TEXTURE0);
         if (submeshMaterial.albedoTextureIdx > 0)
         {
@@ -814,11 +809,9 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
         }
         glUniform1i(programUniformTexture, 0);
 
-        // Draw
         Submesh& submesh = mesh.submeshes[i];
         glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
 
-        // Clean up state
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindVertexArray(0);
     }

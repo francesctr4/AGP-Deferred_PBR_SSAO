@@ -24,10 +24,7 @@ public:
     const glm::vec3& GetTarget() const;
     const glm::vec3& GetUpVector() const;
 
-    // Update the view matrix if necessary
     const glm::mat4& ViewMatrix() const;
-
-    // Update the projection matrix if necessary
     const glm::mat4& ProjectionMatrix() const;
 
     bool created = false;

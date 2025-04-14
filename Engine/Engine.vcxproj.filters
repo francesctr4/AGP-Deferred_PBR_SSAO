@@ -31,6 +31,12 @@
     <Filter Include="Source Code\Core">
       <UniqueIdentifier>{9d698ccc-5061-4bbe-b228-2560c51ba0c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Features">
+      <UniqueIdentifier>{3610abb8-bb8d-48c4-a838-67b1b09cbeed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Code\Graphics">
+      <UniqueIdentifier>{e57e5485-ee4f-4a09-a921-fe8db900210d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -69,9 +75,6 @@
     <ClCompile Include="Code\ModelLoader.cpp">
       <Filter>Source Code\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Code\Camera.cpp">
-      <Filter>Source Code</Filter>
-    </ClCompile>
     <ClCompile Include="Code\EditorMainMenuBar.cpp">
       <Filter>Source Code\Editor</Filter>
     </ClCompile>
@@ -90,20 +93,23 @@
     <ClCompile Include="Code\EditorGBufferDebugWindow.cpp">
       <Filter>Source Code\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Code\engine.cpp">
-      <Filter>Source Code</Filter>
-    </ClCompile>
     <ClCompile Include="Code\platform.cpp">
       <Filter>Source Code\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\OpenGL_Framebuffer.cpp">
-      <Filter>Source Code</Filter>
     </ClCompile>
     <ClCompile Include="Code\ImageLoader.cpp">
       <Filter>Source Code\Utils</Filter>
     </ClCompile>
     <ClCompile Include="Code\ShaderLoader.cpp">
       <Filter>Source Code\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\engine.cpp">
+      <Filter>Source Code\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Camera.cpp">
+      <Filter>Source Code\Features</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\OpenGL_Framebuffer.cpp">
+      <Filter>Source Code\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -152,20 +158,11 @@
     <ClInclude Include="Code\ModelLoader.h">
       <Filter>Source Code\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Camera.h">
-      <Filter>Source Code</Filter>
-    </ClInclude>
     <ClInclude Include="Code\Editor.h">
       <Filter>Source Code\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Code\engine.h">
-      <Filter>Source Code</Filter>
-    </ClInclude>
     <ClInclude Include="Code\platform.h">
       <Filter>Source Code\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\OpenGL_Framebuffer.h">
-      <Filter>Source Code</Filter>
     </ClInclude>
     <ClInclude Include="Code\ImageLoader.h">
       <Filter>Source Code\Utils</Filter>
@@ -173,11 +170,17 @@
     <ClInclude Include="Code\ShaderLoader.h">
       <Filter>Source Code\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Code\engine.h">
+      <Filter>Source Code\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Camera.h">
+      <Filter>Source Code\Features</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\OpenGL_Framebuffer.h">
+      <Filter>Source Code\Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Code\openGL_types.inl">
-      <Filter>Source Code</Filter>
-    </None>
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
@@ -195,6 +198,9 @@
     </None>
     <None Include="Code\ImGuiUtils.inl">
       <Filter>Source Code\Editor</Filter>
+    </None>
+    <None Include="Code\openGL_types.inl">
+      <Filter>Source Code\Graphics</Filter>
     </None>
   </ItemGroup>
 </Project>

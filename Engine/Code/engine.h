@@ -48,8 +48,6 @@ public:
     void UpdateLightList();
     void UpdateLights();
 
-    GridLightConfig gridConfig;
-
 private:
 
     void RenderLightDebugGeometry();
@@ -62,17 +60,15 @@ private:
 
 public:
 
+    // Core
     bool isRunning;
-    f32  deltaTime;
+    f32 deltaTime;
     Input input;
     Mode mode;
     bool needsReinit;
-
     ivec2 displaySize;
 
-    // ====================
     // Graphics Resources
-    // ====================
     std::string mOpenGLInfo;
 
     // Resource pools
@@ -83,9 +79,7 @@ public:
     std::vector<Program>  programs;
     std::vector<Entity> entities;
 
-    // ================
     // Rendering State
-    // ================
     Camera worldCamera;
     Framebuffer primaryFBO;
 
@@ -94,18 +88,13 @@ public:
     GLuint embeddedElements;
     GLuint vao;
 
-    // ====================
     // Buffers and UBOs
-    // ====================
     GLint maxUniformBufferSize;
     GLint uniformBlockAlignment;
-
     Buffer globalUBO;
     Buffer entityUBO;
 
-    // ============
     // Lighting
-    // ============
     std::vector<Light> lights;
     std::vector<Light> gridLights;
     std::vector<Light> defaultLights;
@@ -113,12 +102,13 @@ public:
     bool gridLightsEnabled = true;
     bool enableLightDebug = false;
 
-    // ====================
+    GridLightConfig gridConfig;
+
     // Debug/UI State
-    // ====================
-    int gBufferDebugMode = 0;
     std::vector<std::string> shaderErrors;
     bool showShaderErrors = false;
+
+    int gBufferDebugMode = 0;
 
 private:
 
@@ -154,8 +144,7 @@ private:
     // Uniform locations
     u32 deferredRenderProgramUniformTexture;
     u32 forwardRenderProgramUniformTexture;
-
-    GLuint programUniformDebugMode;
+    u32 programUniformDebugMode;
 
 };
 

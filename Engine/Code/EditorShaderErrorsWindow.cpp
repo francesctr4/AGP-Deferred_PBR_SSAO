@@ -5,8 +5,6 @@
 
 void Editor::DrawShaderErrorsWindow(App* app)
 {
-    // ... rest of your GUI code (Error display, GBuffer Debug View) remains the same ...
-    // Error display window
     ImGui::Begin("Shader Errors", &app->showShaderErrors);
     {
         ImGui::SameLine();

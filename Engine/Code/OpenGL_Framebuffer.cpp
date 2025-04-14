@@ -160,7 +160,6 @@ GLuint Framebuffer::GetColorAttachment(u8 index) const
     return 0;
 }
 
-// Returns the depth texture handle
 GLuint Framebuffer::GetDepthAttachment() const
 {
     return mDepthAttachment;
