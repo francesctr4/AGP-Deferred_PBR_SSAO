@@ -7,99 +7,275 @@
 
 void Editor::DrawLightsWindow(App* app)
 {
-    // Local dirty flags for batched updates
-    bool lightsDirty = false;
-    bool lightListDirty = false;
+    static bool lightsDirty = false;
+    static bool lightListDirty = false;
+    static bool showGridSettings = false;
+    static bool showDefaultLights = true;
 
-    ImGui::Begin("Lights");
-    ImGui::Text("Stress Test");
-    ImGui::SameLine();
-    static bool prevGridState = app->gridLightsEnabled;
-    ImGuiUtils::ToggleButton("Idx", (bool*)&app->gridLightsEnabled);
+    ImGui::Begin("Lights Configuration");
 
-    ImGui::Text("Debug Geometry");
-    ImGui::SameLine();
-    ImGuiUtils::ToggleButton("DebugGeometryIdx", (bool*)&app->enableLightDebug);
+    // ====== Section: Global Controls ======
 
-    // Handle grid light toggle
-    if (prevGridState != app->gridLightsEnabled) {
-        lightListDirty = true;
-        prevGridState = app->gridLightsEnabled;
-    }
+    // Stress Test & Debug Geometry in a horizontal group
+    ImGui::BeginGroup();
+    {
+        ImGui::Text("Stress Test:");
+        ImGui::SameLine();
 
-    ImGui::Text("Quantity of Lights: %d", static_cast<int>(app->lights.size()));
-    ImGui::Separator();
-
-    // Grid light attenuation controls
-    if (app->gridLightsEnabled) {
-        bool attenuationChanged = false;
-        attenuationChanged |= ImGui::DragFloat("Constant", &app->gridLightConstant, 0.01f, 0.0f, 5.0f);
-        attenuationChanged |= ImGui::DragFloat("Linear", &app->gridLightLinear, 0.001f, 0.0f, 5.0f);
-        attenuationChanged |= ImGui::DragFloat("Quadratic", &app->gridLightQuadratic, 0.0001f, 0.0f, 5.0f);
-
-        if (attenuationChanged) {
-            for (auto& light : app->gridLights) {
-                light.constant = app->gridLightConstant;
-                light.linear = app->gridLightLinear;
-                light.quadratic = app->gridLightQuadratic;
-            }
+        // Modified section: Use return value directly
+        if (ImGuiUtils::ToggleButton("Grid Lights", &app->gridLightsEnabled))
+        {
             lightsDirty = true;
-        }
-    }
-
-    // Default light controls
-    for (auto& light : app->defaultLights) {
-        ImGui::PushID(&light);
-        bool lightChanged = false;
-
-        // Color control
-        float color[3] = { light.color.x, light.color.y, light.color.z };
-        if (ImGui::ColorEdit3("Color", color)) {
-            light.color = glm::vec3(color[0], color[1], color[2]);
-            lightChanged = true;
-        }
-
-        // Direction control
-        float direction[3] = { light.direction.x, light.direction.y, light.direction.z };
-        if (ImGui::DragFloat3("Direction", direction, 0.01f, -1.0f, 1.0f)) {
-            light.direction = glm::vec3(direction[0], direction[1], direction[2]);
-            lightChanged = true;
-        }
-
-        // Position control
-        float position[3] = { light.position.x, light.position.y, light.position.z };
-        if (ImGui::DragFloat3("Position", position, 0.1f)) {
-            light.position = glm::vec3(position[0], position[1], position[2]);
-            lightChanged = true;
-        }
-
-        // Attenuation controls
-        lightChanged |= ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 1.0f);
-        lightChanged |= ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 0.1f);
-        lightChanged |= ImGui::DragFloat("Quadratic", &light.quadratic, 0.0001f, 0.0f, 0.01f);
-        lightChanged |= ImGui::DragFloat("Specular", &light.specularStrength, 0.01f, 0.0f, 1.0f);
-
-        if (lightChanged) {
-            lightsDirty = true;
-            // Force light list update when default lights change
             lightListDirty = true;
         }
 
-        ImGui::PopID();
-        ImGui::Separator();
+        ImGui::SameLine(0, 20);
+        ImGui::Text("Debug Geometry:");
+        ImGui::SameLine();
+        ImGuiUtils::ToggleButton("Show Debug##Lights", &app->enableLightDebug);
+    }
+    ImGui::EndGroup();
+
+    // ====== Section: Grid Light Controls ======
+    if (app->gridLightsEnabled)
+    {
+        ImGui::Spacing();
+
+        // Grid Configuration Section
+        if (ImGui::TreeNodeEx("Grid Configuration", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
+
+            // Grid Dimensions
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Layout:");
+            ImGui::BeginTable("##GridDimensions", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit);
+            {
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 90);
+                ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Columns (X)");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                ImGui::DragInt("##Columns", &app->gridConfig.gridSizeX, 1, 1, 1000, "%d", ImGuiSliderFlags_AlwaysClamp);
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Rows (Z)");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                ImGui::DragInt("##Rows", &app->gridConfig.gridSizeZ, 1, 1, 1000, "%d", ImGuiSliderFlags_AlwaysClamp);
+
+                ImGui::EndTable();
+            }
+
+            // Position Ranges
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Positioning:");
+            ImGui::BeginTable("##PositionRanges", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit);
+            {
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 90);
+                ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("X Range");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                ImGui::DragFloatRange2("##XRange", &app->gridConfig.minX, &app->gridConfig.maxX, 0.5f, -100.0f, 100.0f, "Min: %.1f", "Max: %.1f");
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Z Range");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                ImGui::DragFloatRange2("##ZRange", &app->gridConfig.minZ, &app->gridConfig.maxZ, 0.5f, -100.0f, 100.0f, "Min: %.1f", "Max: %.1f");
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("Y Position");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                ImGui::DragFloat("##YPos", &app->gridConfig.yPos, 0.1f, -10.0f, 100.0f, "%.1f m");
+
+                ImGui::EndTable();
+            }
+
+            // Status and regeneration
+            ImGui::Spacing();
+            ImGui::TextDisabled("Total Grid Lights: %d", app->gridConfig.gridSizeX * app->gridConfig.gridSizeZ);
+
+            ImGui::Spacing();
+            if (ImGui::Button("Regenerate Grid", ImVec2(-FLT_MIN, 24)))
+            {
+                app->CreateLights();
+                app->UpdateLightList();
+            }
+
+            ImGui::PopStyleVar(2);
+            ImGui::TreePop();
+        }
+
+        // Grid Light Settings Section
+        ImGui::Spacing();
+        if (ImGui::TreeNodeEx("Light Properties", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
+
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Attenuation:");
+            bool attenuationChanged = false;
+
+            ImGui::BeginTable("##AttenuationSettings", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit);
+            {
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 90);
+                ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+
+                auto AddAttenuationControl = [&](const char* label, float* value, const char* format, float speed) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("%s", label);
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    return ImGui::DragFloat(("##" + std::string(label)).c_str(), value, speed, 0.0f, 5.0f, format);
+                    };
+
+                attenuationChanged |= AddAttenuationControl("Constant", &app->gridConfig.gridLightConstant, "%.2f", 0.01f);
+                attenuationChanged |= AddAttenuationControl("Linear", &app->gridConfig.gridLightLinear, "%.3f", 0.001f);
+                attenuationChanged |= AddAttenuationControl("Quadratic", &app->gridConfig.gridLightQuadratic, "%.4f", 0.0001f);
+                attenuationChanged |= AddAttenuationControl("Specular", &app->gridConfig.gridLightSpecularStrength, "%.4f", 0.0001f);
+
+                ImGui::EndTable();
+            }
+
+            if (attenuationChanged)
+            {
+                for (auto& light : app->gridLights)
+                {
+                    light.constant = app->gridConfig.gridLightConstant;
+                    light.linear = app->gridConfig.gridLightLinear;
+                    light.quadratic = app->gridConfig.gridLightQuadratic;
+                    light.specularStrength = app->gridConfig.gridLightSpecularStrength;
+                }
+                lightsDirty = true;
+            }
+
+            ImGui::PopStyleVar(2);
+            ImGui::TreePop();
+        }
+    }
+
+    // ====== Section: Default Lights ======
+    if (!app->gridLightsEnabled)
+    {
+        ImGui::Spacing();
+        if (ImGui::TreeNodeEx("Scene Lights", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
+
+            // Light counter
+            ImGui::TextColored(ImVec4(0.8f, 0.9f, 1.0f, 1.0f), "Active Lights: %d", static_cast<int>(app->lights.size()));
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            for (auto& light : app->defaultLights)
+            {
+                ImGui::PushID(&light);
+                bool lightChanged = false;
+
+                // Light type and header
+                const char* lightTypeName = light.type == LightType::LightType_Directional ? 
+                    "Directional Light" : "Point Light";
+
+                if (ImGui::TreeNodeEx(lightTypeName, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    // Main properties table
+                    ImGui::BeginTable("##LightProps", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit);
+                    {
+                        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 90);
+                        ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+
+                        // Color picker
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Color");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(100);
+                        lightChanged |= ImGui::ColorEdit3("##Color", &light.color[0],
+                            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+
+                        // Position/Direction based on type
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f),
+                            light.type == LightType::LightType_Directional ? "Direction" : "Position");
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        if (light.type == LightType::LightType_Directional) {
+                            lightChanged |= ImGui::DragFloat3("##Direction", &light.direction[0], 0.01f, -1.0f, 1.0f, "%.2f");
+                        }
+                        else {
+                            lightChanged |= ImGui::DragFloat3("##Position", &light.position[0], 0.1f, -FLT_MAX, FLT_MAX, "%.1f");
+                        }
+
+                        ImGui::EndTable();
+                    }
+
+                    // Attenuation settings (only for point lights)
+                    if (light.type == LightType::LightType_Point)
+                    {
+                        ImGui::Spacing();
+                        if (ImGui::TreeNodeEx("Advanced Properties", ImGuiTreeNodeFlags_DefaultOpen))
+                        {
+                            ImGui::BeginTable("##Attenuation", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit);
+                            {
+                                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 90);
+                                ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
+
+                                auto AddLightControl = [&](const char* label, float* value, const char* format, float speed) {
+                                    ImGui::TableNextRow();
+                                    ImGui::TableSetColumnIndex(0);
+                                    ImGui::Text("%s", label);
+                                    ImGui::TableSetColumnIndex(1);
+                                    ImGui::SetNextItemWidth(-FLT_MIN);
+                                    return ImGui::DragFloat(("##" + std::string(label)).c_str(), value, speed, 0.0f, 5.0f, format);
+                                    };
+
+                                lightChanged |= AddLightControl("Constant", &light.constant, "%.2f", 0.01f);
+                                lightChanged |= AddLightControl("Linear", &light.linear, "%.3f", 0.001f);
+                                lightChanged |= AddLightControl("Quadratic", &light.quadratic, "%.4f", 0.0001f);
+                                lightChanged |= AddLightControl("Specular", &light.specularStrength, "%.4f", 0.0001f);
+
+                                ImGui::EndTable();
+                            }
+                            ImGui::TreePop();
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+
+                if (lightChanged)
+                {
+                    lightsDirty = true;
+                    lightListDirty = true;
+                }
+
+                ImGui::PopID();
+                ImGui::Spacing();
+            }
+
+            ImGui::PopStyleVar(2);
+            ImGui::TreePop();
+        }
     }
 
     ImGui::End();
 
-    // Batched updates at the end
-    if (lightListDirty) 
-    {
-        app->UpdateLightList();
-        lightsDirty = true; // Ensure shader update after list changes
-    }
-
-    if (lightsDirty) 
-    {
-        app->UpdateLights();
-    }
+    // Batched updates
+    if (lightListDirty) app->UpdateLightList();
+    if (lightsDirty) app->UpdateLights();
 }

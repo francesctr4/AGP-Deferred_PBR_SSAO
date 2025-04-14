@@ -27,9 +27,6 @@ App::App()
     maxUniformBufferSize(0),
     uniformBlockAlignment(0),
     gridLightsEnabled(false),
-    gridLightConstant(0.0f),
-    gridLightLinear(0.0f),
-    gridLightQuadratic(0.0f),
     gBufferDebugMode(0),
     showShaderErrors(false),
     // Texture Indices
@@ -52,6 +49,7 @@ App::App()
     cylinderIdx(0),
     sphereIdx(0),
     torusIdx(0),
+    debugSphereIdx(0),
     // Shader Program Indices
     deferredRenderQuadProgramIdx(0),
     deferredRenderGeometryProgramIdx(0),
@@ -154,7 +152,8 @@ void App::Init()
         {cubeIdx, "Meshes/Cube.obj"},
         {cylinderIdx, "Meshes/Cylinder.obj"},
         {sphereIdx, "Meshes/Sphere.obj"},
-        {torusIdx, "Meshes/Torus.obj"}
+        {torusIdx, "Meshes/Torus.obj"},
+        {debugSphereIdx, "Meshes/DebugSphere.obj"}
     };
 
     for (auto& [idx, path] : models) 
@@ -273,17 +272,15 @@ void App::Render()
     {
         case Mode_Forward_Rendering:
         {
-            // TODO: Draw your textured quad here!
-            // - clear the framebuffer
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // - set the viewport
             glViewport(0, 0, displaySize.x, displaySize.y);
 
-            // - set the blending state
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // ----------------------------------- Geometry Pass ----------------------------------- //
 
             Program& texturedMeshProgram = programs[forwardRenderProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
@@ -296,6 +293,8 @@ void App::Render()
             {
                 RenderEntity(&entity, texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0); // Unbind uniform buffer (binding index 0)
 
             glUseProgram(0); // Unbind shader program
 
@@ -313,8 +312,7 @@ void App::Render()
         }
         case Mode_Deferred_Rendering:
         {
-            glEnable(GL_DEPTH_TEST);
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glViewport(0, 0, displaySize.x, displaySize.y);
@@ -519,6 +517,8 @@ App::~App()
 
 void App::OnResize(int width, int height)
 {
+    if (width == 0 && height == 0) return;
+
     displaySize = vec2(width, height);
 
     primaryFBO.Clear();
@@ -537,41 +537,22 @@ void App::CreateLights()
 {
     // Clear existing lights to prevent duplication
     gridLights.clear();
-    defaultLights.clear();
 
-    int gridSizeX = 40;  // Number of columns (X-axis)
-    int gridSizeZ = 40;  // Number of rows (Z-axis)
-    float minX = -15.0f; // Start X range
-    float maxX = 15.0f;  // End X range
-    float minZ = -15.0f; // Start Z range
-    float maxZ = 15.0f;  // End Z range
-    float yPos = 5.0f;   // Fixed Y position
+    float stepX = (gridConfig.maxX - gridConfig.minX) / (gridConfig.gridSizeX - 1);
+    float stepZ = (gridConfig.maxZ - gridConfig.minZ) / (gridConfig.gridSizeZ - 1);
 
-    // In App::App() constructor, before the grid light loop:
-    gridLightConstant = 1.0f;
-    gridLightLinear = 0.5f;
-    gridLightQuadratic = 0.5f;
-
-    float stepX = (maxX - minX) / (gridSizeX - 1);
-    float stepZ = (maxZ - minZ) / (gridSizeZ - 1);
-
-    for (int i = 0; i < gridSizeX; ++i) {
-        for (int j = 0; j < gridSizeZ; ++j) {
+    for (int i = 0; i < gridConfig.gridSizeX; ++i) {
+        for (int j = 0; j < gridConfig.gridSizeZ; ++j) {
             // Calculate position
-            float x = minX + i * stepX;
-            float z = minZ + j * stepZ;
+            float x = gridConfig.minX + i * stepX;
+            float z = gridConfig.minZ + j * stepZ;
 
             // --- Choose one color generation method below ---
 
             // Gradient-Based Colors
-            float red = static_cast<float>(i) / (gridSizeX - 1) * 0.1f;
-            float green = static_cast<float>(j) / (gridSizeZ - 1) * 0.1f;
-            float blue = (1.0f - red) * 0.1f;
-
-            // Sinusoidal Variation
-            // float red = (sin(i * 0.5f) + 1.0f) * 0.5f;
-            // float green = (cos(j * 0.5f) + 1.0f) * 0.5f;
-            // float blue = (sin((i + j) * 0.3f) + 1.0f) * 0.5f;
+            float red = static_cast<float>(i) / (gridConfig.gridSizeX - 1);
+            float green = static_cast<float>(j) / (gridConfig.gridSizeZ - 1);
+            float blue = (1.0f - red);
 
             glm::vec3 lightColor(red, green, blue);
 
@@ -579,39 +560,33 @@ void App::CreateLights()
                 LightType_Point,
                 lightColor,
                 glm::vec3(0.0f), // Unused direction
-                glm::vec3(x, yPos, z),
-                gridLightConstant,   // Constant attenuation for all grid lights
-                gridLightLinear,     // Linear attenuation for all grid lights
-                gridLightQuadratic,  // Quadratic attenuation for all grid lights
-                0.010f               // Specular strength
+                glm::vec3(x, gridConfig.yPos, z),
+                gridConfig.gridLightConstant,   // Constant attenuation for all grid lights
+                gridConfig.gridLightLinear,     // Linear attenuation for all grid lights
+                gridConfig.gridLightQuadratic,  // Quadratic attenuation for all grid lights
+                gridConfig.gridLightSpecularStrength              // Specular strength
                 });
         }
     }
 
-    defaultLights.push_back({
-        LightType_Directional,
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, -1.0f, 0.0f), // Direction (points downward)
-        glm::vec3(0.0f, 0.0f, 0.0f),   // Unused position
-        1.0f,   // unused for directional
-        0.09f,  // unused
-        0.032f, // unused
-        0.5f    // specular strength
-        });
+    if (defaultLights.empty())
+    {
+        defaultLights.push_back({
+            LightType_Directional,
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(-1.0f, -1.0f, -1.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            1.0f, 0.09f, 0.032f, 0.5f
+            });
 
-    defaultLights.push_back({
-                LightType_Point,
-                glm::vec3(1.0f, 0.0f, 0.0f),
-                glm::vec3(0.0f, 0.0f, 0.0f), // Unused direction
-                glm::vec3(0.0f, 10.0f, 0.0f),
-                1.0f,   // constant attenuation
-                0.1f,  // linear attenuation
-                0.010f, // quadratic attenuation
-                0.010f    // specular strength// Position
-        });
-
-    // Combine into lights based on flag
-    gridLightsEnabled = false;
+        defaultLights.push_back({
+            LightType_Point,
+            glm::vec3(1.0f, 1.0f, 1.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 5.8f, 6.2f),
+            0.78f, 0.1f, 0.010f, 0.010f
+            });
+    }
 
     UpdateLightList();
 }
@@ -619,9 +594,15 @@ void App::CreateLights()
 void App::UpdateLightList()
 {
     lights.clear();
-    if (gridLightsEnabled)
+
+    if (gridLightsEnabled) 
+    {
         lights.insert(lights.end(), gridLights.begin(), gridLights.end());
-    lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
+    }
+    else 
+    {
+        lights.insert(lights.end(), defaultLights.begin(), defaultLights.end());
+    }
 }
 
 void App::UpdateLights()
@@ -655,7 +636,7 @@ void App::RenderLightDebugGeometry()
     glm::mat4 projection = worldCamera.ProjectionMatrix();
 
     // Bind sphere model's VAO
-    Model& sphereModel = models[sphereIdx];
+    Model& sphereModel = models[debugSphereIdx];
     Mesh& sphereMesh = meshes[sphereModel.meshIdx];
     Submesh& submesh = sphereMesh.submeshes[0];
     GLuint vao = FindVAO(sphereMesh, 0, lightSphereProgram);
@@ -807,8 +788,7 @@ GLuint App::FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 
 void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTexture)
 {
-    // UNIFORM BUFFER:
-    // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+    // Bind uniform buffer
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle, entity->entityBufferOffset, entity->entityBufferSize);
 
     Model& model = models[entity->modelIdx];
@@ -822,24 +802,27 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
         u32 submeshMaterialIdx = model.materialIdx[i];
         Material& submeshMaterial = materials[submeshMaterialIdx];
 
+        // Bind texture
+        glActiveTexture(GL_TEXTURE0);
         if (submeshMaterial.albedoTextureIdx > 0)
         {
-            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[submeshMaterial.albedoTextureIdx].handle);
-            glUniform1i(programUniformTexture, 0);
         }
         else
         {
-            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[entity->textureIdx].handle);
-            glUniform1i(programUniformTexture, 0);
         }
+        glUniform1i(programUniformTexture, 0);
 
+        // Draw
         Submesh& submesh = mesh.submeshes[i];
         glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
 
-        // Unbind texture & VAO after drawing
+        // Clean up state
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindVertexArray(0);
     }
+
+    // Unbind uniform buffer (binding index 1)
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, 0, 0, 0);
 }

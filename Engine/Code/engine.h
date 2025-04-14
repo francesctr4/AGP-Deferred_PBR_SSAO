@@ -11,6 +11,22 @@
 #include "Camera.h"
 #include <vector>
 
+struct GridLightConfig
+{
+    int gridSizeX = 28;  // Number of columns (X-axis)
+    int gridSizeZ = 28;  // Number of rows (Z-axis)
+    float minX = -23.0f; // Start X range
+    float maxX = 23.0f;  // End X range
+    float minZ = -23.0f; // Start Z range
+    float maxZ = 23.0f;  // End Z range
+    float yPos = 0.1f;   // Fixed Y position
+
+    float gridLightConstant = 1.0f;
+    float gridLightLinear = 8.0f;
+    float gridLightQuadratic = 3.0f;
+    float gridLightSpecularStrength = 2.0f;
+};
+
 class App
 {
 public:
@@ -28,12 +44,14 @@ public:
 
     // ------------------------------------------------------------- //
 
+    void CreateLights();
     void UpdateLightList();
     void UpdateLights();
 
+    GridLightConfig gridConfig;
+
 private:
 
-    void CreateLights();
     void RenderLightDebugGeometry();
 
     glm::mat4 CreateTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale);
@@ -94,9 +112,6 @@ public:
 
     bool gridLightsEnabled = true;
     bool enableLightDebug = false;
-    float gridLightConstant;
-    float gridLightLinear;
-    float gridLightQuadratic;
 
     // ====================
     // Debug/UI State
@@ -128,6 +143,7 @@ private:
     u32 cylinderIdx;
     u32 sphereIdx;
     u32 torusIdx;
+    u32 debugSphereIdx;
 
     // Shader Program Indices
     u32 deferredRenderQuadProgramIdx;

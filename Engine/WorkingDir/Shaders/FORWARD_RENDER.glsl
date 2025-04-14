@@ -46,7 +46,7 @@ out vec3 vViewDir;
 void main()
 {
 	vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0f));
-	vNormal = vec3(uWorldMatrix * vec4(aNormal, 0.0f));
+	vNormal = mat3(transpose(inverse(uWorldMatrix))) * aNormal;
 	vTexCoord = aTexCoord;
 	vViewDir = uCameraPosition - vPosition;
 
