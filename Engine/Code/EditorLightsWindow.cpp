@@ -273,6 +273,15 @@ void Editor::DrawLightsWindow(App* app)
     ImGui::End();
 
     // Batched updates
-    if (lightListDirty) app->UpdateLightList();
-    if (lightsDirty) app->UpdateLights();
+    if (lightListDirty)
+    {
+        app->UpdateLightList();
+        lightListDirty = false;
+    }
+
+    if (lightsDirty)
+    {
+        app->UpdateLights(); 
+        lightsDirty = false;
+    }
 }
