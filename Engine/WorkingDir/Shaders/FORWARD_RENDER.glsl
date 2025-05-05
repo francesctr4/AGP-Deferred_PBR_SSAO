@@ -142,7 +142,7 @@ void main()
             lightResult += CalcPointLight(uLight[i], vNormal, vPosition, vViewDir);
         }
 
-        returnColor += lightResult;
+        returnColor += lightResult * uLight[i].color;
     }
 
     oColor = vec4(returnColor, 1.0);

@@ -108,7 +108,7 @@ void main()
 	vec3 albedoTex = texture(uAlbedo, vTexCoord).rgb;
     vec3 normalTex = texture(uNormal, vTexCoord).rgb;
     vec3 positionTex = texture(uPosition, vTexCoord).rgb;
-    vec3 viewDirTex = texture(uViewDir, vTexCoord).rgb;
+    vec3 viewDirTex = normalize(texture(uViewDir, vTexCoord).rgb);
     float depthTex = texture(uDepth, vTexCoord).r;
 
     switch(uDebugMode)
@@ -140,14 +140,14 @@ void main()
 
         if(uLight[i].type == 0)
         {
-            lightResult += CalcDirLight(uLight[i], normalTex, viewDirTex);
+            lightResult = CalcDirLight(uLight[i], normalTex, viewDirTex);
         }
         else if(uLight[i].type == 1)
         {
-            lightResult += CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex);
+            lightResult = CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex);
         }
 
-        returnColor += lightResult;
+        returnColor += lightResult * uLight[i].color;
     }
 
     oColor = depthTex == 1.0 ? vec4(0.0) : vec4(returnColor, 1.0);
