@@ -715,12 +715,11 @@ void App::UpdateEntities()
 
     for (auto& entity : entities)
     {
-        // Calculate new MVP
         glm::mat4 mvp = VP * entity.worldMatrix;
-        // Seek to this entity's MVP offset (MVP is at offset sizeof(glm::mat4) on the shader)
-        u32 mvpOffset = entity.entityBufferOffset + sizeof(glm::mat4);
 
-        WriteData(entityUBO, mvpOffset, mvp);
+        AlignHead(entityUBO, uniformBlockAlignment);
+        PushMat4(entityUBO, entity.worldMatrix);
+        PushMat4(entityUBO, mvp);
     }
 
     UnmapBuffer(entityUBO);
