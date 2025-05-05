@@ -36,7 +36,7 @@ layout(binding = 0, std140) uniform globalUBO
 {
 	vec3 uCameraPosition;
 	int uLightCount;
-	Light uLight[16];
+	Light uLight[800];
 };
 
 in vec2 vTexCoord;
@@ -108,7 +108,7 @@ void main()
 	vec3 albedoTex = texture(uAlbedo, vTexCoord).rgb;
     vec3 normalTex = texture(uNormal, vTexCoord).rgb;
     vec3 positionTex = texture(uPosition, vTexCoord).rgb;
-    vec3 viewDirTex = normalize(texture(uViewDir, vTexCoord).rgb);
+    vec3 viewDirTex = texture(uViewDir, vTexCoord).rgb;
     float depthTex = texture(uDepth, vTexCoord).r;
 
     switch(uDebugMode)

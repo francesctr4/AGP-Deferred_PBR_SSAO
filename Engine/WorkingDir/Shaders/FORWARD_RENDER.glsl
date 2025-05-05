@@ -29,7 +29,7 @@ layout(binding = 0, std140) uniform globalUBO
 {
 	vec3 uCameraPosition;
 	int uLightCount;
-	Light uLight[16];
+	Light uLight[800];
 };
 
 layout(binding = 1, std140) uniform entityUBO
@@ -72,7 +72,7 @@ layout(binding = 0, std140) uniform globalUBO
 {
 	vec3 uCameraPosition;
 	int uLightCount;
-	Light uLight[16];
+	Light uLight[800];
 };
 
 in vec3 vPosition;
