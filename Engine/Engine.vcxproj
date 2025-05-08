@@ -71,7 +71,6 @@
   <ItemGroup>
     <None Include="Code\ImGuiUtils.inl" />
     <None Include="Code\openGL_types.inl" />
-    <None Include="WorkingDir\Shaders\DEFERRED_LIGHT_VOLUME.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
     <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl" />
