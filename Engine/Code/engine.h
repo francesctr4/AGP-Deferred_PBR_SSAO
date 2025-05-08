@@ -60,6 +60,8 @@ private:
 
     void ChangeRenderMode();
 
+    void RenderLightVolume(Mesh& mesh, Program& program);
+
 public:
 
     // Core
@@ -142,6 +144,7 @@ private:
     u32 deferredRenderGeometryProgramIdx;
     u32 forwardRenderProgramIdx;
     u32 pointLightSphereProgramIdx;
+    u32 lightVolumeProgramIdx;
 
     // Uniform locations
     u32 deferredRenderProgramUniformTexture;

@@ -202,5 +202,8 @@
     <None Include="Code\openGL_types.inl">
       <Filter>Source Code\Graphics</Filter>
     </None>
+    <None Include="WorkingDir\Shaders\DEFERRED_LIGHT_VOLUME.glsl">
+      <Filter>Source Code\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
