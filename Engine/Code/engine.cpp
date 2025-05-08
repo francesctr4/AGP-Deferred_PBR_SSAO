@@ -384,11 +384,13 @@ void App::Render()
             GLuint normalLoc = glGetUniformLocation(lightVolumeProgram.handle, "uNormal");
             GLuint albedoLoc = glGetUniformLocation(lightVolumeProgram.handle, "uAlbedo");
             GLuint viewDirLoc = glGetUniformLocation(lightVolumeProgram.handle, "uViewDir");
+            GLuint depthLoc = glGetUniformLocation(lightVolumeProgram.handle, "uDepth");
 
             glUniform1i(positionLoc, 0);
             glUniform1i(normalLoc, 1);
             glUniform1i(albedoLoc, 2);
             glUniform1i(viewDirLoc, 3);
+            glUniform1i(depthLoc, 4);
 
             // Bind G-Buffer textures
             glActiveTexture(GL_TEXTURE0);
@@ -399,6 +401,8 @@ void App::Render()
             glBindTexture(GL_TEXTURE_2D, primaryFBO.GetColorAttachment(0));
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, primaryFBO.GetColorAttachment(3));
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, primaryFBO.GetDepthAttachment());
 
             // Render point lights
             for (const auto& light : lights)
@@ -437,6 +441,8 @@ void App::Render()
                 // Render light volume
                 RenderLightVolume(sphereMesh, lightVolumeProgram);
             }
+
+            glUniform1i(glGetUniformLocation(lightVolumeProgram.handle, "uDebugMode"), (GLint)gBufferDebugMode);
 
             glDisable(GL_BLEND);
             glUseProgram(0);
