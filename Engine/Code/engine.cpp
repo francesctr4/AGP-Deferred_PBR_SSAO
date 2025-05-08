@@ -112,6 +112,10 @@ void App::Init()
     pointLightSphereProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
 
+    // In App::Init() after other shader loads
+    lightVolumeProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DEFERRED_LIGHT_VOLUME.glsl", "DEFERRED_LIGHT_VOLUME");
+
         // Cache uniform locations
     Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
     forwardRenderProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uAlbedo");
@@ -358,44 +362,83 @@ void App::Render()
                 GL_DEPTH_BUFFER_BIT, GL_NEAREST
             );
 
-            // ----------------------------------- Lighting Pass ----------------------------------- //
-
+            // ----------------------------------- Lighting Pass -----------------------------------
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
 
-            Program& quadProgram = programs[deferredRenderQuadProgramIdx];
-            glUseProgram(quadProgram.handle);
+            Program& lightVolumeProgram = programs[lightVolumeProgramIdx];
+            Model& sphereModel = models[debugSphereIdx];
+            Mesh& sphereMesh = meshes[sphereModel.meshIdx];
 
-            static const struct GBufferTexture
-            {
-                GLenum textureUnit;
-                GLuint textureID;
-                const char* uniformName;
-            } gBufferTextures[] =
-            {
-                { GL_TEXTURE0, primaryFBO.GetColorAttachment(0), "uAlbedo"   },
-                { GL_TEXTURE1, primaryFBO.GetColorAttachment(1), "uNormal"   },
-                { GL_TEXTURE2, primaryFBO.GetColorAttachment(2), "uPosition" },
-                { GL_TEXTURE3, primaryFBO.GetColorAttachment(3), "uViewDir"  },
-                { GL_TEXTURE4, primaryFBO.GetDepthAttachment(),  "uDepth"    }
-            };
+            glm::mat4 view = worldCamera.ViewMatrix();
+            glm::mat4 projection = worldCamera.ProjectionMatrix();
+            glm::mat4 viewProj = projection * view;
 
-            for (const auto& tex : gBufferTextures)
+            glUseProgram(lightVolumeProgram.handle);
+
+            // Set G-Buffer textures
+            GLuint positionLoc = glGetUniformLocation(lightVolumeProgram.handle, "uPosition");
+            GLuint normalLoc = glGetUniformLocation(lightVolumeProgram.handle, "uNormal");
+            GLuint albedoLoc = glGetUniformLocation(lightVolumeProgram.handle, "uAlbedo");
+            GLuint viewDirLoc = glGetUniformLocation(lightVolumeProgram.handle, "uViewDir");
+
+            glUniform1i(positionLoc, 0);
+            glUniform1i(normalLoc, 1);
+            glUniform1i(albedoLoc, 2);
+            glUniform1i(viewDirLoc, 3);
+
+            // Bind G-Buffer textures
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, primaryFBO.GetColorAttachment(2));
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, primaryFBO.GetColorAttachment(1));
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, primaryFBO.GetColorAttachment(0));
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, primaryFBO.GetColorAttachment(3));
+
+            // Render point lights
+            for (const auto& light : lights)
             {
-                glActiveTexture(tex.textureUnit);
-                glBindTexture(GL_TEXTURE_2D, tex.textureID);
-                glUniform1i(glGetUniformLocation(quadProgram.handle, tex.uniformName),
-                    tex.textureUnit - GL_TEXTURE0);
+                if (light.type != LightType_Point) continue;
+
+                // Calculate light radius based on attenuation
+                float maxBrightness = 1.0; // Adjust based on your light intensity
+                float radius = (-light.linear + sqrt(light.linear * light.linear -
+                    4 * light.quadratic * (light.constant - (256.0 / 5.0) * maxBrightness)))
+                    / (2 * light.quadratic);
+
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), light.position);
+                model = glm::scale(model, glm::vec3(radius));
+
+                // Set uniforms
+                glUniformMatrix4fv(glGetUniformLocation(lightVolumeProgram.handle, "uModel"),
+                    1, GL_FALSE, glm::value_ptr(model));
+                glUniformMatrix4fv(glGetUniformLocation(lightVolumeProgram.handle, "uViewProj"),
+                    1, GL_FALSE, glm::value_ptr(viewProj));
+
+                // Set light properties
+                glUniform3fv(glGetUniformLocation(lightVolumeProgram.handle, "uLight.color"),
+                    1, glm::value_ptr(light.color));
+                glUniform3fv(glGetUniformLocation(lightVolumeProgram.handle, "uLight.position"),
+                    1, glm::value_ptr(light.position));
+                glUniform1f(glGetUniformLocation(lightVolumeProgram.handle, "uLight.constant"),
+                    light.constant);
+                glUniform1f(glGetUniformLocation(lightVolumeProgram.handle, "uLight.linear"),
+                    light.linear);
+                glUniform1f(glGetUniformLocation(lightVolumeProgram.handle, "uLight.quadratic"),
+                    light.quadratic);
+                glUniform1f(glGetUniformLocation(lightVolumeProgram.handle, "uLight.specularStrength"),
+                    light.specularStrength);
+
+                // Render light volume
+                RenderLightVolume(sphereMesh, lightVolumeProgram);
             }
 
-            glUniform1i(programUniformDebugMode, (GLint)gBufferDebugMode);
-
-            glBindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-            glBindVertexArray(0);
-
-            glBindTexture(GL_TEXTURE_2D, 0);
+            glDisable(GL_BLEND);
             glUseProgram(0);
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
@@ -822,4 +865,19 @@ void App::ChangeRenderMode()
 {
     // Handle reinit of features that change between forward and deferred rendering
 
+}
+
+void App::RenderLightVolume(Mesh& mesh, Program& program)
+{
+    for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+    {
+        GLuint vao = FindVAO(mesh, i, program);
+        glBindVertexArray(vao);
+
+        Submesh& submesh = mesh.submeshes[i];
+        glDrawElements(GL_TRIANGLES, submesh.indices.size(),
+            GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+
+        glBindVertexArray(0);
+    }
 }
