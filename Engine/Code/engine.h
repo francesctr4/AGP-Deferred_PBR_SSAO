@@ -58,6 +58,8 @@ private:
     GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
     void RenderEntity(Entity* entity, Program& program, u32 programUniformTexture);
 
+    void ChangeRenderMode();
+
 public:
 
     // Core

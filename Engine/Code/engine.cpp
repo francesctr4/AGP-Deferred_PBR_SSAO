@@ -229,8 +229,7 @@ void App::Update()
     // Handle rendering mode changes
     if (needsReinit)
     {
-        CleanUp();
-        Init();
+        ChangeRenderMode();
         needsReinit = false;
     }
 
@@ -817,4 +816,10 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
 
     // Unbind uniform buffer (binding index 1)
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, 0, 0, 0);
+}
+
+void App::ChangeRenderMode()
+{
+    // Handle reinit of features that change between forward and deferred rendering
+
 }

@@ -107,8 +107,9 @@ void Editor::DrawLightsWindow(App* app)
             ImGui::Spacing();
             if (ImGui::Button("Regenerate Grid", ImVec2(-FLT_MIN, 24)))
             {
-                app->CreateLights();
                 app->UpdateLightList();
+                app->CreateLights();
+                app->UpdateLights();
             }
 
             ImGui::PopStyleVar(2);
