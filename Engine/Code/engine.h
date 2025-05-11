@@ -142,6 +142,7 @@ private:
     u32 deferredRenderGeometryProgramIdx;
     u32 forwardRenderProgramIdx;
     u32 pointLightSphereProgramIdx;
+    u32 pbrProgramIdx;
 
     // Uniform locations
     u32 deferredRenderProgramUniformTexture;

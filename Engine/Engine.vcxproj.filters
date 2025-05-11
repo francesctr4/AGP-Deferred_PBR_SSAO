@@ -37,6 +37,12 @@
     <Filter Include="Source Code\Graphics">
       <UniqueIdentifier>{e57e5485-ee4f-4a09-a921-fe8db900210d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\!SSAO">
+      <UniqueIdentifier>{88aed557-eabf-4787-a086-0e18eae20758}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Code\!PBR">
+      <UniqueIdentifier>{94e17458-3997-4735-bc13-b38176ff934d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -201,6 +207,12 @@
     </None>
     <None Include="Code\openGL_types.inl">
       <Filter>Source Code\Graphics</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\PHYSICALLY_BASED_RENDERING.glsl">
+      <Filter>Source Code\!PBR</Filter>
+    </None>
+    <None Include="Code\PBR_types.inl">
+      <Filter>Source Code\!PBR</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -112,6 +112,10 @@ void App::Init()
     pointLightSphereProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
 
+        // Physically Based Rendering
+    pbrProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/PHYSICALLY_BASED_RENDERING.glsl", "PHYSICALLY_BASED_RENDERING");
+
         // Cache uniform locations
     Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
     forwardRenderProgramUniformTexture = glGetUniformLocation(forwardRenderingProgram.handle, "uAlbedo");
