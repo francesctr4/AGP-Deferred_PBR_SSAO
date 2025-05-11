@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Code\BufferManagement.cpp" />
     <ClCompile Include="Code\Camera.cpp" />
+    <ClCompile Include="Code\EditorCameraInfoWindow.cpp" />
     <ClCompile Include="Code\EditorDockspace.cpp" />
     <ClCompile Include="Code\EditorGBufferDebugWindow.cpp" />
     <ClCompile Include="Code\EditorInfoWindow.cpp" />

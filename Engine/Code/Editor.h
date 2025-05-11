@@ -10,6 +10,7 @@ namespace Editor
     void DrawLightsWindow(App* app);
     void DrawShaderErrorsWindow(App* app);
     void DrawGBufferDebugWindow(App* app);
+    void DrawCameraInfo(App* app);
 
     inline void Draw(App* app)
     {
@@ -19,5 +20,6 @@ namespace Editor
         DrawLightsWindow(app);
         DrawShaderErrorsWindow(app);
         DrawGBufferDebugWindow(app);
+        DrawCameraInfo(app);
     }
 }

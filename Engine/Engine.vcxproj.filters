@@ -117,6 +117,9 @@
     <ClCompile Include="Code\OpenGL_Framebuffer.cpp">
       <Filter>Source Code\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Code\EditorCameraInfoWindow.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">

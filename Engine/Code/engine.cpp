@@ -157,7 +157,8 @@ void App::Init()
         {cylinderIdx, "Meshes/Cylinder.obj"},
         {sphereIdx, "Meshes/Sphere.obj"},
         {torusIdx, "Meshes/Torus.obj"},
-        {debugSphereIdx, "Meshes/DebugSphere.obj"}
+        {debugSphereIdx, "Meshes/DebugSphere.obj"},
+        {weaponIdx, "PBR/Cerberus_LP.fbx"}
     };
 
     for (auto& [idx, path] : models) 
@@ -168,12 +169,12 @@ void App::Init()
     // 6. Camera System Initialization
     if (!worldCamera.created) 
     {
-        worldCamera.SetPosition(glm::vec3(10.0f, 8.5f, 11.0f));
-        worldCamera.SetTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+        worldCamera.SetPosition(glm::vec3(75.6f, 15.7f, 30.9f));
+        worldCamera.SetTarget(glm::vec3(74.8f, 15.3f, 30.4f));
         worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / displaySize.y);
         worldCamera.SetNearFar(0.1f, 1000.0f);
         worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-        worldCamera.SetVerticalFOV(60.0f);
+        worldCamera.SetVerticalFOV(90.0f);
         worldCamera.created = true;
     }
 
@@ -193,18 +194,18 @@ void App::Init()
 
     const std::pair<GLuint, GLuint> entities[] = 
     {
-        {patrickIdx, 0},
-        {planeIdx, lightGreenTexIdx},
-        {coneIdx, purpleTexIdx},
-        {cubeIdx, blueTexIdx},
-        {cylinderIdx, orangeTexIdx},
-        {sphereIdx, greenTexIdx},
-        {torusIdx, lightBlueTexIdx}
+        {weaponIdx, 0},
+        //{planeIdx, lightGreenTexIdx},
+        //{coneIdx, purpleTexIdx},
+        //{cubeIdx, blueTexIdx},
+        //{cylinderIdx, orangeTexIdx},
+        //{sphereIdx, greenTexIdx},
+        //{torusIdx, lightBlueTexIdx},
     };
 
     for (auto& [modelIdx, texIdx] : entities) 
     {
-        CreateEntity(modelIdx, texIdx, CreateTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        CreateEntity(modelIdx, texIdx, CreateTransform(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.5f)));
     }
 
     UnmapBuffer(entityUBO);
@@ -247,7 +248,7 @@ void App::Update()
         // Rotate Patrick
 
         static Entity* entity = &entities[0];
-        static float rotationSpeed = glm::radians(45.0f);
+        static float rotationSpeed = glm::radians(30.0f);
 
         float angle = rotationSpeed * deltaTime;
         glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));

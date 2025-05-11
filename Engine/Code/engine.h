@@ -136,6 +136,7 @@ private:
     u32 sphereIdx;
     u32 torusIdx;
     u32 debugSphereIdx;
+    u32 weaponIdx;
 
     // Shader Program Indices
     u32 deferredRenderQuadProgramIdx;
