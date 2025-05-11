@@ -97,7 +97,7 @@ void CameraMovement(Input& input, Camera& camera, f32 deltaTime)
 {
     if (input.mouseButtons[RIGHT] == BUTTON_PRESSED)
     {
-        float sensitivity = 0.1f;
+        float sensitivity = 0.4f;
         float deltaX = input.mouseDelta.x * sensitivity;
         float deltaY = input.mouseDelta.y * sensitivity;
 
@@ -118,7 +118,7 @@ void CameraMovement(Input& input, Camera& camera, f32 deltaTime)
     }
 
     glm::vec3 position = camera.GetPosition();
-    float baseSpeed = 10.0f * deltaTime;
+    float baseSpeed = 30.0f * deltaTime;
     float speed = baseSpeed;
 
     glm::vec3 forward = glm::normalize(camera.GetTarget() - position);

@@ -9,6 +9,7 @@
 #include "OpenGL_Framebuffer.h"
 #include "BufferManagement.h"
 #include "Camera.h"
+#include "Cubemap.h"
 #include <vector>
 
 struct GridLightConfig
@@ -61,6 +62,9 @@ private:
     void ChangeRenderMode();
 
 public:
+
+    // Initialization
+    Cubemap* environmentMap;
 
     // Core
     bool isRunning;
@@ -143,7 +147,10 @@ private:
     u32 deferredRenderGeometryProgramIdx;
     u32 forwardRenderProgramIdx;
     u32 pointLightSphereProgramIdx;
+
     u32 pbrProgramIdx;
+    u32 skyboxProgramIdx;
+    u32 equirectangularProgramIdx;
 
     // Uniform locations
     u32 deferredRenderProgramUniformTexture;

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Code\BufferManagement.cpp" />
     <ClCompile Include="Code\Camera.cpp" />
+    <ClCompile Include="Code\Cubemap.cpp" />
     <ClCompile Include="Code\EditorCameraInfoWindow.cpp" />
     <ClCompile Include="Code\EditorDockspace.cpp" />
     <ClCompile Include="Code\EditorGBufferDebugWindow.cpp" />
@@ -48,6 +49,7 @@
   <ItemGroup>
     <ClInclude Include="Code\BufferManagement.h" />
     <ClInclude Include="Code\Camera.h" />
+    <ClInclude Include="Code\Cubemap.h" />
     <ClInclude Include="Code\Editor.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\ImageLoader.h" />
@@ -73,12 +75,14 @@
     <None Include="Code\ImGuiUtils.inl" />
     <None Include="Code\openGL_types.inl" />
     <None Include="Code\PBR_types.inl" />
+    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR.glsl" />
     <None Include="WorkingDir\Shaders\PHYSICALLY_BASED_RENDERING.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
     <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl" />
     <None Include="WorkingDir\Shaders\shader_template.glsl" />
+    <None Include="WorkingDir\Shaders\SKYBOX.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

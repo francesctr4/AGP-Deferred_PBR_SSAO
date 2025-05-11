@@ -62,6 +62,7 @@ App::App()
     input({})
 {
     worldCamera.created = false;
+    environmentMap = new Cubemap();
 }
 
 void App::Init()
@@ -112,9 +113,15 @@ void App::Init()
     pointLightSphereProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
 
-        // Physically Based Rendering
+    // NEW SHADERS
     pbrProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/PHYSICALLY_BASED_RENDERING.glsl", "PHYSICALLY_BASED_RENDERING");
+
+    equirectangularProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/EQUIRECTANGULAR.glsl", "EQUIRECTANGULAR");
+
+    skyboxProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/SKYBOX.glsl", "SKYBOX");
 
         // Cache uniform locations
     Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
@@ -215,6 +222,11 @@ void App::Init()
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
+
+    // TODO: Be able to load several HDRs and change between them by using a debug key
+    // for example, if we load 5 hdrs, a debug key will do 1 2 3 4 5 1 2 3 4 5
+    // if we load 2 hdrs a debug key will do 1 2 1 2 1 2 1 2
+    environmentMap->LoadFromHDR(this, "HDR/airport_4k.hdr", equirectangularProgramIdx, 2048);
 }
 
 void App::Update()
@@ -283,6 +295,9 @@ void App::Render()
 
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // In render loop
+            environmentMap->RenderSkybox(this, skyboxProgramIdx, worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
@@ -405,18 +420,22 @@ void App::Render()
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 
-            // Prevent overwriting depth buffer
+            // Prepare depth settings for skybox and light debug
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LEQUAL);
-            glDepthMask(GL_FALSE);
+            glDepthMask(GL_FALSE); // Disable depth writes
             glDisable(GL_BLEND);
 
+            // Render the skybox after setting up depth testing
+            environmentMap->RenderSkybox(this, skyboxProgramIdx, worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+
+            // Render light debug geometry if enabled
             if (gBufferDebugMode == 0 && enableLightDebug)
             {
                 RenderLightDebugGeometry();
             }
 
-            glDepthMask(GL_TRUE);
+            glDepthMask(GL_TRUE); // Restore depth writes
 
             break;
         }
