@@ -63,6 +63,7 @@ App::App()
 {
     worldCamera.created = false;
     currentCubemapIndex = 0;
+    drawEditor = true;
 }
 
 void App::Init()
@@ -122,6 +123,9 @@ void App::Init()
 
     skyboxProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/SKYBOX.glsl", "SKYBOX");
+
+    gridProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/GRID.glsl", "GRID");
 
         // Cache uniform locations
     Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
@@ -272,6 +276,11 @@ void App::Update()
         currentCubemapIndex = (currentCubemapIndex + 1) % cubemaps.size();
     }
 
+    if (input.keys[K_N] == BUTTON_PRESS)
+    {
+        drawEditor = !drawEditor;
+    }
+
     // Handle rendering mode changes
     if (needsReinit)
     {
@@ -325,7 +334,7 @@ void App::Render()
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            if (!cubemaps.empty()) 
+            if (!cubemaps.empty())
             {
                 RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
                     worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
@@ -479,7 +488,10 @@ void App::Render()
 
 void App::Gui()
 {
-    Editor::Draw(this);
+    if (drawEditor) 
+    {
+        Editor::Draw(this);
+    }
 }
 
 void App::CleanUp()
@@ -682,6 +694,37 @@ void App::UpdateLights()
     }
 
     UnmapBuffer(globalUBO);
+}
+
+void App::RenderGrid()
+{
+    if (drawGrid == false) return;
+
+    // Fixed draw buffer configuration
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(1, drawBuffers);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    Program& gridProgram = programs[gridProgramIdx];
+    glUseProgram(gridProgram.handle);
+
+    /*glUniform1f(glGetUniformLocation(gridProgram.handle, "left"), glm::value_ptr(worldCamera.GetLeft()));
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "right"), glm::value_ptr(worldCamera.GetRight()));
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "bottom"), glm::value_ptr(worldCamera.GetBottom()));
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "top"), glm::value_ptr(worldCamera.GetTop());
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "znear"), glm::value_ptr(worldCamera.GetZNear()));
+
+    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "worldMatrix"), 1, GL_FALSE, glm::value_ptr(worldCamera.WorldMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(worldCamera.ViewMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(worldCamera.ProjectionMatrix()));*/
+
+    // Render quad
+    //resourceManager->quad->submeshes[0]->draw();
+
+    glUseProgram(0);
 }
 
 void App::RenderLightDebugGeometry()

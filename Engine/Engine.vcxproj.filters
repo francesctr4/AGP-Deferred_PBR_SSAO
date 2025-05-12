@@ -46,6 +46,9 @@
     <Filter Include="Source Code\!PBR\Cubemap">
       <UniqueIdentifier>{1406ea75-8a89-4712-b546-a7fc598049ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Shaders\NewFilter1">
+      <UniqueIdentifier>{2588d97b-d600-48a3-8d6e-4a8a53fc9ec8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -231,6 +234,9 @@
     </None>
     <None Include="WorkingDir\Shaders\SKYBOX.glsl">
       <Filter>Source Code\!PBR\Cubemap</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\GRID.glsl">
+      <Filter>Source Code\Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -76,6 +76,7 @@
     <None Include="Code\openGL_types.inl" />
     <None Include="Code\PBR_types.inl" />
     <None Include="WorkingDir\Shaders\EQUIRECTANGULAR.glsl" />
+    <None Include="WorkingDir\Shaders\GRID.glsl" />
     <None Include="WorkingDir\Shaders\PHYSICALLY_BASED_RENDERING.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
     <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl" />

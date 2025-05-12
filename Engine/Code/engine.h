@@ -49,6 +49,10 @@ public:
     void UpdateLightList();
     void UpdateLights();
 
+    // ------------------------------------------------------------- //
+
+    void RenderGrid();
+
 private:
 
     void RenderLightDebugGeometry();
@@ -68,6 +72,9 @@ public:
 
     // Core
     bool isRunning;
+    bool drawEditor;
+    bool drawGrid;
+
     f32 deltaTime;
     Input input;
     Mode mode;
@@ -154,6 +161,7 @@ private:
     u32 pbrProgramIdx;
     u32 skyboxProgramIdx;
     u32 equirectangularProgramIdx;
+    u32 gridProgramIdx;
 
     // Uniform locations
     u32 deferredRenderProgramUniformTexture;
