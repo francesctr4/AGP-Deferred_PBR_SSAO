@@ -62,7 +62,7 @@ App::App()
     input({})
 {
     worldCamera.created = false;
-    environmentMap = new Cubemap();
+    currentCubemapIndex = 0;
 }
 
 void App::Init()
@@ -224,18 +224,31 @@ void App::Init()
     }
 
     // 11. Cubemap
-    cubemap.CreateCube();
+    Cubemap::CreateCube();
 
-    const std::pair<GLuint&, const char*> cubemaps[] =
+    const std::vector<const char*> cubemapPaths =
     {
-        {airport4kIdx, "HDR/airport_4k.hdr"},
-        {burntWarehouse4kIdx, "HDR/burnt_warehouse_4k.hdr"},
-        {mirroredHall4kIdx, "HDR/mirrored_hall_4k.hdr"},
+        "HDR/airport_4k.hdr",
+        "HDR/burnt_warehouse_4k.hdr",
+        "HDR/mirrored_hall_4k.hdr",
     };
 
-    for (auto& [cubemapIdx, path] : cubemaps)
+    // Reserve space to prevent reallocation and copying
+    cubemaps.reserve(cubemapPaths.size());
+
+    for (auto& path : cubemapPaths)
     {
-        LoadHDR(cubemapIdx, path, equirectangularProgramIdx);
+        cubemaps.emplace_back(); // Add a new Cubemap to the vector
+        Cubemap& newCubemap = cubemaps.back(); // Reference to the new Cubemap
+        if (newCubemap.LoadFromHDR(this, path, equirectangularProgramIdx))
+        {
+            // Successfully loaded, no action needed
+        }
+        else
+        {
+            cubemaps.pop_back(); // Remove if loading failed
+            ELOG("Failed to load cubemap: %s", path);
+        }
     }
 }
 
@@ -252,6 +265,12 @@ void App::Update()
     if (input.keys[K_4] == BUTTON_PRESS) gBufferDebugMode = 3;
     if (input.keys[K_5] == BUTTON_PRESS) gBufferDebugMode = 4;
     if (input.keys[K_6] == BUTTON_PRESS) gBufferDebugMode = 5;
+
+    // Cubemaps
+    if (input.keys[K_M] == BUTTON_PRESS)
+    {
+        currentCubemapIndex = (currentCubemapIndex + 1) % cubemaps.size();
+    }
 
     // Handle rendering mode changes
     if (needsReinit)
@@ -306,8 +325,11 @@ void App::Render()
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            // In render loop
-            cubemap.RenderSkybox(this, skyboxProgramIdx, cubemaps[0].GetCubemapID(), worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            if (!cubemaps.empty()) 
+            {
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            }
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
@@ -436,8 +458,11 @@ void App::Render()
             glDepthMask(GL_FALSE); // Disable depth writes
             glDisable(GL_BLEND);
 
-            // Render the skybox after setting up depth testing
-            environmentMap->RenderSkybox(this, skyboxProgramIdx, worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            if (!cubemaps.empty())
+            {
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            }
 
             // Render light debug geometry if enabled
             if (gBufferDebugMode == 0 && enableLightDebug)
@@ -850,6 +875,30 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
 
     // Unbind uniform buffer (binding index 1)
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, 0, 0, 0);
+}
+
+
+// Render skybox using specified shader
+void App::RenderSkybox(u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection)
+{
+    glDepthMask(GL_FALSE);
+    Program& skyboxProgram = programs[skyboxShaderIdx];
+    glUseProgram(skyboxProgram.handle);
+
+    // Set up matrices (remove translation from view matrix)
+    glm::mat4 viewWithoutTranslation = glm::mat4(glm::mat3(view));
+    GLint viewLoc = glGetUniformLocation(skyboxProgram.handle, "view");
+    GLint projectionLoc = glGetUniformLocation(skyboxProgram.handle, "projection");
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewWithoutTranslation));
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    // Bind cubemap and render
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapIdx);
+
+    Cubemap::RenderCube();
+
+    glDepthMask(GL_TRUE);
 }
 
 void App::ChangeRenderMode()

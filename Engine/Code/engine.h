@@ -59,6 +59,9 @@ private:
     GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
     void RenderEntity(Entity* entity, Program& program, u32 programUniformTexture);
 
+    // Render skybox using specified shader
+    void RenderSkybox(u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection);
+
     void ChangeRenderMode();
 
 public:
@@ -88,7 +91,6 @@ public:
     Framebuffer primaryFBO;
 
     // Cubemap
-    Cubemap cubemap;
     u32 currentCubemapIndex;
 
     // Embedded geometry
@@ -157,11 +159,6 @@ private:
     u32 deferredRenderProgramUniformTexture;
     u32 forwardRenderProgramUniformTexture;
     u32 programUniformDebugMode;
-    
-    // Cubemaps
-    u32 airport4kIdx;
-    u32 burntWarehouse4kIdx;
-    u32 mirroredHall4kIdx;
 
 };
 

@@ -15,12 +15,42 @@ Cubemap::Cubemap() : cubemapID(0), hdrTextureID(0), captureFBO(0), captureRBO(0)
     
 }
 
-Cubemap::~Cubemap() {
+Cubemap::Cubemap(Cubemap&& other) noexcept
+    : cubemapID(other.cubemapID),
+    hdrTextureID(other.hdrTextureID),
+    captureFBO(other.captureFBO),
+    captureRBO(other.captureRBO)
+{
+    other.cubemapID = 0;
+    other.hdrTextureID = 0;
+    other.captureFBO = 0;
+    other.captureRBO = 0;
+}
+
+Cubemap& Cubemap::operator=(Cubemap&& other) noexcept {
+    if (this != &other) {
+        ReleaseResources();
+
+        cubemapID = other.cubemapID;
+        hdrTextureID = other.hdrTextureID;
+        captureFBO = other.captureFBO;
+        captureRBO = other.captureRBO;
+
+        other.cubemapID = 0;
+        other.hdrTextureID = 0;
+        other.captureFBO = 0;
+        other.captureRBO = 0;
+    }
+    return *this;
+}
+
+Cubemap::~Cubemap() 
+{
     ReleaseResources();
 }
 
 // Load HDR environment map and convert to cubemap
-bool Cubemap::LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx, int size) 
+bool Cubemap::LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx, int size)
 {
     // Load HDR texture
     int width, height, nrComponents;
@@ -38,7 +68,7 @@ bool Cubemap::LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx
     cubemapID = CreateCubemapTexture(size);
 
     // Convert HDR to cubemap
-    ConvertHDRToCubemap(app, conversionShaderIdx, size);
+    ConvertHDRToCubemap(app, cubemapID, conversionShaderIdx, size);
 
     return true;
 }
@@ -61,7 +91,7 @@ void Cubemap::RenderSkybox(App* app, u32 skyboxShaderIdx, u32 cubemapIdx, const 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapIdx);
 
-    RenderCube();
+    Cubemap::RenderCube();
 
     glDepthMask(GL_TRUE);
 }
@@ -105,7 +135,7 @@ void Cubemap::CreateCube()
     cubeInitialized = true;
 }
 
-void Cubemap::ConvertHDRToCubemap(App* app, u32 conversionShaderIdx, int size) {
+void Cubemap::ConvertHDRToCubemap(App* app, u32& cubemapID, u32 conversionShaderIdx, int size) {
     // Set up framebuffer
     glGenFramebuffers(1, &captureFBO);
     glGenRenderbuffers(1, &captureRBO);
