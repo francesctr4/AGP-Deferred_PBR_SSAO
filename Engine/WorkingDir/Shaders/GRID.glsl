@@ -25,6 +25,7 @@ uniform float top;
 uniform float znear;
 uniform mat4 worldMatrix;
 uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
 
 in vec2 texCoord;
 out vec4 outColor;
@@ -65,7 +66,7 @@ void main()
 	if (t > 0.0) // Intersected in front of the eye
 	{
 		vec3 hitWorldspace = eyeposWorldspace + eyedirWorldspace * t;
-		outColor = vec4(grid(hitWorldspace, 1.0));
+		outColor = vec4(grid(hitWorldspace, 10.0));
 	}
 	else 
 	{

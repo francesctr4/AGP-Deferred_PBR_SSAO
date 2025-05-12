@@ -64,6 +64,7 @@ App::App()
     worldCamera.created = false;
     currentCubemapIndex = 0;
     drawEditor = true;
+    drawGrid = true;
 }
 
 void App::Init()
@@ -333,6 +334,8 @@ void App::Render()
 
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            RenderGrid();
 
             if (!cubemaps.empty())
             {
@@ -700,9 +703,8 @@ void App::RenderGrid()
 {
     if (drawGrid == false) return;
 
-    // Fixed draw buffer configuration
-    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(1, drawBuffers);
+    // Bind the default framebuffer (or adjust if using a specific FBO)
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -711,18 +713,35 @@ void App::RenderGrid()
     Program& gridProgram = programs[gridProgramIdx];
     glUseProgram(gridProgram.handle);
 
-    /*glUniform1f(glGetUniformLocation(gridProgram.handle, "left"), glm::value_ptr(worldCamera.GetLeft()));
-    glUniform1f(glGetUniformLocation(gridProgram.handle, "right"), glm::value_ptr(worldCamera.GetRight()));
-    glUniform1f(glGetUniformLocation(gridProgram.handle, "bottom"), glm::value_ptr(worldCamera.GetBottom()));
-    glUniform1f(glGetUniformLocation(gridProgram.handle, "top"), glm::value_ptr(worldCamera.GetTop());
-    glUniform1f(glGetUniformLocation(gridProgram.handle, "znear"), glm::value_ptr(worldCamera.GetZNear()));
+    // Calculate camera frustum parameters
+    float znear = worldCamera.GetZNear();
+    float aspectRatio = worldCamera.GetAspectRatio();
+    float fovY = worldCamera.GetVerticalFOV();
+    float fovRadians = glm::radians(fovY);
+    float top = znear * tan(fovRadians / 2.0f);
+    float bottom = -top;
+    float right = top * aspectRatio;
+    float left = -right;
 
-    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "worldMatrix"), 1, GL_FALSE, glm::value_ptr(worldCamera.WorldMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(worldCamera.ViewMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(worldCamera.ProjectionMatrix()));*/
+    // Get camera matrices
+    glm::mat4 viewMatrix = worldCamera.ViewMatrix();
+    glm::mat4 projectionMatrix = worldCamera.ProjectionMatrix();
+    glm::mat4 worldMatrix = glm::inverse(viewMatrix);
 
-    // Render quad
-    //resourceManager->quad->submeshes[0]->draw();
+    // Set uniforms
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "left"), left);
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "right"), right);
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "bottom"), bottom);
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "top"), top);
+    glUniform1f(glGetUniformLocation(gridProgram.handle, "znear"), znear);
+    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "worldMatrix"), 1, GL_FALSE, glm::value_ptr(worldMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(gridProgram.handle, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+    // Render full-screen quad using the embedded VAO
+    glBindVertexArray(vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+    glBindVertexArray(0);
 
     glUseProgram(0);
 }

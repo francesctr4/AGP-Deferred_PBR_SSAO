@@ -24,6 +24,10 @@ public:
     const glm::vec3& GetTarget() const;
     const glm::vec3& GetUpVector() const;
 
+    const float GetVerticalFOV() const;
+    const float GetAspectRatio() const;
+    const float GetZNear() const;
+
     const glm::mat4& ViewMatrix() const;
     const glm::mat4& ProjectionMatrix() const;
 

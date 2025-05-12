@@ -73,6 +73,21 @@ const glm::vec3& Camera::GetUpVector() const
     return upVector; 
 }
 
+const float Camera::GetVerticalFOV() const
+{
+    return verticalFOV;
+}
+
+const float Camera::GetAspectRatio() const
+{
+    return aspectRatio;
+}
+
+const float Camera::GetZNear() const
+{
+    return znear;
+}
+
 const glm::mat4& Camera::ViewMatrix() const
 {
     if (isViewDirty)
