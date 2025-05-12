@@ -223,10 +223,20 @@ void App::Init()
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
 
-    // TODO: Be able to load several HDRs and change between them by using a debug key
-    // for example, if we load 5 hdrs, a debug key will do 1 2 3 4 5 1 2 3 4 5
-    // if we load 2 hdrs a debug key will do 1 2 1 2 1 2 1 2
-    environmentMap->LoadFromHDR(this, "HDR/airport_4k.hdr", equirectangularProgramIdx, 2048);
+    // 11. Cubemap
+    cubemap.CreateCube();
+
+    const std::pair<GLuint&, const char*> cubemaps[] =
+    {
+        {airport4kIdx, "HDR/airport_4k.hdr"},
+        {burntWarehouse4kIdx, "HDR/burnt_warehouse_4k.hdr"},
+        {mirroredHall4kIdx, "HDR/mirrored_hall_4k.hdr"},
+    };
+
+    for (auto& [cubemapIdx, path] : cubemaps)
+    {
+        LoadHDR(cubemapIdx, path, equirectangularProgramIdx);
+    }
 }
 
 void App::Update()
@@ -297,7 +307,7 @@ void App::Render()
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // In render loop
-            environmentMap->RenderSkybox(this, skyboxProgramIdx, worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            cubemap.RenderSkybox(this, skyboxProgramIdx, cubemaps[0].GetCubemapID(), worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 

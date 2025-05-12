@@ -63,9 +63,6 @@ private:
 
 public:
 
-    // Initialization
-    Cubemap* environmentMap;
-
     // Core
     bool isRunning;
     f32 deltaTime;
@@ -83,11 +80,16 @@ public:
     std::vector<Mesh>     meshes;
     std::vector<Model>    models;
     std::vector<Program>  programs;
-    std::vector<Entity> entities;
+    std::vector<Entity>   entities;
+    std::vector<Cubemap>  cubemaps;
 
     // Rendering State
     Camera worldCamera;
     Framebuffer primaryFBO;
+
+    // Cubemap
+    Cubemap cubemap;
+    u32 currentCubemapIndex;
 
     // Embedded geometry
     GLuint embeddedVertices;
@@ -147,7 +149,6 @@ private:
     u32 deferredRenderGeometryProgramIdx;
     u32 forwardRenderProgramIdx;
     u32 pointLightSphereProgramIdx;
-
     u32 pbrProgramIdx;
     u32 skyboxProgramIdx;
     u32 equirectangularProgramIdx;
@@ -156,6 +157,11 @@ private:
     u32 deferredRenderProgramUniformTexture;
     u32 forwardRenderProgramUniformTexture;
     u32 programUniformDebugMode;
+    
+    // Cubemaps
+    u32 airport4kIdx;
+    u32 burntWarehouse4kIdx;
+    u32 mirroredHall4kIdx;
 
 };
 

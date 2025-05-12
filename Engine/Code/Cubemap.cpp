@@ -22,8 +22,6 @@ Cubemap::~Cubemap() {
 // Load HDR environment map and convert to cubemap
 bool Cubemap::LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx, int size) 
 {
-    InitializeCube();
-
     // Load HDR texture
     int width, height, nrComponents;
     float* data = stbi_loadf(hdrPath, &width, &height, &nrComponents, 0);
@@ -46,8 +44,8 @@ bool Cubemap::LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx
 }
 
 // Render skybox using specified shader
-
-void Cubemap::RenderSkybox(App* app, u32 skyboxShaderIdx, const glm::mat4& view, const glm::mat4& projection) {
+void Cubemap::RenderSkybox(App* app, u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection)
+{
     glDepthMask(GL_FALSE);
     Program& skyboxProgram = app->programs[skyboxShaderIdx];
     glUseProgram(skyboxProgram.handle);
@@ -61,13 +59,15 @@ void Cubemap::RenderSkybox(App* app, u32 skyboxShaderIdx, const glm::mat4& view,
 
     // Bind cubemap and render
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapIdx);
+
     RenderCube();
 
     glDepthMask(GL_TRUE);
 }
 
-void Cubemap::InitializeCube() {
+void Cubemap::CreateCube() 
+{
     if (cubeInitialized) return;
 
     float vertices[] = {
