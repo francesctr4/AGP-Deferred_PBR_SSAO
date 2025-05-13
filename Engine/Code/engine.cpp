@@ -282,6 +282,12 @@ void App::Update()
         drawEditor = !drawEditor;
     }
 
+    if (input.keys[K_B] == BUTTON_PRESS)
+    {
+        mode = mode == Mode_Deferred_Rendering ? Mode_Forward_Rendering : Mode_Deferred_Rendering;
+        needsReinit = true;
+    }
+
     // Handle rendering mode changes
     if (needsReinit)
     {
@@ -335,13 +341,20 @@ void App::Render()
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            RenderGrid();
+            // ----------------------------------- Skybox Pass ----------------------------------- //
 
             if (!cubemaps.empty())
             {
                 RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
                     worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
             }
+
+            // ----------------------------------- Grid Pass ----------------------------------- //
+
+            glDepthMask(GL_FALSE);
+            // Render the grid before entities
+            RenderGrid();
+            glDepthMask(GL_TRUE);
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
@@ -397,6 +410,8 @@ void App::Render()
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            //RenderGrid(); // Add grid rendering here before entities
 
             Program& geometryProgram = programs[deferredRenderGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
@@ -470,11 +485,11 @@ void App::Render()
             glDepthMask(GL_FALSE); // Disable depth writes
             glDisable(GL_BLEND);
 
-            if (!cubemaps.empty())
-            {
-                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
-                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
-            }
+            //if (!cubemaps.empty())
+            //{
+            //    RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+            //        worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            //}
 
             // Render light debug geometry if enabled
             if (gBufferDebugMode == 0 && enableLightDebug)
@@ -703,12 +718,12 @@ void App::RenderGrid()
 {
     if (drawGrid == false) return;
 
-    // Bind the default framebuffer (or adjust if using a specific FBO)
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //// Bind the default framebuffer (or adjust if using a specific FBO)
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     Program& gridProgram = programs[gridProgramIdx];
     glUseProgram(gridProgram.handle);
