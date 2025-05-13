@@ -236,6 +236,8 @@ void App::Init()
         "HDR/airport_4k.hdr",
         "HDR/burnt_warehouse_4k.hdr",
         "HDR/mirrored_hall_4k.hdr",
+        "HDR/autumn_field_puresky_2k.hdr",
+        "HDR/sunset_jhbcentral_2k.hdr"
     };
 
     // Reserve space to prevent reallocation and copying
@@ -351,10 +353,10 @@ void App::Render()
 
             // ----------------------------------- Grid Pass ----------------------------------- //
 
-            glDepthMask(GL_FALSE);
-            // Render the grid before entities
-            RenderGrid();
-            glDepthMask(GL_TRUE);
+            //glDepthMask(GL_FALSE);
+            //// Render the grid before entities
+            //RenderGrid();
+            //glDepthMask(GL_TRUE);
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
