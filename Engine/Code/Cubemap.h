@@ -20,6 +20,7 @@ public:
 
     static void CreateCube();
     static void RenderCube();
+    static void ReleaseCube();
 
     bool LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx, int size = 2048);
 

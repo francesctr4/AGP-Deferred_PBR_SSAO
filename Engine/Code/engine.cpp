@@ -236,8 +236,9 @@ void App::Init()
         "HDR/airport_4k.hdr",
         "HDR/burnt_warehouse_4k.hdr",
         "HDR/mirrored_hall_4k.hdr",
-        "HDR/autumn_field_puresky_2k.hdr",
-        "HDR/sunset_jhbcentral_2k.hdr"
+        "HDR/cobblestone_street_night_4k.hdr",
+        "HDR/sunset_jhbcentral_4k.hdr",
+        "HDR/stierberg_sunrise_4k.hdr",
     };
 
     // Reserve space to prevent reallocation and copying
@@ -517,6 +518,10 @@ void App::Gui()
 void App::CleanUp()
 {
     ELOG("Cleaning Up Engine");
+
+    // --- Clean Up Cubemaps ---
+    cubemaps.clear();
+    Cubemap::ReleaseCube();
 
     // --- Delete Textures ---
     for (auto& texture : textures)

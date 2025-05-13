@@ -218,3 +218,18 @@ void Cubemap::ReleaseResources() {
     if (captureFBO) glDeleteFramebuffers(1, &captureFBO);
     if (captureRBO) glDeleteRenderbuffers(1, &captureRBO);
 }
+
+void Cubemap::ReleaseCube()
+{
+    if (cubeVAO)
+    {
+        glDeleteVertexArrays(1, &cubeVAO);
+        cubeVAO = 0;
+    }
+    if (cubeVBO)
+    {
+        glDeleteBuffers(1, &cubeVBO);
+        cubeVBO = 0;
+    }
+    cubeInitialized = false;
+}
