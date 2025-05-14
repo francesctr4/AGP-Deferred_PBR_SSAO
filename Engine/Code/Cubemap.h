@@ -3,6 +3,8 @@
 #include "platform.h"
 #include "openGL_types.inl"
 
+#include <array>
+
 class App;
 
 class Cubemap 
@@ -10,12 +12,6 @@ class Cubemap
 public:
 
     Cubemap();
-
-    Cubemap(Cubemap&& other) noexcept;
-    Cubemap& operator=(Cubemap&& other) noexcept;
-    Cubemap(const Cubemap&) = delete;
-    Cubemap& operator=(const Cubemap&) = delete;
-
     ~Cubemap();
 
     static void CreateCube();
@@ -23,25 +19,32 @@ public:
     static void RenderQuad();
     static void ReleaseCube();
 
-    bool LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx, int size = 2048);
+    bool LoadFromHDR(App* app, const char* hdrPath, int size = 2048);
 
     // Render skybox using specified shader
-    void RenderSkybox(App* app, u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection);
+    static void RenderSkybox(App* app, u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection);
 
     GLuint GetCubemapID() const { return cubemapID; }
     GLuint GetDiffuseIrradianceMap() const { return irradianceMap; }
     GLuint GetSpecularPrefilterMap() const { return prefilterMap; }
-    GLuint GetBRFDlookUpTexture() const { return BRFD_LUT; }
+    GLuint GetBRFDlookUpTexture() const { return BRDF_LUT; }
 
 private:
+
+    bool LoadHDRTexture(const char* hdrPath);
+
+    glm::mat4 captureProjection;
+    std::array<glm::mat4, 6> captureViews;
 
     GLuint cubemapID;
     GLuint irradianceMap;
     GLuint prefilterMap;
-    GLuint BRFD_LUT;
+    GLuint BRDF_LUT;
     GLuint hdrTextureID;
     GLuint captureFBO;
     GLuint captureRBO;
+
+    int size = 0;
 
     static GLuint cubeVAO;
     static GLuint cubeVBO;
@@ -51,10 +54,13 @@ private:
 
     static bool cubeInitialized;
 
-    void ConvertHDRToCubemap(App* app, u32& cubemapID, u32 conversionShaderIdx, int size,
-        glm::mat4 captureProjection, glm::mat4* captureViews);
+    void GenerateDiffuseIrradianceMap(Program& irradianceShader);
+    void GenerateSpecularPrefilterMap(Program& prefilterShader);
+    void GenerateBRDFIntegrationLUT(Program& brdfShader);
 
-    GLuint CreateCubemapTexture(int size);
+    void ConvertHDRToCubemap(Program& conversionShader);
+
+    void CreateCubemapObject(GLuint& textureID);
 
     void SetTextureParameters(GLenum target);
 

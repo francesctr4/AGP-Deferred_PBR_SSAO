@@ -254,13 +254,13 @@ void App::Init()
 
     const std::vector<const char*> cubemapPaths =
     {
-        //"HDR/airport_4k.hdr",
+        "HDR/airport_4k.hdr",
         //"HDR/burnt_warehouse_4k.hdr",
         //"HDR/mirrored_hall_4k.hdr",
         "HDR/cobblestone_street_night_4k.hdr",
         //"HDR/stierberg_sunrise_4k.hdr",
         //"HDR/sunset_jhbcentral_4k.hdr",
-        "HDR/table_mountain_1_4k.hdr"
+        //"HDR/table_mountain_1_4k.hdr"
     };
 
     // Reserve space to prevent reallocation and copying
@@ -270,7 +270,7 @@ void App::Init()
     {
         cubemaps.emplace_back(); // Add a new Cubemap to the vector
         Cubemap& newCubemap = cubemaps.back(); // Reference to the new Cubemap
-        if (!newCubemap.LoadFromHDR(this, path, equirectangularToCubemapProgramIdx))
+        if (!newCubemap.LoadFromHDR(this, path))
         {
             cubemaps.pop_back(); // Remove if loading failed
             ELOG("Failed to load cubemap: %s", path);
@@ -322,17 +322,17 @@ void App::Update()
 
     CameraMovement(input, worldCamera, deltaTime);
 
-    //{
-    //    // Rotate Patrick
+    {
+        // Rotate Patrick
 
-    //    static Entity* entity = &entities[0];
-    //    static float rotationSpeed = glm::radians(30.0f);
+        static Entity* entity = &entities[0];
+        static float rotationSpeed = glm::radians(30.0f);
 
-    //    float angle = rotationSpeed * deltaTime;
-    //    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+        float angle = rotationSpeed * deltaTime;
+        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //    entity->worldMatrix = entity->worldMatrix * rotation;
-    //}
+        entity->worldMatrix = entity->worldMatrix * rotation;
+    }
 
     UpdateEntities();
 
