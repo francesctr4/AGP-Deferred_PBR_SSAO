@@ -20,6 +20,7 @@ public:
 
     static void CreateCube();
     static void RenderCube();
+    static void RenderQuad();
     static void ReleaseCube();
 
     bool LoadFromHDR(App* app, const char* hdrPath, u32 conversionShaderIdx, int size = 2048);
@@ -38,16 +39,20 @@ private:
     GLuint irradianceMap;
     GLuint prefilterMap;
     GLuint BRFD_LUT;
-
     GLuint hdrTextureID;
     GLuint captureFBO;
     GLuint captureRBO;
 
     static GLuint cubeVAO;
     static GLuint cubeVBO;
+
+    static GLuint quadVAO;
+    static GLuint quadVBO;
+
     static bool cubeInitialized;
 
-    void ConvertHDRToCubemap(App* app, u32& cubemapID, u32 conversionShaderIdx, int size);
+    void ConvertHDRToCubemap(App* app, u32& cubemapID, u32 conversionShaderIdx, int size,
+        glm::mat4 captureProjection, glm::mat4* captureViews);
 
     GLuint CreateCubemapTexture(int size);
 

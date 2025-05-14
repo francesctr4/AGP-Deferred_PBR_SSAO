@@ -71,6 +71,7 @@ void App::Init()
 {
     // 1. Core OpenGL state setup
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     // 2. Geometry Buffers Setup
         // - Vertex Buffer Object
@@ -170,7 +171,8 @@ void App::Init()
         {cerberusAlbedoIdx, "PBR/Textures/Cerberus_A.tga"},
         {cerberusMetallicIdx, "PBR/Textures/Cerberus_M.tga"},
         {cerberusNormalIdx, "PBR/Textures/Cerberus_N.tga"},
-        {cerberusRoughnessIdx, "PBR/Textures/Cerberus_R.tga"}
+        {cerberusRoughnessIdx, "PBR/Textures/Cerberus_R.tga"},
+
     };
 
     for (auto& [idx, path] : textures) 
@@ -252,13 +254,13 @@ void App::Init()
 
     const std::vector<const char*> cubemapPaths =
     {
-        "HDR/airport_4k.hdr",
+        //"HDR/airport_4k.hdr",
         //"HDR/burnt_warehouse_4k.hdr",
         //"HDR/mirrored_hall_4k.hdr",
-        //"HDR/cobblestone_street_night_4k.hdr",
-        //"HDR/sunset_jhbcentral_4k.hdr",
+        "HDR/cobblestone_street_night_4k.hdr",
         //"HDR/stierberg_sunrise_4k.hdr",
-        //"HDR/table_mountain_1_4k.hdr"
+        //"HDR/sunset_jhbcentral_4k.hdr",
+        "HDR/table_mountain_1_4k.hdr"
     };
 
     // Reserve space to prevent reallocation and copying
@@ -320,17 +322,17 @@ void App::Update()
 
     CameraMovement(input, worldCamera, deltaTime);
 
-    {
-        // Rotate Patrick
+    //{
+    //    // Rotate Patrick
 
-        static Entity* entity = &entities[0];
-        static float rotationSpeed = glm::radians(30.0f);
+    //    static Entity* entity = &entities[0];
+    //    static float rotationSpeed = glm::radians(30.0f);
 
-        float angle = rotationSpeed * deltaTime;
-        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    //    float angle = rotationSpeed * deltaTime;
+    //    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        entity->worldMatrix = entity->worldMatrix * rotation;
-    }
+    //    entity->worldMatrix = entity->worldMatrix * rotation;
+    //}
 
     UpdateEntities();
 
@@ -539,11 +541,11 @@ void App::Render()
             }
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
+            
+            //Program& forwardPbrProgram = programs[forwardPbrDirectProgramIdx];
+            Program& forwardPbrProgram = programs[forwardPbrIblProgramIdx];
 
-            Program& forwardPbrDirectProgram = programs[forwardPbrDirectProgramIdx];
-            //Program& forwardPbrIblProgram = programs[forwardPbrIblProgramIdx];
-
-            glUseProgram(forwardPbrDirectProgram.handle);
+            glUseProgram(forwardPbrProgram.handle);
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
@@ -558,35 +560,35 @@ void App::Render()
             // Bind pre-computed IBL data
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "irradianceMap"), 0);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "irradianceMap"), 0);
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "prefilterMap"), 1);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "prefilterMap"), 1);
 
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "brdfLUT"), 2);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "brdfLUT"), 2);
 
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "albedoMap"), 3);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "albedoMap"), 3);
 
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "normalMap"), 4);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "normalMap"), 4);
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "metallicMap"), 5);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "metallicMap"), 5);
 
             glActiveTexture(GL_TEXTURE6);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "roughnessMap"), 6);
+            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "roughnessMap"), 6);
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
             {
-                GLuint vao = FindVAO(mesh, i, forwardPbrDirectProgram);
+                GLuint vao = FindVAO(mesh, i, forwardPbrProgram);
                 glBindVertexArray(vao);
 
                 Submesh& submesh = mesh.submeshes[i];
