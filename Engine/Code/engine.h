@@ -14,13 +14,13 @@
 
 struct GridLightConfig
 {
-    int gridSizeX = 28;  // Number of columns (X-axis)
-    int gridSizeZ = 28;  // Number of rows (Z-axis)
+    int gridSizeX = 10;  // Number of columns (X-axis)
+    int gridSizeZ = 10;  // Number of rows (Z-axis)
     float minX = -23.0f; // Start X range
     float maxX = 23.0f;  // End X range
     float minZ = -23.0f; // Start Z range
     float maxZ = 23.0f;  // End Z range
-    float yPos = 0.1f;   // Fixed Y position
+    float yPos = 0.5f;   // Fixed Y position
 
     float gridLightConstant = 1.0f;
     float gridLightLinear = 8.0f;
@@ -141,6 +141,12 @@ private:
     u32 blueTexIdx;
     u32 lightGreenTexIdx;
     u32 orangeTexIdx;
+
+    // PBR
+    u32 cerberusAlbedoIdx;
+    u32 cerberusMetallicIdx;
+    u32 cerberusNormalIdx;
+    u32 cerberusRoughnessIdx;
 
     // Model Indices
     u32 patrickIdx;

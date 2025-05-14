@@ -28,9 +28,17 @@ public:
     void RenderSkybox(App* app, u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection);
 
     GLuint GetCubemapID() const { return cubemapID; }
+    GLuint GetDiffuseIrradianceMap() const { return irradianceMap; }
+    GLuint GetSpecularPrefilterMap() const { return prefilterMap; }
+    GLuint GetBRFDlookUpTexture() const { return BRFD_LUT; }
 
 private:
+
     GLuint cubemapID;
+    GLuint irradianceMap;
+    GLuint prefilterMap;
+    GLuint BRFD_LUT;
+
     GLuint hdrTextureID;
     GLuint captureFBO;
     GLuint captureRBO;

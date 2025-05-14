@@ -78,6 +78,8 @@ enum Mode
     Mode_BlinnPhong_Deferred_Rendering = 1, // Deferred Blinn-Phong Shading Pipeline
     Mode_PBR_Forward_Rendering = 2,         // Forward PBR Shading Pipeline
     Mode_PBR_Deferred_Rendering = 3,        // Deferred PBR Shading Pipeline
+
+    ALL_MODES
 };
 
 // --- Material System ---

@@ -18,7 +18,7 @@
 App::App()
     : isRunning(true),
     deltaTime(0.0f),
-    mode(Mode_BlinnPhong_Deferred_Rendering),
+    mode(Mode_PBR_Forward_Rendering),
     needsReinit(false),
     displaySize(0, 0),
     embeddedVertices(0),
@@ -165,7 +165,12 @@ void App::Init()
         {purpleTexIdx, "Textures/color_purple.png"},
         {blueTexIdx, "Textures/color_blue.png"},
         {lightGreenTexIdx, "Textures/color_light_green.png"},
-        {orangeTexIdx, "Textures/color_orange.png"}
+        {orangeTexIdx, "Textures/color_orange.png"},
+
+        {cerberusAlbedoIdx, "PBR/Textures/Cerberus_A.tga"},
+        {cerberusMetallicIdx, "PBR/Textures/Cerberus_M.tga"},
+        {cerberusNormalIdx, "PBR/Textures/Cerberus_N.tga"},
+        {cerberusRoughnessIdx, "PBR/Textures/Cerberus_R.tga"}
     };
 
     for (auto& [idx, path] : textures) 
@@ -298,7 +303,7 @@ void App::Update()
 
     if (input.keys[K_B] == BUTTON_PRESS)
     {
-        mode = mode == Mode_BlinnPhong_Deferred_Rendering ? Mode_BlinnPhong_Forward_Rendering : Mode_BlinnPhong_Deferred_Rendering;
+        mode = static_cast<Mode>((static_cast<int>(mode) + 1) % ALL_MODES);
         needsReinit = true;
     }
 
@@ -517,13 +522,108 @@ void App::Render()
         }
         case Mode_PBR_Forward_Rendering:
         {
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            glViewport(0, 0, displaySize.x, displaySize.y);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // ----------------------------------- Skybox Pass ----------------------------------- //
+
+            if (!cubemaps.empty())
+            {
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            }
+
+            // ----------------------------------- Geometry Pass ----------------------------------- //
+
+            Program& forwardPbrDirectProgram = programs[forwardPbrDirectProgramIdx];
+            //Program& forwardPbrIblProgram = programs[forwardPbrIblProgramIdx];
+
+            glUseProgram(forwardPbrDirectProgram.handle);
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
+
+            Entity* entity = &entities[0];
+
+            // Bind uniform buffer
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle, entity->entityBufferOffset, entity->entityBufferSize);
+
+            Model& model = models[entity->modelIdx];
+            Mesh& mesh = meshes[model.meshIdx];
+
+            // Bind pre-computed IBL data
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "irradianceMap"), 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "prefilterMap"), 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "brdfLUT"), 2);
+
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "albedoMap"), 3);
+
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "normalMap"), 4);
+
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "metallicMap"), 5);
+
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
+            glUniform1i(glGetUniformLocation(forwardPbrDirectProgram.handle, "roughnessMap"), 6);
+
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, forwardPbrDirectProgram);
+                glBindVertexArray(vao);
+
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+
+                glBindVertexArray(0);
+            }
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            // Unbind uniform buffer (binding index 1)
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, 0, 0, 0);
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
+
+            glUseProgram(0);
+
+            // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
+
+            glDisable(GL_BLEND);
+
+            if (gBufferDebugMode == 0 && enableLightDebug)
+            {
+                RenderLightDebugGeometry();
+            }
 
             break;
         }
         case Mode_PBR_Deferred_Rendering:
         {
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            glViewport(0, 0, displaySize.x, displaySize.y);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             break;
         }
@@ -984,11 +1084,13 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, 0, 0, 0);
 }
 
-
-// Render skybox using specified shader
 void App::RenderSkybox(u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection)
 {
     glDepthMask(GL_FALSE);
+    GLint prevDepthFunc;
+    glGetIntegerv(GL_DEPTH_FUNC, &prevDepthFunc); // Save current depth function
+    glDepthFunc(GL_LEQUAL); // Change depth function to allow depth == 1.0
+
     Program& skyboxProgram = programs[skyboxShaderIdx];
     glUseProgram(skyboxProgram.handle);
 
@@ -1005,6 +1107,7 @@ void App::RenderSkybox(u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& vie
 
     Cubemap::RenderCube();
 
+    glDepthFunc(prevDepthFunc); // Restore original depth function
     glDepthMask(GL_TRUE);
 }
 
