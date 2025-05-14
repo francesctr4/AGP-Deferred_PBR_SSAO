@@ -158,10 +158,16 @@ private:
     u32 deferredRenderGeometryProgramIdx;
     u32 forwardRenderProgramIdx;
     u32 pointLightSphereProgramIdx;
-    u32 pbrProgramIdx;
-    u32 skyboxProgramIdx;
-    u32 equirectangularProgramIdx;
     u32 gridProgramIdx;
+
+    // PBR + IBL
+    u32 forwardPbrIblProgramIdx;
+    u32 forwardPbrDirectProgramIdx;
+    u32 equirectangularToCubemapProgramIdx;
+    u32 skyboxProgramIdx;
+    u32 diffuseIrradianceProgramIdx;
+    u32 specularPrefilterProgramIdx;
+    u32 brdfIntegrationProgramIdx;
 
     // Uniform locations
     u32 deferredRenderProgramUniformTexture;

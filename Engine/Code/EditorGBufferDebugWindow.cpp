@@ -30,7 +30,7 @@ void Editor::DrawGBufferDebugWindow(App* app)
             "Final Render", "Albedo", "Normal", "Position", "View Direction", "Depth"
         };
 
-        if (app->mode == Mode_Deferred_Rendering) 
+        if (app->mode == Mode_BlinnPhong_Deferred_Rendering) 
         {
             ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
             ImGui::Separator();

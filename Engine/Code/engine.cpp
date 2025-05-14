@@ -18,7 +18,7 @@
 App::App()
     : isRunning(true),
     deltaTime(0.0f),
-    mode(Mode_Deferred_Rendering),
+    mode(Mode_BlinnPhong_Deferred_Rendering),
     needsReinit(false),
     displaySize(0, 0),
     embeddedVertices(0),
@@ -114,19 +114,33 @@ void App::Init()
         // Light Debug programs
     pointLightSphereProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/POINT_LIGHT_SPHERE.glsl", "POINT_LIGHT_SPHERE");
+        
+        // Grid program
+    gridProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/GRID.glsl", "GRID");
 
-    // NEW SHADERS
-    pbrProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/PHYSICALLY_BASED_RENDERING.glsl", "PHYSICALLY_BASED_RENDERING");
+    // ------------------------ PBR ------------------------ //
+    forwardPbrIblProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/FORWARD_PBR_IBL_TEXTURED.glsl", "FORWARD_PBR_IBL_TEXTURED");
 
-    equirectangularProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/EQUIRECTANGULAR.glsl", "EQUIRECTANGULAR");
+    forwardPbrDirectProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/FORWARD_PBR_DIRECT_TEXTURED.glsl", "FORWARD_PBR_DIRECT_TEXTURED");
+
+    equirectangularToCubemapProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/EQUIRECTANGULAR_TO_CUBEMAP.glsl", "EQUIRECTANGULAR_TO_CUBEMAP");
 
     skyboxProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/SKYBOX.glsl", "SKYBOX");
 
-    gridProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/GRID.glsl", "GRID");
+    diffuseIrradianceProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DIFFUSE_IRRADIANCE_CONVOLUTION.glsl", "DIFFUSE_IRRADIANCE_CONVOLUTION");
+
+    specularPrefilterProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/SPECULAR_PREFILTER_CONVOLUTION.glsl", "SPECULAR_PREFILTER_CONVOLUTION");
+
+    brdfIntegrationProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/BRDF_INTEGRATION_CONVOLUTION.glsl", "BRDF_INTEGRATION_CONVOLUTION");
+    // ------------------------ PBR ------------------------ //
 
         // Cache uniform locations
     Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
@@ -234,11 +248,12 @@ void App::Init()
     const std::vector<const char*> cubemapPaths =
     {
         "HDR/airport_4k.hdr",
-        "HDR/burnt_warehouse_4k.hdr",
-        "HDR/mirrored_hall_4k.hdr",
-        "HDR/cobblestone_street_night_4k.hdr",
-        "HDR/sunset_jhbcentral_4k.hdr",
-        "HDR/stierberg_sunrise_4k.hdr",
+        //"HDR/burnt_warehouse_4k.hdr",
+        //"HDR/mirrored_hall_4k.hdr",
+        //"HDR/cobblestone_street_night_4k.hdr",
+        //"HDR/sunset_jhbcentral_4k.hdr",
+        //"HDR/stierberg_sunrise_4k.hdr",
+        //"HDR/table_mountain_1_4k.hdr"
     };
 
     // Reserve space to prevent reallocation and copying
@@ -248,11 +263,7 @@ void App::Init()
     {
         cubemaps.emplace_back(); // Add a new Cubemap to the vector
         Cubemap& newCubemap = cubemaps.back(); // Reference to the new Cubemap
-        if (newCubemap.LoadFromHDR(this, path, equirectangularProgramIdx))
-        {
-            // Successfully loaded, no action needed
-        }
-        else
+        if (!newCubemap.LoadFromHDR(this, path, equirectangularToCubemapProgramIdx))
         {
             cubemaps.pop_back(); // Remove if loading failed
             ELOG("Failed to load cubemap: %s", path);
@@ -287,7 +298,7 @@ void App::Update()
 
     if (input.keys[K_B] == BUTTON_PRESS)
     {
-        mode = mode == Mode_Deferred_Rendering ? Mode_Forward_Rendering : Mode_Deferred_Rendering;
+        mode = mode == Mode_BlinnPhong_Deferred_Rendering ? Mode_BlinnPhong_Forward_Rendering : Mode_BlinnPhong_Deferred_Rendering;
         needsReinit = true;
     }
 
@@ -334,7 +345,7 @@ void App::Render()
 {
     switch (mode)
     {
-        case Mode_Forward_Rendering:
+        case Mode_BlinnPhong_Forward_Rendering:
         {
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -388,7 +399,7 @@ void App::Render()
 
             break;
         }
-        case Mode_Deferred_Rendering:
+        case Mode_BlinnPhong_Deferred_Rendering:
         {
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -501,6 +512,18 @@ void App::Render()
             }
 
             glDepthMask(GL_TRUE); // Restore depth writes
+
+            break;
+        }
+        case Mode_PBR_Forward_Rendering:
+        {
+
+
+            break;
+        }
+        case Mode_PBR_Deferred_Rendering:
+        {
+
 
             break;
         }

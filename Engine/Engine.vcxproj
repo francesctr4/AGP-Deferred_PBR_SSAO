@@ -45,6 +45,7 @@
     <ClCompile Include="ThirdParty\imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui_widgets.cpp" />
     <ClCompile Include="ThirdParty\stb\stb.cpp" />
+    <ClCompile Include="WorkingDir\Shaders\SPECULAR_PREFILTER_CONVOLUTION.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\BufferManagement.h" />
@@ -75,9 +76,12 @@
     <None Include="Code\ImGuiUtils.inl" />
     <None Include="Code\openGL_types.inl" />
     <None Include="Code\PBR_types.inl" />
-    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR.glsl" />
+    <None Include="WorkingDir\Shaders\BRDF_INTEGRATION_CONVOLUTION.glsl" />
+    <None Include="WorkingDir\Shaders\DIFFUSE_IRRADIANCE_CONVOLUTION.glsl" />
+    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR_TO_CUBEMAP.glsl" />
+    <None Include="WorkingDir\Shaders\FORWARD_PBR_DIRECT_TEXTURED.glsl" />
     <None Include="WorkingDir\Shaders\GRID.glsl" />
-    <None Include="WorkingDir\Shaders\PHYSICALLY_BASED_RENDERING.glsl" />
+    <None Include="WorkingDir\Shaders\FORWARD_PBR_IBL_TEXTURED.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
     <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl" />

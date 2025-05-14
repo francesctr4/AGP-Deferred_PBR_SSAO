@@ -46,7 +46,7 @@
     <Filter Include="Source Code\!PBR\Cubemap">
       <UniqueIdentifier>{1406ea75-8a89-4712-b546-a7fc598049ed}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Code\Shaders\NewFilter1">
+    <Filter Include="Source Code\Shaders\PBR">
       <UniqueIdentifier>{2588d97b-d600-48a3-8d6e-4a8a53fc9ec8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -128,6 +128,9 @@
     </ClCompile>
     <ClCompile Include="Code\Cubemap.cpp">
       <Filter>Source Code\!PBR\Cubemap</Filter>
+    </ClCompile>
+    <ClCompile Include="WorkingDir\Shaders\SPECULAR_PREFILTER_CONVOLUTION.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -223,20 +226,29 @@
     <None Include="Code\openGL_types.inl">
       <Filter>Source Code\Graphics</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\PHYSICALLY_BASED_RENDERING.glsl">
-      <Filter>Source Code\!PBR</Filter>
-    </None>
     <None Include="Code\PBR_types.inl">
       <Filter>Source Code\!PBR</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR.glsl">
-      <Filter>Source Code\!PBR\Cubemap</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\SKYBOX.glsl">
-      <Filter>Source Code\!PBR\Cubemap</Filter>
-    </None>
     <None Include="WorkingDir\Shaders\GRID.glsl">
       <Filter>Source Code\Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\FORWARD_PBR_IBL_TEXTURED.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\BRDF_INTEGRATION_CONVOLUTION.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\DIFFUSE_IRRADIANCE_CONVOLUTION.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR_TO_CUBEMAP.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\SKYBOX.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\FORWARD_PBR_DIRECT_TEXTURED.glsl">
+      <Filter>Source Code\Shaders\PBR</Filter>
     </None>
   </ItemGroup>
 </Project>
