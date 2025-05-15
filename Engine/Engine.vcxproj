@@ -90,6 +90,8 @@
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl" />
     <None Include="WorkingDir\Shaders\shader_template.glsl" />
     <None Include="WorkingDir\Shaders\SKYBOX.glsl" />
+    <None Include="WorkingDir\Shaders\SSAO.glsl" />
+    <None Include="WorkingDir\Shaders\SSAO_BLUR.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

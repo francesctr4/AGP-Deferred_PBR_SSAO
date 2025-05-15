@@ -52,6 +52,12 @@
     <Filter Include="Source Code\Shaders\PBR\Deferred Shading">
       <UniqueIdentifier>{5492dd41-1ba9-436e-bc56-febae994e82f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Shaders\Blinn-Phong">
+      <UniqueIdentifier>{4a708044-10f7-4d6f-86c8-67897738c344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Code\Shaders\SSAO">
+      <UniqueIdentifier>{33364ffb-5b7e-4f00-b717-a6da4a42f814}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -208,16 +214,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl">
-      <Filter>Source Code\Shaders</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl">
-      <Filter>Source Code\Shaders</Filter>
-    </None>
     <None Include="WorkingDir\Shaders\shader_template.glsl">
-      <Filter>Source Code\Shaders</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
     <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl">
@@ -258,6 +255,21 @@
     </None>
     <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl">
       <Filter>Source Code\Shaders\PBR\Deferred Shading</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl">
+      <Filter>Source Code\Shaders\Blinn-Phong</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl">
+      <Filter>Source Code\Shaders\Blinn-Phong</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl">
+      <Filter>Source Code\Shaders\Blinn-Phong</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\SSAO_BLUR.glsl">
+      <Filter>Source Code\Shaders\SSAO</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\SSAO.glsl">
+      <Filter>Source Code\Shaders\SSAO</Filter>
     </None>
   </ItemGroup>
 </Project>
