@@ -233,13 +233,14 @@ void App::Init()
 
     const std::pair<GLuint, GLuint> entities[] = 
     {
+        {patrickIdx, 0},
+        {planeIdx, lightGreenTexIdx},
+        {coneIdx, purpleTexIdx},
+        {cubeIdx, blueTexIdx},
+        {cylinderIdx, orangeTexIdx},
+        {sphereIdx, greenTexIdx},
+        {torusIdx, lightBlueTexIdx},
         {weaponIdx, 0},
-        //{planeIdx, lightGreenTexIdx},
-        //{coneIdx, purpleTexIdx},
-        //{cubeIdx, blueTexIdx},
-        //{cylinderIdx, orangeTexIdx},
-        //{sphereIdx, greenTexIdx},
-        //{torusIdx, lightBlueTexIdx},
     };
 
     for (auto& [modelIdx, texIdx] : entities) 
@@ -337,15 +338,17 @@ void App::Update()
     CameraMovement(input, worldCamera, deltaTime);
 
     {
-        // Rotate Patrick
-
-        static Entity* entity = &entities[0];
         static float rotationSpeed = glm::radians(30.0f);
-
         float angle = rotationSpeed * deltaTime;
         glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        entity->worldMatrix = entity->worldMatrix * rotation;
+        // Rotate Patrick
+        static Entity* patrickEntity = &entities[0];
+        patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
+
+        // Rotate PBR Cerberus
+        static Entity* cerberusEntity = &entities[7];
+        cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
     }
 
     UpdateEntities();
@@ -400,9 +403,9 @@ void App::Render()
             // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (auto& entity : entities)
+            for (int i = 0; i < entities.size() - 1; ++i)
             {
-                RenderEntity(&entity, texturedMeshProgram, forwardRenderProgramUniformTexture);
+                RenderEntity(&entities[i], texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
@@ -433,9 +436,9 @@ void App::Render()
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (auto& entity : entities)
+            for (int i = 0; i < entities.size() - 1; ++i)
             {
-                RenderEntity(&entity, geometryProgram, deferredRenderProgramUniformTexture);
+                RenderEntity(&entities[i], geometryProgram, deferredRenderProgramUniformTexture);
             }
 
             glUseProgram(0);
@@ -541,7 +544,7 @@ void App::Render()
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            Entity* entity = &entities[0];
+            Entity* entity = &entities[7];
 
             // Bind uniform buffer
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle, entity->entityBufferOffset, entity->entityBufferSize);
@@ -621,7 +624,7 @@ void App::Render()
             glUseProgram(geometryProgram.handle);
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            Entity& entity = entities[0];
+            Entity& entity = entities[7];
 
             // Bind entity's uniform buffer
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle,
