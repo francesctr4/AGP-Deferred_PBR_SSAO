@@ -53,7 +53,14 @@ enum Key {
     K_A, K_B, K_C, K_D, K_E, K_F, K_G, K_H, K_I, K_J, K_K, K_L, K_M,
     K_N, K_O, K_P, K_Q, K_R, K_S, K_T, K_U, K_V, K_W, K_X, K_Y, K_Z,
     K_ENTER, K_ESCAPE,
-    KEY_COUNT
+    // Add new keys below
+    K_LALT, K_RALT,        // Alt keys
+    K_LSHIFT, K_RSHIFT,     // Shift keys
+    K_LCTRL, K_RCTRL,       // Control keys
+    K_UP, K_DOWN, K_LEFT, K_RIGHT, // Arrow keys
+    K_F1, K_F2, K_F3, K_F4, K_F5, K_F6, // Function keys
+    K_F7, K_F8, K_F9, K_F10, K_F11, K_F12,
+    KEY_COUNT // Keep this as the last element
 };
 
 enum ButtonState {

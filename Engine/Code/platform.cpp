@@ -74,12 +74,15 @@ void OnGlfwScrollEvent(GLFWwindow* window, double xoffset, double yoffset)
 void OnGlfwKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     // Remap key to our enum values
-    switch (key) {
+    switch (key) 
+    {
         case GLFW_KEY_SPACE:  key = K_SPACE; break;
+
         case GLFW_KEY_0: key = K_0; break; case GLFW_KEY_1: key = K_1; break; case GLFW_KEY_2: key = K_2; break;
         case GLFW_KEY_3: key = K_3; break; case GLFW_KEY_4: key = K_4; break; case GLFW_KEY_5: key = K_5; break;
         case GLFW_KEY_6: key = K_6; break; case GLFW_KEY_7: key = K_7; break; case GLFW_KEY_8: key = K_8; break;
         case GLFW_KEY_9: key = K_9; break;
+
         case GLFW_KEY_A: key = K_A; break; case GLFW_KEY_B: key = K_B; break; case GLFW_KEY_C: key = K_C; break;
         case GLFW_KEY_D: key = K_D; break; case GLFW_KEY_E: key = K_E; break; case GLFW_KEY_F: key = K_F; break;
         case GLFW_KEY_G: key = K_G; break; case GLFW_KEY_H: key = K_H; break; case GLFW_KEY_I: key = K_I; break;
@@ -89,8 +92,33 @@ void OnGlfwKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_S: key = K_S; break; case GLFW_KEY_T: key = K_T; break; case GLFW_KEY_U: key = K_U; break;
         case GLFW_KEY_V: key = K_V; break; case GLFW_KEY_W: key = K_W; break; case GLFW_KEY_X: key = K_X; break;
         case GLFW_KEY_Y: key = K_Y; break; case GLFW_KEY_Z: key = K_Z; break;
+
         case GLFW_KEY_ESCAPE: key = K_ESCAPE; break;
         case GLFW_KEY_ENTER:  key = K_ENTER; break;
+
+        case GLFW_KEY_LEFT_ALT:      key = K_LALT; break;
+        case GLFW_KEY_RIGHT_ALT:     key = K_RALT; break;
+        case GLFW_KEY_LEFT_SHIFT:    key = K_LSHIFT; break;
+        case GLFW_KEY_RIGHT_SHIFT:   key = K_RSHIFT; break;
+        case GLFW_KEY_LEFT_CONTROL:  key = K_LCTRL; break;
+        case GLFW_KEY_RIGHT_CONTROL: key = K_RCTRL; break;
+        case GLFW_KEY_UP:            key = K_UP; break;
+        case GLFW_KEY_DOWN:          key = K_DOWN; break;
+        case GLFW_KEY_LEFT:          key = K_LEFT; break;
+        case GLFW_KEY_RIGHT:         key = K_RIGHT; break;
+
+        case GLFW_KEY_F1:            key = K_F1; break;
+        case GLFW_KEY_F2:            key = K_F2; break;
+        case GLFW_KEY_F3:            key = K_F3; break;
+        case GLFW_KEY_F4:            key = K_F4; break;
+        case GLFW_KEY_F5:            key = K_F5; break;
+        case GLFW_KEY_F6:            key = K_F6; break;
+        case GLFW_KEY_F7:            key = K_F7; break;
+        case GLFW_KEY_F8:            key = K_F8; break;
+        case GLFW_KEY_F9:            key = K_F9; break;
+        case GLFW_KEY_F10:           key = K_F10; break;
+        case GLFW_KEY_F11:           key = K_F11; break;
+        case GLFW_KEY_F12:           key = K_F12; break;
     }
 
     App* app = (App*)glfwGetWindowUserPointer(window);
