@@ -49,6 +49,9 @@
     <Filter Include="Source Code\Shaders\PBR">
       <UniqueIdentifier>{2588d97b-d600-48a3-8d6e-4a8a53fc9ec8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Shaders\PBR\Deferred Shading">
+      <UniqueIdentifier>{5492dd41-1ba9-436e-bc56-febae994e82f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -249,6 +252,12 @@
     </None>
     <None Include="WorkingDir\Shaders\FORWARD_PBR_DIRECT_TEXTURED.glsl">
       <Filter>Source Code\Shaders\PBR</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl">
+      <Filter>Source Code\Shaders\PBR\Deferred Shading</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl">
+      <Filter>Source Code\Shaders\PBR\Deferred Shading</Filter>
     </None>
   </ItemGroup>
 </Project>

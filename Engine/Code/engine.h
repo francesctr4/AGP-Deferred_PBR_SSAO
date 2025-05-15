@@ -95,7 +95,10 @@ public:
 
     // Rendering State
     Camera worldCamera;
-    Framebuffer primaryFBO;
+
+    // Framebuffers
+    Framebuffer blinnPhongDeferredFBO;
+    Framebuffer pbrDeferredFBO;
 
     // Cubemap
     u32 currentCubemapIndex;
@@ -130,6 +133,9 @@ public:
     // PBR + IBL
     u32 forwardPbrIblProgramIdx;
     u32 forwardPbrDirectProgramIdx;
+    u32 deferredPbrIblGeometryProgramIdx;
+    u32 deferredPbrIblQuadProgramIdx;
+
     u32 equirectangularToCubemapProgramIdx;
     u32 skyboxProgramIdx;
     u32 diffuseIrradianceProgramIdx;

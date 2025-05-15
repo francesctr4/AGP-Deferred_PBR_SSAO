@@ -127,6 +127,12 @@ void App::Init()
     forwardPbrDirectProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/FORWARD_PBR_DIRECT_TEXTURED.glsl", "FORWARD_PBR_DIRECT_TEXTURED");
 
+    deferredPbrIblGeometryProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl", "DEFERRED_PBR_IBL_TEXTURED_GEOMETRY");
+
+    deferredPbrIblQuadProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl", "DEFERRED_PBR_IBL_TEXTURED_QUAD");
+
     equirectangularToCubemapProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/EQUIRECTANGULAR_TO_CUBEMAP.glsl", "EQUIRECTANGULAR_TO_CUBEMAP");
 
@@ -244,7 +250,7 @@ void App::Init()
     UnmapBuffer(entityUBO);
 
     // 10. Framebuffer Setup
-    if (!primaryFBO.Create(4, displaySize))
+    if (!blinnPhongDeferredFBO.Create(4, displaySize))
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
@@ -276,6 +282,12 @@ void App::Init()
             ELOG("Failed to load cubemap: %s", path);
         }
     }
+
+    // 12. PBR Deferred Rendering
+    if (!pbrDeferredFBO.Create(4, displaySize))
+    {
+        ELOG("[ERROR] The framebuffer was not created correctly.");
+    }
 }
 
 void App::Update()
@@ -291,6 +303,8 @@ void App::Update()
     if (input.keys[K_4] == BUTTON_PRESS) gBufferDebugMode = 3;
     if (input.keys[K_5] == BUTTON_PRESS) gBufferDebugMode = 4;
     if (input.keys[K_6] == BUTTON_PRESS) gBufferDebugMode = 5;
+    if (input.keys[K_7] == BUTTON_PRESS) gBufferDebugMode = 6;
+    if (input.keys[K_8] == BUTTON_PRESS) gBufferDebugMode = 7;
 
     // Cubemaps
     if (input.keys[K_M] == BUTTON_PRESS)
@@ -408,31 +422,11 @@ void App::Render()
         }
         case Mode_BlinnPhong_Deferred_Rendering:
         {
+            // ------------------------------- Geometry Pass ------------------------------- //
+            glBindFramebuffer(GL_FRAMEBUFFER, blinnPhongDeferredFBO.GetFramebufferHandle());
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             glViewport(0, 0, displaySize.x, displaySize.y);
-
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            // ----------------------------------- Geometry Pass ----------------------------------- //
-
-            glBindFramebuffer(GL_FRAMEBUFFER, primaryFBO.GetFramebufferHandle());
-
-            std::vector<GLuint> drawBuffers;
-
-            for (size_t i = 0; i < primaryFBO.GetColorAttachmentCount(); ++i)
-            {
-                drawBuffers.push_back(primaryFBO.GetColorAttachment(i));
-            }
-
-            glDrawBuffers(drawBuffers.size(), drawBuffers.data());
-
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            //RenderGrid(); // Add grid rendering here before entities
 
             Program& geometryProgram = programs[deferredRenderGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
@@ -446,23 +440,21 @@ void App::Render()
 
             glUseProgram(0);
 
-            // ----------------------------------- Depth Blit ----------------------------------- //
-            // This is for keeping the depth test on the light debug geometry later.
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, primaryFBO.GetFramebufferHandle());
+            // ------------------------------- Depth Blit ------------------------------- //
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, blinnPhongDeferredFBO.GetFramebufferHandle());
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             glBlitFramebuffer(
                 0, 0, displaySize.x, displaySize.y,
                 0, 0, displaySize.x, displaySize.y,
                 GL_DEPTH_BUFFER_BIT, GL_NEAREST
             );
-
-            // ----------------------------------- Lighting Pass ----------------------------------- //
-
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // ------------------------------- Lighting Pass ------------------------------- //
+            // Clear only color buffer, NOT depth buffer
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_DEPTH_TEST);
+            glViewport(0, 0, displaySize.x, displaySize.y);
 
             Program& quadProgram = programs[deferredRenderQuadProgramIdx];
             glUseProgram(quadProgram.handle);
@@ -474,11 +466,11 @@ void App::Render()
                 const char* uniformName;
             } gBufferTextures[] =
             {
-                { GL_TEXTURE0, primaryFBO.GetColorAttachment(0), "uAlbedo"   },
-                { GL_TEXTURE1, primaryFBO.GetColorAttachment(1), "uNormal"   },
-                { GL_TEXTURE2, primaryFBO.GetColorAttachment(2), "uPosition" },
-                { GL_TEXTURE3, primaryFBO.GetColorAttachment(3), "uViewDir"  },
-                { GL_TEXTURE4, primaryFBO.GetDepthAttachment(),  "uDepth"    }
+                { GL_TEXTURE0, blinnPhongDeferredFBO.GetColorAttachment(0), "uAlbedo"   },
+                { GL_TEXTURE1, blinnPhongDeferredFBO.GetColorAttachment(1), "uNormal"   },
+                { GL_TEXTURE2, blinnPhongDeferredFBO.GetColorAttachment(2), "uPosition" },
+                { GL_TEXTURE3, blinnPhongDeferredFBO.GetColorAttachment(3), "uViewDir"  },
+                { GL_TEXTURE4, blinnPhongDeferredFBO.GetDepthAttachment(),  "uDepth"    }
             };
 
             for (const auto& tex : gBufferTextures)
@@ -498,27 +490,27 @@ void App::Render()
             glBindTexture(GL_TEXTURE_2D, 0);
             glUseProgram(0);
 
-            // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
-
-            // Prepare depth settings for skybox and light debug
+            // ------------------------------- Post-Lighting ------------------------------- //
             glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LEQUAL);
-            glDepthMask(GL_FALSE); // Disable depth writes
-            glDisable(GL_BLEND);
 
-            //if (!cubemaps.empty())
-            //{
-            //    RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
-            //        worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
-            //}
+            // Skybox
+            if (!cubemaps.empty())
+            {
+                glDepthFunc(GL_LEQUAL);
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+                glDepthFunc(GL_LESS);
+            }
 
-            // Render light debug geometry if enabled
+            // Light debug
             if (gBufferDebugMode == 0 && enableLightDebug)
             {
                 RenderLightDebugGeometry();
             }
 
-            glDepthMask(GL_TRUE); // Restore depth writes
+            // Cleanup
+            glUseProgram(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
 
             break;
         }
@@ -619,13 +611,135 @@ void App::Render()
         }
         case Mode_PBR_Deferred_Rendering:
         {
+            // ------------------------------- Geometry Pass ------------------------------- //
+            glBindFramebuffer(GL_FRAMEBUFFER, pbrDeferredFBO.GetFramebufferHandle());
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             glViewport(0, 0, displaySize.x, displaySize.y);
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            Program& geometryProgram = programs[deferredPbrIblGeometryProgramIdx];
+            glUseProgram(geometryProgram.handle);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
+
+            Entity& entity = entities[0];
+
+            // Bind entity's uniform buffer
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle,
+                entity.entityBufferOffset, entity.entityBufferSize);
+
+            Model& model = models[entity.modelIdx];
+            Mesh& mesh = meshes[model.meshIdx];
+
+            // Bind PBR textures
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uAlbedo"), 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uNormal"), 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uMetallic"), 2);
+
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uRoughness"), 3);
+
+            // Draw submeshes
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, geometryProgram);
+                glBindVertexArray(vao);
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(),
+                    GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                glBindVertexArray(0);
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // ------------------------------- Depth Blit ------------------------------- //
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, pbrDeferredFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+            glBlitFramebuffer(
+                0, 0, displaySize.x, displaySize.y,
+                0, 0, displaySize.x, displaySize.y,
+                GL_DEPTH_BUFFER_BIT, GL_NEAREST
+            );
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // ------------------------------- Lighting Pass ------------------------------- //
+            // Clear only color buffer, NOT depth buffer
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDisable(GL_DEPTH_TEST);
+            glViewport(0, 0, displaySize.x, displaySize.y);
+
+            Program& quadProgram = programs[deferredPbrIblQuadProgramIdx];
+            glUseProgram(quadProgram.handle);
+
+            // Bind G-buffer textures
+            struct GBufferBinding {
+                GLenum unit;
+                GLuint texture;
+                const char* name;
+            } gBufferBindings[] = {
+                {GL_TEXTURE0, pbrDeferredFBO.GetColorAttachment(0), "gAlbedoRoughness"},
+                {GL_TEXTURE1, pbrDeferredFBO.GetColorAttachment(1), "gNormalMetallic"},
+                {GL_TEXTURE2, pbrDeferredFBO.GetColorAttachment(2), "gPosition"},
+                {GL_TEXTURE3, pbrDeferredFBO.GetColorAttachment(3), "gViewDir"},
+                {GL_TEXTURE4, pbrDeferredFBO.GetDepthAttachment(),  "gDepth"}
+            };
+
+            for (auto& binding : gBufferBindings) {
+                glActiveTexture(binding.unit);
+                glBindTexture(GL_TEXTURE_2D, binding.texture);
+                glUniform1i(glGetUniformLocation(quadProgram.handle, binding.name),
+                    binding.unit - GL_TEXTURE0);
+            }
+
+            // Bind IBL textures
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "irradianceMap"), 4);
+
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "prefilterMap"), 5);
+
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "brdfLUT"), 6);
+
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
+
+            // Render fullscreen quad
+            glBindVertexArray(vao);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+            glBindVertexArray(0);
+
+            // ------------------------------- Post-Lighting ------------------------------- //
+            glEnable(GL_DEPTH_TEST);
+
+            // Skybox
+            if (!cubemaps.empty()) 
+            {
+                glDepthFunc(GL_LEQUAL);
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+                glDepthFunc(GL_LESS);
+            }
+
+            // Light debug
+            if (gBufferDebugMode == 0 && enableLightDebug) 
+            {
+                RenderLightDebugGeometry();
+            }
+
+            // Cleanup
+            glUseProgram(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
 
             break;
         }
@@ -720,7 +834,7 @@ void App::CleanUp()
     entities.clear();
 
     // --- Clean Up FBO ---
-    primaryFBO.Clear();
+    blinnPhongDeferredFBO.Clear();
 
     lights.clear();
     gridLights.clear();
@@ -738,8 +852,11 @@ void App::OnResize(int width, int height)
 
     displaySize = vec2(width, height);
 
-    primaryFBO.Clear();
-    primaryFBO.Create(4, displaySize);
+    blinnPhongDeferredFBO.Clear();
+    blinnPhongDeferredFBO.Create(4, displaySize);
+
+    pbrDeferredFBO.Clear();
+    pbrDeferredFBO.Create(4, displaySize);
 
     worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
 

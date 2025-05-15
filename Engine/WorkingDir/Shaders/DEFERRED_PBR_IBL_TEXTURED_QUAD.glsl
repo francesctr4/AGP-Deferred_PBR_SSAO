@@ -2,81 +2,35 @@
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef FORWARD_PBR_IBL_TEXTURED
+#ifdef DEFERRED_PBR_IBL_TEXTURED_QUAD
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
 layout(location=0) in vec3 aPosition;
-layout(location=1) in vec3 aNormal;
-layout(location=2) in vec2 aTexCoord;
-layout(location=3) in vec3 aTangent;
-layout(location=4) in vec3 aBitangent;
+layout(location=1) in vec2 aTexCoord;
 
-struct Light 
-{
-	int type;
-	vec3 color;
-	vec3 direction;
-	vec3 position;
-
-    float constant;
-    float linear;
-    float quadratic;
-    float specularStrength;
-};
-
-layout(binding = 0, std140) uniform globalUBO
-{
-	vec3 uCameraPosition;
-	int uLightCount;
-	Light uLight[800];
-};
-
-layout(binding = 1, std140) uniform entityUBO
-{
-	mat4 uWorldMatrix;
-	mat4 uWorldViewProjectionMatrix;
-};
-
-out vec3 vPosition;
-out vec3 vNormal;
 out vec2 vTexCoord;
-out vec3 vViewDir;
-out vec3 vTangent;
-out vec3 vBitangent;
 
 void main()
 {
-	vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0f));
-
-	mat3 normalMatrix = mat3(transpose(inverse(uWorldMatrix)));
-    vNormal = normalMatrix * aNormal;
-    vTangent = normalMatrix * aTangent;
-    vBitangent = normalMatrix * aBitangent;
-
 	vTexCoord = aTexCoord;
-	vViewDir = uCameraPosition - vPosition;
-
-	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 1.0f);
+	gl_Position = vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-out vec4 FragColor;
+layout(location=0) out vec4 FragColor;
 
-in vec3 vPosition;
-in vec3 vNormal;
 in vec2 vTexCoord;
-in vec3 vViewDir;
-in vec3 vTangent;
-in vec3 vBitangent;
 
 // Material Parameters
-uniform sampler2D albedoMap;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-//uniform sampler2D aoMap;
+uniform sampler2D gAlbedoRoughness; // RGB: Albedo, A: Roughness
+uniform sampler2D gNormalMetallic;  // RGB: Normal, A: Metallic
+uniform sampler2D gPosition;
+uniform sampler2D gViewDir;
+uniform sampler2D gDepth;
+
+uniform int gDebugMode;
 
 // IBL
 uniform samplerCube irradianceMap;
@@ -152,24 +106,36 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }   
 // ----------------------------------------------------------------------------
+float linearizeDepth(float depth, float near, float far) 
+{
+    // Convert depth to view-space Z
+    float z = depth * 2.0 - 1.0; 
+    float viewZ = (2.0 * near * far) / (far + near - z * (far - near));
+    
+    // Normalize to [0,1] range and invert. White=close, Black=far
+    return 1.0 - ((viewZ - near) / (far - near));
+}
+// ----------------------------------------------------------------------------
 void main()
 {		
-    // material properties
-    vec3 albedo = pow(texture(albedoMap, vTexCoord).rgb, vec3(2.2));
-    float metallic = texture(metallicMap, vTexCoord).r;
-    float roughness = texture(roughnessMap, vTexCoord).r;
-    //float ao = texture(aoMap, vTexCoord).r;
-    
-    // Normal map calculation
-    mat3 TBN = mat3(normalize(vTangent), 
-                   normalize(vBitangent), 
-                   normalize(vNormal));
-    vec3 N = texture(normalMap, vTexCoord).xyz * 2.0 - 1.0;
-    N = normalize(TBN * N);
+    // Retrieve data from G-buffer
+    vec3 worldPos = texture(gPosition, vTexCoord).rgb;
+    vec4 normalMetallic = texture(gNormalMetallic, vTexCoord);
+    vec4 albedoRoughness = texture(gAlbedoRoughness, vTexCoord);
+    float depth = texture(gDepth, vTexCoord).r;
+    vec3 viewDir = texture(gViewDir, vTexCoord).rgb;
 
-    // input lighting data
-    vec3 V = normalize(uCameraPosition - vPosition);
-    vec3 R = reflect(-V, N); 
+    albedoRoughness.xyz = pow(albedoRoughness.xyz, vec3(2.2));
+    
+    // Unpack values
+    vec3 N = normalize(normalMetallic.rgb * 2.0 - 1.0); // [-1,1] range
+    float metallic = normalMetallic.a;
+    vec3 albedo = albedoRoughness.rgb;
+    float roughness = albedoRoughness.a;
+    
+    // Reconstruct view direction
+    vec3 V = normalize(uCameraPosition - worldPos);
+    vec3 R = reflect(-V, N);
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
@@ -181,9 +147,9 @@ void main()
     for(int i = 0; i < uLightCount; ++i) 
     {
         // calculate per-light radiance
-        vec3 L = normalize(uLight[i].position - vPosition);
+        vec3 L = normalize(uLight[i].position - worldPos);
         vec3 H = normalize(V + L);
-        float distance = length(uLight[i].position - vPosition);
+        float distance = length(uLight[i].position - worldPos);
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = uLight[i].color * attenuation;
 
@@ -239,6 +205,34 @@ void main()
     color = color / (color + vec3(1.0));
     // gamma correct
     color = pow(color, vec3(1.0/2.2)); 
+
+    switch(gDebugMode)
+    {
+        case 1: // Albedo
+            FragColor = vec4(albedo, 1.0);
+            return;
+        case 2: // Normal
+            FragColor = vec4(N, 1.0);
+            return;
+        case 3: // Position
+            FragColor = vec4(worldPos, 1.0);
+            return;
+        case 4: // View Direction
+            FragColor = vec4(viewDir, 1.0);
+            return;
+        case 5: // Metallic
+            FragColor = vec4(vec3(metallic), 1.0);
+            return;
+        case 6: // Roughness
+            FragColor = vec4(vec3(roughness), 1.0);
+            return;
+        case 7: // Depth
+            float linDepth = linearizeDepth(depth, 0.1f, 10.0f);
+            FragColor = vec4(vec3(linDepth), 1.0f);
+            return;
+        default: // Final render
+            break;
+    }
 
     FragColor = vec4(color , 1.0);
 }
