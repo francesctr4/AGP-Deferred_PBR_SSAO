@@ -75,6 +75,10 @@ public:
     bool drawEditor;
     bool drawGrid;
 
+    bool useDeferredRendering = false;
+    bool usePBR = false;
+    bool useSkybox = true;
+
     f32 deltaTime;
     Input input;
     Mode mode;

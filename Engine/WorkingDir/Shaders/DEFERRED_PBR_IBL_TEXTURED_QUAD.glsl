@@ -220,21 +220,21 @@ void main()
         case 4: // View Direction
             FragColor = vec4(viewDir, 1.0);
             return;
-        case 5: // Metallic
-            FragColor = vec4(vec3(metallic), 1.0);
-            return;
-        case 6: // Roughness
-            FragColor = vec4(vec3(roughness), 1.0);
-            return;
-        case 7: // Depth
+        case 5: // Depth
             float linDepth = linearizeDepth(depth, 0.1f, 10.0f);
             FragColor = vec4(vec3(linDepth), 1.0f);
+            return;
+        case 6: // Metallic
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(metallic), 1.0);
+            return;
+        case 7: // Roughness
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(roughness), 1.0);
             return;
         default: // Final render
             break;
     }
 
-    FragColor = vec4(color , 1.0);
+    FragColor = depth == 1.0 ? vec4(0.0) : vec4(color, 1.0);
 }
 
 #endif

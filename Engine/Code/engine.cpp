@@ -378,7 +378,7 @@ void App::Render()
 
             // ----------------------------------- Skybox Pass ----------------------------------- //
 
-            if (!cubemaps.empty())
+            if (!cubemaps.empty() && useSkybox)
             {
                 RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
                     worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
@@ -494,7 +494,7 @@ void App::Render()
             glEnable(GL_DEPTH_TEST);
 
             // Skybox
-            if (!cubemaps.empty())
+            if (!cubemaps.empty() && useSkybox)
             {
                 glDepthFunc(GL_LEQUAL);
                 RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
@@ -526,7 +526,7 @@ void App::Render()
 
             // ----------------------------------- Skybox Pass ----------------------------------- //
 
-            if (!cubemaps.empty())
+            if (!cubemaps.empty() && useSkybox)
             {
                 RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
                     worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
@@ -723,7 +723,7 @@ void App::Render()
             glEnable(GL_DEPTH_TEST);
 
             // Skybox
-            if (!cubemaps.empty()) 
+            if (!cubemaps.empty() && useSkybox) 
             {
                 glDepthFunc(GL_LEQUAL);
                 RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
