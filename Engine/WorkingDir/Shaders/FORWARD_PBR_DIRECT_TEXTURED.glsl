@@ -35,8 +35,7 @@ layout(binding = 0, std140) uniform globalUBO
 layout(binding = 1, std140) uniform entityUBO
 {
 	mat4 uWorldMatrix;
-    mat4 uViewMatrix;
-	mat4 uProjectionMatrix;
+	mat4 uWorldViewProjectionMatrix;
 };
 
 out vec3 vPosition;
@@ -49,7 +48,7 @@ void main()
 	vNormal = mat3(transpose(inverse(uWorldMatrix))) * aNormal;
 	vTexCoord = aTexCoord;
 
-	gl_Position = uProjectionMatrix * uViewMatrix * uWorldMatrix * vec4(aPosition, 1.0f);
+	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 1.0f);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////

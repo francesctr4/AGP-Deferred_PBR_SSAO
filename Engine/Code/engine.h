@@ -151,9 +151,7 @@ public:
     // Shader Resources
     u32 SSAOprogramIdx;
     u32 SSAOblurProgramIdx;
-
-    u32 testSSAOgeometryIdx;
-    u32 testSSAOquadIdx;
+    u32 testSSAOIdx;
 
     // SSAO Resources
     GLuint ssaoFBO;

@@ -157,10 +157,7 @@ void App::Init()
     SSAOblurProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/SSAO_BLUR.glsl", "SSAO_BLUR");
 
-    testSSAOgeometryIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DEFERRED_PBR_IBL_TEXTURED_GEOMETRY_SSAO.glsl", "DEFERRED_PBR_IBL_TEXTURED_GEOMETRY_SSAO");
-
-    testSSAOquadIdx = ShaderLoader::LoadProgram(this,
+    testSSAOIdx = ShaderLoader::LoadProgram(this,
         "Shaders/DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO.glsl", "DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO");
     // ------------------------ SSAO ------------------------ //
 
@@ -355,19 +352,19 @@ void App::Update()
 
     CameraMovement(input, worldCamera, deltaTime);
 
-    //{
-    //    static float rotationSpeed = glm::radians(30.0f);
-    //    float angle = rotationSpeed * deltaTime;
-    //    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    {
+        static float rotationSpeed = glm::radians(30.0f);
+        float angle = rotationSpeed * deltaTime;
+        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //    // Rotate Patrick
-    //    static Entity* patrickEntity = &entities[0];
-    //    patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
+        // Rotate Patrick
+        static Entity* patrickEntity = &entities[0];
+        patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
 
-    //    // Rotate PBR Cerberus
-    //    static Entity* cerberusEntity = &entities[7];
-    //    cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
-    //}
+        // Rotate PBR Cerberus
+        static Entity* cerberusEntity = &entities[7];
+        cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
+    }
 
     UpdateEntities();
 
@@ -772,7 +769,7 @@ void App::Render()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glViewport(0, 0, displaySize.x, displaySize.y);
 
-            Program& geometryProgram = programs[testSSAOgeometryIdx];
+            Program& geometryProgram = programs[deferredPbrIblGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
@@ -831,7 +828,7 @@ void App::Render()
             glDisable(GL_DEPTH_TEST);
             glViewport(0, 0, displaySize.x, displaySize.y);
 
-            Program& quadProgram = programs[testSSAOquadIdx];
+            Program& quadProgram = programs[testSSAOIdx];
             glUseProgram(quadProgram.handle);
 
             // Bind G-buffer textures
@@ -857,21 +854,6 @@ void App::Render()
             // ------------------------------- SSAO-Pass ------------------------------- //
             CalculateSSAO(programs[SSAOprogramIdx], pbrDeferredFBO.GetColorAttachment(2), pbrDeferredFBO.GetColorAttachment(1));
             ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
-
-            GBufferBinding gBufferBindings2[] = {
-                {GL_TEXTURE0, pbrDeferredFBO.GetColorAttachment(0), "gAlbedoRoughness"},
-                {GL_TEXTURE1, pbrDeferredFBO.GetColorAttachment(1), "gNormalMetallic"},
-                {GL_TEXTURE2, pbrDeferredFBO.GetColorAttachment(2), "gPosition"},
-                {GL_TEXTURE3, pbrDeferredFBO.GetColorAttachment(3), "gViewDir"},
-                {GL_TEXTURE4, pbrDeferredFBO.GetDepthAttachment(),  "gDepth"}
-            };
-
-            for (auto& binding : gBufferBindings) {
-                glActiveTexture(binding.unit);
-                glBindTexture(GL_TEXTURE_2D, binding.texture);
-                glUniform1i(glGetUniformLocation(quadProgram.handle, binding.name),
-                    binding.unit - GL_TEXTURE0);
-            }
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
@@ -1255,7 +1237,6 @@ glm::mat4 App::CreateTransform(const glm::vec3& translation, const glm::vec3& ro
 void App::CreateEntity(const u32 aModelIdx, const u32 aTextureIdx, const glm::mat4& aWorldMatrix)
 {
     Entity entity{};
-
     AlignHead(entityUBO, uniformBlockAlignment);
     entity.entityBufferOffset = entityUBO.head;
 
@@ -1263,17 +1244,12 @@ void App::CreateEntity(const u32 aModelIdx, const u32 aTextureIdx, const glm::ma
     entity.modelIdx = aModelIdx;
     entity.textureIdx = aTextureIdx;
 
-    // Model
+    // Only push world matrix during creation
     PushMat4(entityUBO, entity.worldMatrix);
-
-    // View
-    PushMat4(entityUBO, glm::identity<glm::mat4>());
-
-    // Projection
+    // Reserve space for MVP (will be updated later)
     PushMat4(entityUBO, glm::identity<glm::mat4>());
 
     entity.entityBufferSize = entityUBO.head - entity.entityBufferOffset;
-
     entities.push_back(entity);
 }
 
@@ -1281,13 +1257,15 @@ void App::UpdateEntities()
 {
     MapBuffer(entityUBO, GL_WRITE_ONLY);
 
+    glm::mat4 VP = worldCamera.ProjectionMatrix() * worldCamera.ViewMatrix();
+
     for (auto& entity : entities)
     {
-        AlignHead(entityUBO, uniformBlockAlignment);
+        glm::mat4 mvp = VP * entity.worldMatrix;
 
+        AlignHead(entityUBO, uniformBlockAlignment);
         PushMat4(entityUBO, entity.worldMatrix);
-        PushMat4(entityUBO, worldCamera.ViewMatrix());
-        PushMat4(entityUBO, worldCamera.ProjectionMatrix());
+        PushMat4(entityUBO, mvp);
     }
 
     UnmapBuffer(entityUBO);
@@ -1545,9 +1523,6 @@ void App::CalculateSSAO(Program& shaderSSAO, GLuint gPositionID, GLuint gNormalI
         GLint location = glGetUniformLocation(shaderSSAO.handle, ("samples[" + std::to_string(i) + "]").c_str());
         glUniform3fv(location, 1, &ssaoKernel[i][0]);
     }
-
-    glm::mat4 view = worldCamera.ViewMatrix();
-    glUniformMatrix4fv(glGetUniformLocation(shaderSSAO.handle, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
     glm::mat4 projection = worldCamera.ProjectionMatrix();
     glUniformMatrix4fv(glGetUniformLocation(shaderSSAO.handle, "projection"), 1, GL_FALSE, glm::value_ptr(projection));

@@ -23,61 +23,62 @@ out float FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gPosition;    // World-space position from G-buffer
-uniform sampler2D gNormal;      // World-space normal from G-buffer
+uniform sampler2D gPosition;
+uniform sampler2D gNormal;
 uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
+
+// parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
+//int kernelSize = 64;
+//float radius = 0.5;
+//float bias = 0.025;
+
 uniform int kernelSize;
 uniform float radius;
 uniform float bias;
+
 uniform float SCREEN_WIDTH;
 uniform float SCREEN_HEIGHT;
 
-// Key addition: view/projection matrices
-uniform mat4 view;             // Camera's view matrix
-uniform mat4 projection;       // Camera's projection matrix
+uniform mat4 projection;
 
 void main()
 {
+    // tile noise texture over screen based on screen dimensions divided by noise size
     const vec2 noiseScale = vec2(SCREEN_WIDTH/4.0, SCREEN_HEIGHT/4.0); 
 
-    // 1. Convert world-space position/normal to view space
-    vec3 worldPos = texture(gPosition, TexCoords).xyz;
-    vec3 viewPos = vec3(view * vec4(worldPos, 1.0));  // World to view space
-    
-    vec3 worldNormal = normalize(texture(gNormal, TexCoords).rgb);
-    mat3 normalMatrix = transpose(inverse(mat3(view)));  // Convert normal to view space
-    vec3 viewNormal = normalize(normalMatrix * worldNormal);
-
-    // 2. Create TBN matrix in view space
+    // get input for SSAO algorithm
+    vec3 fragPos = texture(gPosition, TexCoords).xyz;
+    vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
     vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
-    vec3 tangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
-    vec3 bitangent = cross(viewNormal, tangent);
-    mat3 TBN = mat3(tangent, bitangent, viewNormal);
-
-    // 3. Calculate occlusion in view space
+    // create TBN change-of-basis matrix: from tangent-space to view-space
+    vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+    vec3 bitangent = cross(normal, tangent);
+    mat3 TBN = mat3(tangent, bitangent, normal);
+    // iterate over the sample kernel and calculate occlusion factor
     float occlusion = 0.0;
     for(int i = 0; i < kernelSize; ++i)
     {
-        vec3 sampleOffset = TBN * samples[i];  // Now in view space
-        vec3 sampleViewPos = viewPos + sampleOffset * radius;
+        // get sample position
+        vec3 samplePos = TBN * samples[i]; // from tangent to view-space
+        samplePos = fragPos + samplePos * radius; 
         
-        // 4. Project sample position to screen space
-        vec4 clipPos = projection * vec4(sampleViewPos, 1.0);
-        clipPos.xyz /= clipPos.w;  // Perspective divide
-        vec2 screenUV = clipPos.xy * 0.5 + 0.5;  // Convert to texture coordinates
-
-        // 5. Get comparison depth in view space
-        vec3 sampleWorldPos = texture(gPosition, screenUV).xyz;
-        vec3 sampleViewPosActual = vec3(view * vec4(sampleWorldPos, 1.0));
+        // project sample position (to sample texture) (to get position on screen/texture)
+        vec4 offset = vec4(samplePos, 1.0);
+        offset = projection * offset; // from view to clip-space
+        offset.xyz /= offset.w; // perspective divide
+        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
         
-        // 6. Range check and accumulate
-        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(viewPos.z - sampleViewPosActual.z));
-        occlusion += (sampleViewPosActual.z >= sampleViewPos.z + bias ? 1.0 : 0.0) * rangeCheck;
+        // get sample depth
+        float sampleDepth = texture(gPosition, offset.xy).z; // get depth value of kernel sample
+        
+        // range check & accumulate
+        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
+        occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;           
     }
-    
     occlusion = 1.0 - (occlusion / kernelSize);
+    
     FragColor = occlusion;
 }
 

@@ -78,7 +78,6 @@
     <None Include="Code\PBR_types.inl" />
     <None Include="WorkingDir\Shaders\BRDF_INTEGRATION_CONVOLUTION.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl" />
-    <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_GEOMETRY_SSAO.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl" />
     <None Include="WorkingDir\Shaders\DIFFUSE_IRRADIANCE_CONVOLUTION.glsl" />
     <None Include="WorkingDir\Shaders\EQUIRECTANGULAR_TO_CUBEMAP.glsl" />
