@@ -29,7 +29,6 @@ uniform sampler2D gNormalMetallic;  // RGB: Normal, A: Metallic
 uniform sampler2D gPosition;
 uniform sampler2D gViewDir;
 uniform sampler2D gDepth;
-
 uniform sampler2D aoMap;
 
 uniform int gDebugMode;
@@ -237,7 +236,7 @@ void main()
             break;
     }
 
-    FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(ao), 1.0);
+    FragColor = depth == 1.0 ? vec4(0.0) : vec4(color, 1.0);
 }
 
 #endif
