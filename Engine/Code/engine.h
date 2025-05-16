@@ -146,6 +146,34 @@ public:
     u32 specularPrefilterProgramIdx;
     u32 brdfIntegrationProgramIdx;
 
+    // ------------- SSAO ------------- //
+
+    // Shader Resources
+    u32 SSAOprogramIdx;
+    u32 SSAOblurProgramIdx;
+    u32 testSSAOIdx;
+
+    // SSAO Resources
+    GLuint ssaoFBO;
+    GLuint ssaoColorBuffer;
+
+    // Blur Resources
+    GLuint ssaoBlurFBO;
+    GLuint ssaoColorBufferBlur;
+
+    // Kernel Resources
+    std::vector<glm::vec3> ssaoKernel;
+    std::vector<glm::vec3> ssaoNoise;
+    GLuint noiseTexture;
+
+    // Functions
+    void CreateResourcesSSAO();
+    void DeleteResourcesSSAO();
+    void CalculateSSAO(Program& shaderSSAO, GLuint gPositionID, GLuint gNormalID);
+    void ApplyBlurSSAO(Program& shaderBlurSSAO);
+
+    // ------------- SSAO ------------- //
+
 private:
 
     // Texture Indices

@@ -14,11 +14,12 @@
 #include "Editor.h"
 
 #include <format>
+#include <random>
 
 App::App()
     : isRunning(true),
     deltaTime(0.0f),
-    mode(Mode_PBR_Forward_Rendering),
+    mode(Mode_PBR_Deferred_Rendering_SSAO),
     needsReinit(false),
     displaySize(0, 0),
     embeddedVertices(0),
@@ -148,6 +149,17 @@ void App::Init()
     brdfIntegrationProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/BRDF_INTEGRATION_CONVOLUTION.glsl", "BRDF_INTEGRATION_CONVOLUTION");
     // ------------------------ PBR ------------------------ //
+
+    // ------------------------ SSAO ------------------------ //
+    SSAOprogramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/SSAO.glsl", "SSAO");
+
+    SSAOblurProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/SSAO_BLUR.glsl", "SSAO_BLUR");
+
+    testSSAOIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO.glsl", "DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO");
+    // ------------------------ SSAO ------------------------ //
 
         // Cache uniform locations
     Program& forwardRenderingProgram = programs[forwardRenderProgramIdx];
@@ -289,6 +301,9 @@ void App::Init()
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
+
+    // 13. SSAO Resources
+    CreateResourcesSSAO();
 }
 
 void App::Update()
@@ -746,6 +761,148 @@ void App::Render()
 
             break;
         }
+        case Mode_PBR_Deferred_Rendering_SSAO: 
+        {
+            // ------------------------------- Geometry Pass ------------------------------- //
+            glBindFramebuffer(GL_FRAMEBUFFER, pbrDeferredFBO.GetFramebufferHandle());
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glViewport(0, 0, displaySize.x, displaySize.y);
+
+            Program& geometryProgram = programs[deferredPbrIblGeometryProgramIdx];
+            glUseProgram(geometryProgram.handle);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
+
+            Entity& entity = entities[7];
+
+            // Bind entity's uniform buffer
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle,
+                entity.entityBufferOffset, entity.entityBufferSize);
+
+            Model& model = models[entity.modelIdx];
+            Mesh& mesh = meshes[model.meshIdx];
+
+            // Bind PBR textures
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uAlbedo"), 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uNormal"), 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uMetallic"), 2);
+
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
+            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uRoughness"), 3);
+
+            // Draw submeshes
+            for (u32 i = 0; i < mesh.submeshes.size(); ++i)
+            {
+                GLuint vao = FindVAO(mesh, i, geometryProgram);
+                glBindVertexArray(vao);
+                Submesh& submesh = mesh.submeshes[i];
+                glDrawElements(GL_TRIANGLES, submesh.indices.size(),
+                    GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
+                glBindVertexArray(0);
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // ------------------------------- Depth Blit ------------------------------- //
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, pbrDeferredFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+            glBlitFramebuffer(
+                0, 0, displaySize.x, displaySize.y,
+                0, 0, displaySize.x, displaySize.y,
+                GL_DEPTH_BUFFER_BIT, GL_NEAREST
+            );
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // ------------------------------- Lighting Pass ------------------------------- //
+            // Clear only color buffer, NOT depth buffer
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDisable(GL_DEPTH_TEST);
+            glViewport(0, 0, displaySize.x, displaySize.y);
+
+            Program& quadProgram = programs[testSSAOIdx];
+            glUseProgram(quadProgram.handle);
+
+            // Bind G-buffer textures
+            struct GBufferBinding {
+                GLenum unit;
+                GLuint texture;
+                const char* name;
+            } gBufferBindings[] = {
+                {GL_TEXTURE0, pbrDeferredFBO.GetColorAttachment(0), "gAlbedoRoughness"},
+                {GL_TEXTURE1, pbrDeferredFBO.GetColorAttachment(1), "gNormalMetallic"},
+                {GL_TEXTURE2, pbrDeferredFBO.GetColorAttachment(2), "gPosition"},
+                {GL_TEXTURE3, pbrDeferredFBO.GetColorAttachment(3), "gViewDir"},
+                {GL_TEXTURE4, pbrDeferredFBO.GetDepthAttachment(),  "gDepth"}
+            };
+
+            for (auto& binding : gBufferBindings) {
+                glActiveTexture(binding.unit);
+                glBindTexture(GL_TEXTURE_2D, binding.texture);
+                glUniform1i(glGetUniformLocation(quadProgram.handle, binding.name),
+                    binding.unit - GL_TEXTURE0);
+            }
+
+            // ------------------------------- SSAO-Pass ------------------------------- //
+            CalculateSSAO(programs[SSAOprogramIdx], pbrDeferredFBO.GetColorAttachment(2), pbrDeferredFBO.GetColorAttachment(1));
+            ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
+
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "aoMap"), 5);
+
+            // Bind IBL textures
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "irradianceMap"), 6);
+
+            glActiveTexture(GL_TEXTURE7);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "prefilterMap"), 7);
+
+            glActiveTexture(GL_TEXTURE8);
+            glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "brdfLUT"), 8);
+
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
+
+            // Render fullscreen quad
+            glBindVertexArray(vao);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+            glBindVertexArray(0);
+
+            // ------------------------------- Post-Lighting ------------------------------- //
+            glEnable(GL_DEPTH_TEST);
+
+            // Skybox
+            if (!cubemaps.empty() && useSkybox)
+            {
+                glDepthFunc(GL_LEQUAL);
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+                glDepthFunc(GL_LESS);
+            }
+
+            // Light debug
+            if (gBufferDebugMode == 0 && enableLightDebug)
+            {
+                RenderLightDebugGeometry();
+            }
+
+            // Cleanup
+            glUseProgram(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            break;
+        }  
     }
 }
 
@@ -854,6 +1011,7 @@ void App::OnResize(int width, int height)
     if (width == 0 && height == 0) return;
 
     displaySize = vec2(width, height);
+    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
 
     blinnPhongDeferredFBO.Clear();
     blinnPhongDeferredFBO.Create(4, displaySize);
@@ -861,7 +1019,8 @@ void App::OnResize(int width, int height)
     pbrDeferredFBO.Clear();
     pbrDeferredFBO.Create(4, displaySize);
 
-    worldCamera.SetAspectRatio(static_cast<float>(displaySize.x) / static_cast<float>(displaySize.y));
+    DeleteResourcesSSAO();
+    CreateResourcesSSAO();
 
     UpdateEntities();
 }
@@ -1237,4 +1396,166 @@ void App::ChangeRenderMode()
 {
     // Handle reinit of features that change between forward and deferred rendering
 
+}
+
+float Lerp(float a, float b, float f)
+{
+    return a + f * (b - a);
+}
+
+void App::CreateResourcesSSAO()
+{
+    // also create framebuffer to hold SSAO processing stage 
+    // -----------------------------------------------------
+    glGenFramebuffers(1, &ssaoFBO);  
+    glGenFramebuffers(1, &ssaoBlurFBO);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+
+    // SSAO color buffer
+    glGenTextures(1, &ssaoColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, displaySize.x, displaySize.y, 0, GL_RED, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBuffer, 0);
+
+    // and blur stage
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+    glGenTextures(1, &ssaoColorBufferBlur);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, displaySize.x, displaySize.y, 0, GL_RED, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBufferBlur, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // generate sample kernel
+    // ----------------------
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::default_random_engine generator;
+    
+    for (unsigned int i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+
+        // scale samples s.t. they're more aligned to center of kernel
+        scale = Lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+
+    // generate noise texture
+    // ----------------------
+    
+    for (unsigned int i = 0; i < 16; i++)
+    {
+        glm::vec3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0f); // rotate around z-axis (in tangent space)
+        ssaoNoise.push_back(noise);
+    }
+    
+    glGenTextures(1, &noiseTexture);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
+void App::DeleteResourcesSSAO()
+{
+    // Delete framebuffers
+    if (ssaoFBO) {
+        glDeleteFramebuffers(1, &ssaoFBO);
+        ssaoFBO = 0;
+    }
+    if (ssaoBlurFBO) {
+        glDeleteFramebuffers(1, &ssaoBlurFBO);
+        ssaoBlurFBO = 0;
+    }
+
+    // Delete textures
+    if (ssaoColorBuffer) {
+        glDeleteTextures(1, &ssaoColorBuffer);
+        ssaoColorBuffer = 0;
+    }
+    if (ssaoColorBufferBlur) {
+        glDeleteTextures(1, &ssaoColorBufferBlur);
+        ssaoColorBufferBlur = 0;
+    }
+    if (noiseTexture) {
+        glDeleteTextures(1, &noiseTexture);
+        noiseTexture = 0;
+    }
+
+    // Clear vectors (though they'll be repopulated)
+    ssaoKernel.clear();
+    ssaoNoise.clear();
+}
+
+void App::CalculateSSAO(Program& shaderSSAO, GLuint gPositionID, GLuint gNormalID)
+{
+    // 2. generate SSAO texture
+    // -----------------------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "gPosition"), 0);
+    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "gNormal"), 1);
+    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "texNoise"), 2);
+
+    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "kernelSize"), 64);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "radius"), 0.5f);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "bias"), 0.025f);
+
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_WIDTH"), displaySize.x);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_HEIGHT"), displaySize.y);
+
+    glUseProgram(shaderSSAO.handle);
+
+    // Send kernel + rotation 
+    for (unsigned int i = 0; i < 64; ++i)
+    {
+        GLint location = glGetUniformLocation(shaderSSAO.handle, ("samples[" + std::to_string(i) + "]").c_str());
+        glUniform3fv(location, 1, &ssaoKernel[i][0]);
+    }
+
+    glm::mat4 projection = worldCamera.ProjectionMatrix();
+    glUniformMatrix4fv(glGetUniformLocation(shaderSSAO.handle, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gPositionID);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, gNormalID);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+
+    Cubemap::RenderQuad();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void App::ApplyBlurSSAO(Program& shaderBlurSSAO)
+{
+    // 3. Blur SSAO Texture to Remove Noise
+    // ------------------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUniform1i(glGetUniformLocation(shaderBlurSSAO.handle, "ssaoInput"), 0);
+
+    glUseProgram(shaderBlurSSAO.handle);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+
+    Cubemap::RenderQuad();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

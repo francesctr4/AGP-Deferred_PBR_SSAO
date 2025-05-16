@@ -85,6 +85,7 @@
     <None Include="WorkingDir\Shaders\GRID.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_PBR_IBL_TEXTURED.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
+    <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO.glsl" />
     <None Include="WorkingDir\Shaders\POINT_LIGHT_SPHERE.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_GEOMETRY.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_RENDER_QUAD.glsl" />
