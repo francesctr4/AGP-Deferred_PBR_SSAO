@@ -32,12 +32,12 @@ uniform sampler2D gDepth;
 
 uniform sampler2D aoMap;
 
-uniform int gDebugMode;
-
 // IBL
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
+
+uniform int gDebugMode;
 
 // lights
 struct Light 
@@ -234,10 +234,9 @@ void main()
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(roughness), 1.0);
             return;
         default: // Final render
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(ao), 1.0);
             break;
     }
-
-    FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(ao), 1.0);
 }
 
 #endif
