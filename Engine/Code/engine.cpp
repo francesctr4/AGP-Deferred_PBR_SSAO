@@ -352,19 +352,19 @@ void App::Update()
 
     CameraMovement(input, worldCamera, deltaTime);
 
-    {
-        static float rotationSpeed = glm::radians(30.0f);
-        float angle = rotationSpeed * deltaTime;
-        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    //{
+    //    static float rotationSpeed = glm::radians(30.0f);
+    //    float angle = rotationSpeed * deltaTime;
+    //    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // Rotate Patrick
-        static Entity* patrickEntity = &entities[0];
-        patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
+    //    // Rotate Patrick
+    //    static Entity* patrickEntity = &entities[0];
+    //    patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
 
-        // Rotate PBR Cerberus
-        static Entity* cerberusEntity = &entities[7];
-        cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
-    }
+    //    // Rotate PBR Cerberus
+    //    static Entity* cerberusEntity = &entities[7];
+    //    cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
+    //}
 
     UpdateEntities();
 
@@ -854,6 +854,21 @@ void App::Render()
             // ------------------------------- SSAO-Pass ------------------------------- //
             CalculateSSAO(programs[SSAOprogramIdx], pbrDeferredFBO.GetColorAttachment(2), pbrDeferredFBO.GetColorAttachment(1));
             ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
+
+            GBufferBinding gBufferBindings2[] = {
+                {GL_TEXTURE0, pbrDeferredFBO.GetColorAttachment(0), "gAlbedoRoughness"},
+                {GL_TEXTURE1, pbrDeferredFBO.GetColorAttachment(1), "gNormalMetallic"},
+                {GL_TEXTURE2, pbrDeferredFBO.GetColorAttachment(2), "gPosition"},
+                {GL_TEXTURE3, pbrDeferredFBO.GetColorAttachment(3), "gViewDir"},
+                {GL_TEXTURE4, pbrDeferredFBO.GetDepthAttachment(),  "gDepth"}
+            };
+
+            for (auto& binding : gBufferBindings) {
+                glActiveTexture(binding.unit);
+                glBindTexture(GL_TEXTURE_2D, binding.texture);
+                glUniform1i(glGetUniformLocation(quadProgram.handle, binding.name),
+                    binding.unit - GL_TEXTURE0);
+            }
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
