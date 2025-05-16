@@ -31,8 +31,9 @@ uniform vec3 samples[64];
 
 // parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
 int kernelSize = 64;
-float radius = 0.5;
-float bias = 0.025;
+float radius = 0.2;
+float bias = 0.25;
+float power = 5.0;
 
 //uniform int kernelSize;
 //uniform float radius;
@@ -44,46 +45,52 @@ uniform float SCREEN_HEIGHT;
 uniform mat4 view;
 uniform mat4 projection;
 
-void main()
-{
-    // tile noise texture over screen based on screen dimensions divided by noise size
-    const vec2 noiseScale = vec2(SCREEN_WIDTH/4.0, SCREEN_HEIGHT/4.0); 
+void main() {
+    // Tile noise texture
+    vec2 noiseScale = vec2(textureSize(gPosition, 0)) / 4.0;
 
-    // get input for SSAO algorithm
-    vec4 viewPos = view * vec4(texture(gPosition, TexCoords).xyz, 1.0);
-    vec3 fragPos = viewPos.xyz / viewPos.w; // Handle perspective division
+    // Get world-space position and normal from G-buffer
+    vec3 fragPosWorld = texture(gPosition, TexCoords).xyz;
+    vec3 normalWorld = normalize(texture(gNormal, TexCoords).rgb);
 
-    vec3 normal = mat3(view) * texture(gNormal, TexCoords).rgb;
+    // Generate random tangent from noise texture
     vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
-    // create TBN change-of-basis matrix: from tangent-space to view-space
-    vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
-    vec3 bitangent = cross(normal, tangent);
-    mat3 TBN = mat3(tangent, bitangent, normal);
-    // iterate over the sample kernel and calculate occlusion factor
+
+    // Create TBN matrix (tangent -> world space)
+    vec3 tangent = normalize(randomVec - normalWorld * dot(randomVec, normalWorld));
+    vec3 bitangent = cross(normalWorld, tangent);
+    mat3 TBN = mat3(tangent, bitangent, normalWorld);
+
+    // Calculate occlusion
     float occlusion = 0.0;
-    for(int i = 0; i < kernelSize; ++i)
-    {
-        // get sample position
-        vec3 samplePos = TBN * samples[i]; // from tangent to view-space
-        samplePos = fragPos + samplePos * radius; 
+    for (int i = 0; i < kernelSize; ++i) {
+        // Transform sample to world space
+        vec3 sampleOffset = TBN * samples[i]; 
+        vec3 samplePosWorld = fragPosWorld + sampleOffset * radius;
 
-        // project sample position (to sample texture) (to get position on screen/texture)
-        vec4 offset = vec4(samplePos, 1.0);
-        offset = projection * offset; // from view to clip-space
-        offset.xyz /= offset.w; // perspective divide
-        offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
+        // Project sample position to view space and clip space
+        vec4 samplePosView = view * vec4(samplePosWorld, 1.0);
+        vec4 clipPos = projection * samplePosView;
+        clipPos.xyz /= clipPos.w; // Perspective divide
+        vec3 ndc = clipPos.xyz;
 
-        // get sample depth
-        vec3 sampleFragPos = vec3(view * vec4(texture(gPosition, offset.xy).xyz, 1.0));
-        float sampleDepth = sampleFragPos.z;
+        // Convert to UV [0, 1]
+        vec2 sampleUV = ndc.xy * 0.5 + 0.5;
 
-        // range check & accumulate
-        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-        occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
+        // Get sampled world position from G-buffer
+        vec3 sampledPosWorld = texture(gPosition, sampleUV).xyz;
+
+        // Transform sampled position to view space
+        vec4 sampledPosView = view * vec4(sampledPosWorld, 1.0);
+        float sampledDepth = sampledPosView.z / sampledPosView.w;
+
+        // Range check and accumulate occlusion
+        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(samplePosView.z - sampledDepth));
+        occlusion += (sampledDepth >= samplePosView.z + bias ? 1.0 : 0.0) * rangeCheck;
     }
-    occlusion = 1.0 - (occlusion / kernelSize);
 
-    FragColor = occlusion;
+    occlusion = 1.0 - (occlusion / kernelSize);
+    FragColor = pow(occlusion, power);
 }
 
 #endif
