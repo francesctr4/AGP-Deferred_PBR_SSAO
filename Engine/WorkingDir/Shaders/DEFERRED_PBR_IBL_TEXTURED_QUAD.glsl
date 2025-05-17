@@ -230,6 +230,15 @@ void main()
         case 7: // Roughness
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(roughness), 1.0);
             return;
+        case 8: // Irradiance (IBL)
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(irradiance, 1.0);
+            return;
+        case 9: // Prefilter (IBL)
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(prefilteredColor, 1.0);
+            return;
+        case 10: // BRDF
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(brdf, 0.0, 1.0);
+            return;
         default: // Final render
             break;
     }

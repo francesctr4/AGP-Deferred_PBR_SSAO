@@ -66,7 +66,9 @@ void Editor::DrawGBufferDebugWindow(App* app)
         {
             static const char* debugModes[] =
             {
-                "Final Render", "Albedo", "Normal", "Position", "View Direction", "Depth", "Metallic", "Roughness"
+                "Final Render", "Albedo", "Normal", "Position", "View Direction", 
+                "Depth", "Metallic", "Roughness", 
+                "Diffuse Irradiance (IBL)", "Specular Prefilter (IBL)", "BRDF Integration (IBL)"
             };
 
             ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
