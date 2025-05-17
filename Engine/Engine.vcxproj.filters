@@ -274,8 +274,5 @@
     <None Include="WorkingDir\Shaders\SSAO.glsl">
       <Filter>Source Code\Shaders\SSAO</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO.glsl">
-      <Filter>Source Code\Shaders\SSAO</Filter>
-    </None>
   </ItemGroup>
 </Project>

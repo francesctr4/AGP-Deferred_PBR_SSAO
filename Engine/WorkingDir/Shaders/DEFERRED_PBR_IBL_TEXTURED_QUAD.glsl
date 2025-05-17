@@ -29,13 +29,15 @@ layout(binding = 1) uniform sampler2D gNormalMetallic;  // RGB: Normal, A: Metal
 layout(binding = 2) uniform sampler2D gPosition;
 layout(binding = 3) uniform sampler2D gViewDir;
 layout(binding = 4) uniform sampler2D gDepth;
+layout(binding = 5) uniform sampler2D aoMap;
 
 // IBL
-layout(binding = 5) uniform samplerCube irradianceMap;
-layout(binding = 6) uniform samplerCube prefilterMap;
-layout(binding = 7) uniform sampler2D brdfLUT;
+layout(binding = 6) uniform samplerCube irradianceMap;
+layout(binding = 7) uniform samplerCube prefilterMap;
+layout(binding = 8) uniform sampler2D brdfLUT;
 
 uniform int gDebugMode;
+uniform bool enableSSAO;
 
 // lights
 struct Light 
@@ -125,6 +127,12 @@ void main()
     float depth = texture(gDepth, vTexCoord).r;
     vec3 viewDir = texture(gViewDir, vTexCoord).rgb;
 
+    float ao = 0.0f;
+    if (enableSSAO)
+    {
+        ao = texture(aoMap, vTexCoord).r;
+    }
+
     albedoRoughness.xyz = pow(albedoRoughness.xyz, vec3(2.2));
     
     // Unpack values
@@ -196,8 +204,9 @@ void main()
     vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-    //vec3 ambient = (kD * diffuse + specular) * ao;
     vec3 ambient = (kD * diffuse + specular);
+
+    if (enableSSAO) ambient *= ao;
 
     vec3 color = ambient + Lo;
 
@@ -224,19 +233,23 @@ void main()
             float linDepth = linearizeDepth(depth, 0.1f, 10.0f);
             FragColor = vec4(vec3(linDepth), 1.0f);
             return;
-        case 6: // Metallic
+        case 6: // SSAO
+            if (enableSSAO) FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(ao), 1.0);
+            else FragColor = vec4(0.0);
+            return;
+        case 7: // Metallic
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(metallic), 1.0);
             return;
-        case 7: // Roughness
+        case 8: // Roughness
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(roughness), 1.0);
             return;
-        case 8: // Irradiance (IBL)
+        case 9: // Irradiance (IBL)
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(irradiance, 1.0);
             return;
-        case 9: // Prefilter (IBL)
+        case 10: // Prefilter (IBL)
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(prefilteredColor, 1.0);
             return;
-        case 10: // BRDF
+        case 11: // BRDF
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(brdf, 0.0, 1.0);
             return;
         default: // Final render

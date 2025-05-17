@@ -66,14 +66,39 @@ void Editor::DrawGBufferDebugWindow(App* app)
         {
             static const char* debugModes[] =
             {
-                "Final Render", "Albedo", "Normal", "Position", "View Direction", 
-                "Depth", "Metallic", "Roughness", 
+                "Final Render", "Albedo", "Normal", "Position", "View Direction",
+                "Depth", "Ambient Occlusion", "Metallic", "Roughness",
                 "Diffuse Irradiance (IBL)", "Specular Prefilter (IBL)", "BRDF Integration (IBL)"
             };
 
             ImGui::Combo("Display Mode", &app->gBufferDebugMode, debugModes, IM_ARRAYSIZE(debugModes));
             ImGui::Separator();
-            ImGui::Text("DEBUG KEYS -> 1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth | 7: Metallic | 8: Roughness");
+
+            // Grid-styled debug keys
+            ImGui::Text("DEBUG KEYS");
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 5));  // Compact spacing
+            ImGui::Columns(4, "##debugkeyscolumns", false);  // 4-column grid
+
+            // First column
+            ImGui::Text("1: Final Render");
+            ImGui::Text("2: Albedo");
+            ImGui::Text("3: Normal");
+            ImGui::Text("4: Position");
+            ImGui::Text("5: ViewDir");
+
+            // Next column
+            ImGui::NextColumn();
+            ImGui::Text("6: Depth");
+            ImGui::Text("7: SSAO");
+            ImGui::Text("8: Metallic");
+            ImGui::Text("9: Roughness");
+
+            // Add more columns if needed
+            ImGui::Columns(1);  // Reset columns
+            ImGui::PopStyleVar();
+
+            // Optional: Add some vertical spacing
+            ImGui::Dummy(ImVec2(0, 5));
         }
     }
     ImGui::End();

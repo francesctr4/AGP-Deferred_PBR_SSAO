@@ -19,7 +19,7 @@
 App::App()
     : isRunning(true),
     deltaTime(0.0f),
-    mode(Mode_PBR_Deferred_Rendering_SSAO),
+    mode(Mode_PBR_Deferred_Rendering),
     needsReinit(false),
     displaySize(0, 0),
     embeddedVertices(0),
@@ -156,9 +156,6 @@ void App::Init()
 
     SSAOblurProgramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/SSAO_BLUR.glsl", "SSAO_BLUR");
-
-    testSSAOIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO.glsl", "DEFERRED_PBR_IBL_TEXTURED_QUAD_SSAO");
     // ------------------------ SSAO ------------------------ //
 
         // Cache uniform locations
@@ -323,6 +320,7 @@ void App::Update()
     if (input.keys[K_6] == BUTTON_PRESS) gBufferDebugMode = 5;
     if (input.keys[K_7] == BUTTON_PRESS) gBufferDebugMode = 6;
     if (input.keys[K_8] == BUTTON_PRESS) gBufferDebugMode = 7;
+    if (input.keys[K_9] == BUTTON_PRESS) gBufferDebugMode = 8;
 
     // Cubemaps
     if (input.keys[K_M] == BUTTON_PRESS)
@@ -677,6 +675,14 @@ void App::Render()
             );
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+            // ------------------------------- SSAO Pass -------------------------------
+
+            if (enableSSAO) 
+            {
+                CalculateSSAO(programs[SSAOprogramIdx], pbrDeferredFBO.GetColorAttachment(2), pbrDeferredFBO.GetColorAttachment(1));
+                ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
+            }
+
             // ------------------------------- Lighting Pass ------------------------------- //
             // Clear only color buffer, NOT depth buffer
             glClear(GL_COLOR_BUFFER_BIT);
@@ -705,17 +711,25 @@ void App::Render()
                 glBindTexture(GL_TEXTURE_2D, binding.texture);
             }
 
+            if (enableSSAO)
+            {
+                // Bind SSAO texture
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+            }
+
             // Bind IBL textures
-            glActiveTexture(GL_TEXTURE5);
+            glActiveTexture(GL_TEXTURE6);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
 
-            glActiveTexture(GL_TEXTURE6);
+            glActiveTexture(GL_TEXTURE7);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
 
-            glActiveTexture(GL_TEXTURE7);
+            glActiveTexture(GL_TEXTURE8);
             glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
 
             glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "enableSSAO"), (GLint)enableSSAO);
 
             // Render fullscreen quad
             glBindVertexArray(vao);
@@ -745,127 +759,7 @@ void App::Render()
             glBindTexture(GL_TEXTURE_2D, 0);
 
             break;
-        }
-        case Mode_PBR_Deferred_Rendering_SSAO:
-        {
-            // ------------------------------- Geometry Pass -------------------------------
-            glBindFramebuffer(GL_FRAMEBUFFER, pbrDeferredFBO.GetFramebufferHandle());
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glViewport(0, 0, displaySize.x, displaySize.y);
-
-            Program& geometryProgram = programs[deferredPbrIblGeometryProgramIdx];
-            glUseProgram(geometryProgram.handle);
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
-
-            Entity& entity = entities[7];
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle, entity.entityBufferOffset, entity.entityBufferSize);
-
-            Model& model = models[entity.modelIdx];
-            Mesh& mesh = meshes[model.meshIdx];
-
-            // Bind PBR textures
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
-
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
-
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
-
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
-
-            // Draw geometry
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
-                GLuint vao = FindVAO(mesh, i, geometryProgram);
-                glBindVertexArray(vao);
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
-                glBindVertexArray(0);
-            }
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            // ------------------------------- Depth Blit -------------------------------
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, pbrDeferredFBO.GetFramebufferHandle());
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-            glBlitFramebuffer(0, 0, displaySize.x, displaySize.y, 0, 0, displaySize.x, displaySize.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            // ------------------------------- SSAO Pass -------------------------------
-            CalculateSSAO(programs[SSAOprogramIdx], pbrDeferredFBO.GetColorAttachment(2), pbrDeferredFBO.GetColorAttachment(1));
-            ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
-
-            // ------------------------------- Lighting Pass -------------------------------
-            glClear(GL_COLOR_BUFFER_BIT);
-            glDisable(GL_DEPTH_TEST);
-            glViewport(0, 0, displaySize.x, displaySize.y);
-
-            Program& quadProgram = programs[testSSAOIdx];
-            glUseProgram(quadProgram.handle);
-
-            // Re-bind G-buffer textures after SSAO passes
-            struct GBufferBinding {
-                GLenum unit;
-                GLuint texture;
-                const char* name;
-            } gBufferBindings[] = {
-                {GL_TEXTURE0, pbrDeferredFBO.GetColorAttachment(0), "gAlbedoRoughness"},
-                {GL_TEXTURE1, pbrDeferredFBO.GetColorAttachment(1), "gNormalMetallic"},
-                {GL_TEXTURE2, pbrDeferredFBO.GetColorAttachment(2), "gPosition"},
-                {GL_TEXTURE3, pbrDeferredFBO.GetColorAttachment(3), "gViewDir"},
-                {GL_TEXTURE4, pbrDeferredFBO.GetDepthAttachment(),  "gDepth"}
-            };
-
-            for (auto& binding : gBufferBindings) {
-                glActiveTexture(binding.unit);
-                glBindTexture(GL_TEXTURE_2D, binding.texture);
-            }
-
-            // Bind SSAO texture
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-
-            // Bind IBL textures
-            glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
-
-            glActiveTexture(GL_TEXTURE7);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
-
-            glActiveTexture(GL_TEXTURE8);
-            glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
-
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
-
-            // Render fullscreen quad
-            glBindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-            glBindVertexArray(0);
-
-            // ------------------------------- Post-Lighting -------------------------------
-            glEnable(GL_DEPTH_TEST);
-
-            // Skybox
-            if (!cubemaps.empty() && useSkybox) {
-                glDepthFunc(GL_LEQUAL);
-                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
-                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
-                glDepthFunc(GL_LESS);
-            }
-
-            // Light debug
-            if (gBufferDebugMode == 0 && enableLightDebug) {
-                RenderLightDebugGeometry();
-            }
-
-            // Cleanup
-            glUseProgram(0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            break;
-        }
+        }  
     }
 }
 

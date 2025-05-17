@@ -75,8 +75,8 @@ public:
     bool drawEditor;
     bool drawGrid;
 
-    bool useDeferredRendering = false;
-    bool usePBR = false;
+    bool useDeferredRendering = true;
+    bool usePBR = true;
     bool useSkybox = true;
 
     f32 deltaTime;
@@ -149,10 +149,11 @@ public:
 
     // ------------- SSAO ------------- //
 
+    bool enableSSAO = true;
+
     // Shader Resources
     u32 SSAOprogramIdx;
     u32 SSAOblurProgramIdx;
-    u32 testSSAOIdx;
 
     // SSAO Resources
     GLuint ssaoFBO;
