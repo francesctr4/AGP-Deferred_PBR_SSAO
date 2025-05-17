@@ -72,16 +72,16 @@ in vec3 vTangent;
 in vec3 vBitangent;
 
 // Material Parameters
-uniform sampler2D albedoMap;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
+layout(binding = 0) uniform sampler2D albedoMap;
+layout(binding = 1) uniform sampler2D normalMap;
+layout(binding = 2) uniform sampler2D metallicMap;
+layout(binding = 3) uniform sampler2D roughnessMap;
 //uniform sampler2D aoMap;
 
 // IBL
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-uniform sampler2D brdfLUT;
+layout(binding = 4) uniform samplerCube irradianceMap;
+layout(binding = 5) uniform samplerCube prefilterMap;
+layout(binding = 6) uniform sampler2D brdfLUT;
 
 // lights
 struct Light 

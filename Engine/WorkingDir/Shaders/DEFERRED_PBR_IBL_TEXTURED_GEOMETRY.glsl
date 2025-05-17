@@ -69,10 +69,10 @@ in vec3 vViewDir;
 in vec3 vTangent;
 in vec3 vBitangent;
 
-uniform sampler2D uAlbedo;
-uniform sampler2D uNormal;
-uniform sampler2D uMetallic;
-uniform sampler2D uRoughness;
+layout(binding = 0) uniform sampler2D uAlbedo;
+layout(binding = 1) uniform sampler2D uNormal;
+layout(binding = 2) uniform sampler2D uMetallic;
+layout(binding = 3) uniform sampler2D uRoughness;
 
 layout(location=0) out vec4 oAlbedoRoughness;
 layout(location=1) out vec4 oNormalMetallic;

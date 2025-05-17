@@ -28,7 +28,7 @@ void main()
 out vec4 FragColor;
 in vec3 WorldPos;
 
-uniform samplerCube environmentMap;
+layout(binding = 0) uniform samplerCube environmentMap;
 
 void main()
 {		

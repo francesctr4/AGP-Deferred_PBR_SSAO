@@ -60,10 +60,10 @@ in vec3 vNormal;
 in vec2 vTexCoord;
 
 // Material Parameters
-uniform sampler2D albedoMap;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
+layout(binding = 0) uniform sampler2D albedoMap;
+layout(binding = 1) uniform sampler2D normalMap;
+layout(binding = 2) uniform sampler2D metallicMap;
+layout(binding = 3) uniform sampler2D roughnessMap;
 //uniform sampler2D aoMap;
 
 // lights

@@ -497,8 +497,6 @@ void App::Render()
             {
                 glActiveTexture(tex.textureUnit);
                 glBindTexture(GL_TEXTURE_2D, tex.textureID);
-                glUniform1i(glGetUniformLocation(quadProgram.handle, tex.uniformName),
-                    tex.textureUnit - GL_TEXTURE0);
             }
 
             glUniform1i(programUniformDebugMode, (GLint)gBufferDebugMode);
@@ -569,34 +567,27 @@ void App::Render()
             Model& model = models[entity->modelIdx];
             Mesh& mesh = meshes[model.meshIdx];
 
-            // Bind pre-computed IBL data
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "irradianceMap"), 0);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
 
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "prefilterMap"), 1);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "brdfLUT"), 2);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
 
             glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "albedoMap"), 3);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
 
+            // Bind pre-computed IBL data
             glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "normalMap"), 4);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
 
             glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "metallicMap"), 5);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
 
             glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
-            glUniform1i(glGetUniformLocation(forwardPbrProgram.handle, "roughnessMap"), 6);
+            glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
             {
@@ -653,19 +644,15 @@ void App::Render()
             // Bind PBR textures
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uAlbedo"), 0);
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uNormal"), 1);
 
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uMetallic"), 2);
 
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uRoughness"), 3);
 
             // Draw submeshes
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
@@ -780,19 +767,15 @@ void App::Render()
             // Bind PBR textures
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uAlbedo"), 0);
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uNormal"), 1);
 
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uMetallic"), 2);
 
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
-            glUniform1i(glGetUniformLocation(geometryProgram.handle, "uRoughness"), 3);
 
             // Draw geometry
             for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
@@ -839,26 +822,21 @@ void App::Render()
             for (auto& binding : gBufferBindings) {
                 glActiveTexture(binding.unit);
                 glBindTexture(GL_TEXTURE_2D, binding.texture);
-                glUniform1i(glGetUniformLocation(quadProgram.handle, binding.name), binding.unit - GL_TEXTURE0);
             }
 
             // Bind SSAO texture
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "aoMap"), 5);
 
             // Bind IBL textures
             glActiveTexture(GL_TEXTURE6);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "irradianceMap"), 6);
 
             glActiveTexture(GL_TEXTURE7);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "prefilterMap"), 7);
 
             glActiveTexture(GL_TEXTURE8);
             glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "brdfLUT"), 8);
 
             glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
 
@@ -1337,7 +1315,6 @@ void App::RenderEntity(Entity* entity, Program& program, u32 programUniformTextu
         {
             glBindTexture(GL_TEXTURE_2D, textures[entity->textureIdx].handle);
         }
-        glUniform1i(programUniformTexture, 0);
 
         Submesh& submesh = mesh.submeshes[i];
         glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);

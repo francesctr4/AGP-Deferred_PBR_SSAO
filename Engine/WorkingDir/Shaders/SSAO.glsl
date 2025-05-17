@@ -29,7 +29,7 @@ layout(binding = 2) uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
 
-// parameters
+// Parameters
 uniform int kernelSize;
 uniform float radius;
 uniform float bias;

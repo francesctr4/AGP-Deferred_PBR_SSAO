@@ -41,11 +41,11 @@ layout(binding = 0, std140) uniform globalUBO
 
 in vec2 vTexCoord;
 
-uniform sampler2D uAlbedo;
-uniform sampler2D uNormal;
-uniform sampler2D uPosition;
-uniform sampler2D uViewDir;
-uniform sampler2D uDepth;
+layout(binding = 0) uniform sampler2D uAlbedo;
+layout(binding = 1) uniform sampler2D uNormal;
+layout(binding = 2) uniform sampler2D uPosition;
+layout(binding = 3) uniform sampler2D uViewDir;
+layout(binding = 4) uniform sampler2D uDepth;
 
 uniform int uDebugMode;
 

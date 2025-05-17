@@ -80,7 +80,7 @@ in vec3 vNormal;
 in vec2 vTexCoord;
 in vec3 vViewDir;
 
-uniform sampler2D uAlbedo;
+layout(binding = 0) uniform sampler2D uAlbedo;
 
 layout(location=0) out vec4 oColor;
 

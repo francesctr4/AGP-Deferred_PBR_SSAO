@@ -144,7 +144,6 @@ void Cubemap::ConvertHDRToCubemap(Program& conversionShader)
     // Convert HDR equirectangular to cubemap
     glUseProgram(conversionShader.handle);
 
-    glUniform1i(glGetUniformLocation(conversionShader.handle, "equirectangularMap"), 0);
     glUniformMatrix4fv(glGetUniformLocation(conversionShader.handle, "projection"),
         1, GL_FALSE, glm::value_ptr(captureProjection));
 
@@ -261,7 +260,6 @@ void Cubemap::GenerateDiffuseIrradianceMap(Program& irradianceShader)
 
     glUseProgram(irradianceShader.handle);
 
-    glUniform1i(glGetUniformLocation(irradianceShader.handle, "environmentMap"), 0);
     glUniformMatrix4fv(glGetUniformLocation(irradianceShader.handle, "projection"),
         1, GL_FALSE, glm::value_ptr(captureProjection));
 
@@ -307,7 +305,6 @@ void Cubemap::GenerateSpecularPrefilterMap(Program& prefilterShader)
 
     glUseProgram(prefilterShader.handle);
 
-    glUniform1i(glGetUniformLocation(prefilterShader.handle, "environmentMap"), 0);
     glUniformMatrix4fv(glGetUniformLocation(prefilterShader.handle, "projection"),
         1, GL_FALSE, glm::value_ptr(captureProjection));
 
