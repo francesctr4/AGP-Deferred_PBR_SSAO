@@ -145,6 +145,19 @@ void OnGlfwCloseWindow(GLFWwindow* window)
     app->isRunning = false;
 }
 
+#define USE_DISCRETE_GPU 1
+#if USE_DISCRETE_GPU == 1
+extern "C" 
+{
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
+
+extern "C" 
+{
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 int main()
 {
     App app         = {};
