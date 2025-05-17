@@ -25,6 +25,19 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#define USE_DISCRETE_GPU 1
+#if USE_DISCRETE_GPU == 1
+extern "C"
+{
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
+
+extern "C"
+{
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 #ifdef _DEBUG
 #include "OpenGLDebugCallback.h"
 #endif
@@ -144,19 +157,6 @@ void OnGlfwCloseWindow(GLFWwindow* window)
     App* app = (App*)glfwGetWindowUserPointer(window);
     app->isRunning = false;
 }
-
-#define USE_DISCRETE_GPU 1
-#if USE_DISCRETE_GPU == 1
-extern "C" 
-{
-    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-}
-
-extern "C" 
-{
-    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif
 
 int main()
 {

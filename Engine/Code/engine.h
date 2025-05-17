@@ -127,6 +127,7 @@ public:
     bool enableLightDebug = false;
 
     GridLightConfig gridConfig;
+    SSAOsettings ssaoSettings;
 
     // Debug/UI State
     std::vector<std::string> shaderErrors;

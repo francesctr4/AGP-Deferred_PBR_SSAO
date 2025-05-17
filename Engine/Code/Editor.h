@@ -11,6 +11,7 @@ namespace Editor
     void DrawShaderErrorsWindow(App* app);
     void DrawGBufferDebugWindow(App* app);
     void DrawCameraInfo(App* app);
+    void DrawSSAOconfigWindow(App* app);
 
     inline void Draw(App* app)
     {
@@ -21,5 +22,6 @@ namespace Editor
         DrawShaderErrorsWindow(app);
         DrawGBufferDebugWindow(app);
         DrawCameraInfo(app);
+        DrawSSAOconfigWindow(app);
     }
 }

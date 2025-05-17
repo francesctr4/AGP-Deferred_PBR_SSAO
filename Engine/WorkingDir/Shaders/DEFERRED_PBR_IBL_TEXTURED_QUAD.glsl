@@ -24,18 +24,18 @@ layout(location=0) out vec4 FragColor;
 in vec2 vTexCoord;
 
 // Material Parameters
-uniform sampler2D gAlbedoRoughness; // RGB: Albedo, A: Roughness
-uniform sampler2D gNormalMetallic;  // RGB: Normal, A: Metallic
-uniform sampler2D gPosition;
-uniform sampler2D gViewDir;
-uniform sampler2D gDepth;
-
-uniform int gDebugMode;
+layout(binding = 0) uniform sampler2D gAlbedoRoughness; // RGB: Albedo, A: Roughness
+layout(binding = 1) uniform sampler2D gNormalMetallic;  // RGB: Normal, A: Metallic
+layout(binding = 2) uniform sampler2D gPosition;
+layout(binding = 3) uniform sampler2D gViewDir;
+layout(binding = 4) uniform sampler2D gDepth;
 
 // IBL
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-uniform sampler2D brdfLUT;
+layout(binding = 5) uniform samplerCube irradianceMap;
+layout(binding = 6) uniform samplerCube prefilterMap;
+layout(binding = 7) uniform sampler2D brdfLUT;
+
+uniform int gDebugMode;
 
 // lights
 struct Light 

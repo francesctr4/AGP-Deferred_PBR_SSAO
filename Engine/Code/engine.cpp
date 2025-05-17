@@ -278,7 +278,7 @@ void App::Init()
         "HDR/airport_4k.hdr",
         //"HDR/burnt_warehouse_4k.hdr",
         //"HDR/mirrored_hall_4k.hdr",
-        //"HDR/cobblestone_street_night_4k.hdr",
+        "HDR/cobblestone_street_night_4k.hdr",
         //"HDR/stierberg_sunrise_4k.hdr",
         //"HDR/sunset_jhbcentral_4k.hdr",
         //"HDR/table_mountain_1_4k.hdr"
@@ -354,19 +354,19 @@ void App::Update()
 
     CameraMovement(input, worldCamera, deltaTime);
 
-    //{
-    //    static float rotationSpeed = glm::radians(30.0f);
-    //    float angle = rotationSpeed * deltaTime;
-    //    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    {
+        static float rotationSpeed = glm::radians(30.0f);
+        float angle = rotationSpeed * deltaTime;
+        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //    // Rotate Patrick
-    //    static Entity* patrickEntity = &entities[0];
-    //    patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
+        // Rotate Patrick
+        static Entity* patrickEntity = &entities[0];
+        patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
 
-    //    // Rotate PBR Cerberus
-    //    static Entity* cerberusEntity = &entities[7];
-    //    cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
-    //}
+        // Rotate PBR Cerberus
+        static Entity* cerberusEntity = &entities[7];
+        cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
+    }
 
     UpdateEntities();
 
@@ -712,25 +712,21 @@ void App::Render()
                 {GL_TEXTURE4, pbrDeferredFBO.GetDepthAttachment(),  "gDepth"}
             };
 
-            for (auto& binding : gBufferBindings) {
+            for (auto& binding : gBufferBindings) 
+            {
                 glActiveTexture(binding.unit);
                 glBindTexture(GL_TEXTURE_2D, binding.texture);
-                glUniform1i(glGetUniformLocation(quadProgram.handle, binding.name),
-                    binding.unit - GL_TEXTURE0);
             }
 
             // Bind IBL textures
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "irradianceMap"), 4);
-
             glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "prefilterMap"), 5);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
 
             glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
+
+            glActiveTexture(GL_TEXTURE7);
             glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
-            glUniform1i(glGetUniformLocation(quadProgram.handle, "brdfLUT"), 6);
 
             glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
 
@@ -1491,21 +1487,17 @@ void App::CalculateSSAO(Program& shaderSSAO, GLuint gPositionID, GLuint gNormalI
     // 2. generate SSAO texture
     // -----------------------------------------
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
-    //glViewport(0, 0, displaySize.x, displaySize.y);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "gPosition"), 0);
-    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "gNormal"), 1);
-    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "texNoise"), 2);
+    glUseProgram(shaderSSAO.handle);
 
-    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "kernelSize"), 64);
-    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "radius"), 0.5);
-    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "bias"), 0.025);
+    glUniform1i(glGetUniformLocation(shaderSSAO.handle, "kernelSize"), ssaoSettings.kernelSize);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "radius"), ssaoSettings.radius);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "bias"), ssaoSettings.bias);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "power"), ssaoSettings.power);
 
     glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_WIDTH"), displaySize.x);
     glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_HEIGHT"), displaySize.y);
-
-    glUseProgram(shaderSSAO.handle);
 
     // Send kernel + rotation 
     for (unsigned int i = 0; i < 64; ++i)
@@ -1539,10 +1531,7 @@ void App::ApplyBlurSSAO(Program& shaderBlurSSAO)
     // 3. Blur SSAO Texture to Remove Noise
     // ------------------------------------
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
-    //glViewport(0, 0, displaySize.x, displaySize.y);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    glUniform1i(glGetUniformLocation(shaderBlurSSAO.handle, "ssaoInput"), 0);
 
     glUseProgram(shaderBlurSSAO.handle);
 

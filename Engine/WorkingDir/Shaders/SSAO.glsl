@@ -23,21 +23,17 @@ out float FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gPosition;
-uniform sampler2D gNormal;
-uniform sampler2D texNoise;
+layout(binding = 0) uniform sampler2D gPosition;
+layout(binding = 1) uniform sampler2D gNormal;
+layout(binding = 2) uniform sampler2D texNoise;
 
 uniform vec3 samples[64];
 
-// parameters (you'd probably want to use them as uniforms to more easily tweak the effect)
-int kernelSize = 64;
-float radius = 0.2;
-float bias = 0.25;
-float power = 5.0;
-
-//uniform int kernelSize;
-//uniform float radius;
-//uniform float bias;
+// parameters
+uniform int kernelSize;
+uniform float radius;
+uniform float bias;
+uniform float power;
 
 uniform float SCREEN_WIDTH;
 uniform float SCREEN_HEIGHT;
@@ -47,7 +43,7 @@ uniform mat4 projection;
 
 void main() {
     // Tile noise texture
-    vec2 noiseScale = vec2(textureSize(gPosition, 0)) / 4.0;
+    vec2 noiseScale = vec2(SCREEN_WIDTH / 4.0, SCREEN_HEIGHT / 4.0);
 
     // Get world-space position and normal from G-buffer
     vec3 fragPosWorld = texture(gPosition, TexCoords).xyz;

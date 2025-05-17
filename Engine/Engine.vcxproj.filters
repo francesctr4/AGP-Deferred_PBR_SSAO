@@ -141,6 +141,9 @@
     <ClCompile Include="WorkingDir\Shaders\SPECULAR_PREFILTER_CONVOLUTION.glsl">
       <Filter>Source Code\Shaders\PBR</Filter>
     </ClCompile>
+    <ClCompile Include="Code\EditorSSAOconfigWindow.cpp">
+      <Filter>Source Code\Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">

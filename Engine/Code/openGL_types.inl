@@ -191,3 +191,11 @@ struct Light
 
     float specularStrength; // Specular intensity multiplier
 };
+
+struct SSAOsettings
+{
+    int kernelSize = 64;
+    float radius = 0.5f;
+    float bias = 0.25f;
+    float power = 5.0f;
+};

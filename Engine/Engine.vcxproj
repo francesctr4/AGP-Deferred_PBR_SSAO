@@ -29,6 +29,7 @@
     <ClCompile Include="Code\EditorLightsWindow.cpp" />
     <ClCompile Include="Code\EditorMainMenuBar.cpp" />
     <ClCompile Include="Code\EditorShaderErrorsWindow.cpp" />
+    <ClCompile Include="Code\EditorSSAOconfigWindow.cpp" />
     <ClCompile Include="Code\engine.cpp" />
     <ClCompile Include="Code\ImageLoader.cpp" />
     <ClCompile Include="Code\ModelLoader.cpp" />
