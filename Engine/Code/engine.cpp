@@ -235,6 +235,8 @@ void App::Init()
 
     globalUBO = CreateConstantBuffer(maxUniformBufferSize);
     entityUBO = CreateConstantBuffer(maxUniformBufferSize);
+
+    int maxLights = (maxUniformBufferSize - sizeof(vec3) - sizeof(int)) / sizeof(Light);
     
     // 8. Lights Setup
     CreateLights();
