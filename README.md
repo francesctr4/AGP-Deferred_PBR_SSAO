@@ -8,6 +8,10 @@ _**Francesc Teruel Rodríguez**_
 _**Mario García Sutil**_
 * **GitHub:** [mariogs5](https://github.com/mariogs5)
 
+## Application Controls
+
+_Work In Progress_
+
 # Physically Based Rendering (PBR) + Image Based Lighting (IBL)
 
 ○ To show the effect of each technique, show a couple of renders from the
