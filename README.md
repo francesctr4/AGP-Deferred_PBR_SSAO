@@ -8,6 +8,13 @@ _**Francesc Teruel Rodríguez**_
 _**Mario García Sutil**_
 * **GitHub:** [mariogs5](https://github.com/mariogs5)
 
+● List of techniques implemented:
+○ To show the effect of each technique, show a couple of renders from the
+same point of view, with each technique enabled and disabled.
+○ Explain how to enable / disable / configure the options you may have.
+○ Include screenshots of the corresponding widgets when appropriate.
+○ Name of shader files for every effect
+
 # Advanced Graphics Programming - Delivery 2 - Deferred Rendering
 
 ## Final Result
