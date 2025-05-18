@@ -10,6 +10,10 @@ _**Mario García Sutil**_
 
 ## Application Controls
 
+### Camera Controls
+_Work In Progress_
+
+### Debug Keys
 _Work In Progress_
 
 # Physically Based Rendering (PBR) + Image Based Lighting (IBL)
