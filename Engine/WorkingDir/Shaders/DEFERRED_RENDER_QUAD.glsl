@@ -46,12 +46,14 @@ layout(binding = 1) uniform sampler2D uNormal;
 layout(binding = 2) uniform sampler2D uPosition;
 layout(binding = 3) uniform sampler2D uViewDir;
 layout(binding = 4) uniform sampler2D uDepth;
+layout(binding = 5) uniform sampler2D uAO;
 
 uniform int uDebugMode;
+uniform bool enableSSAO;
 
 layout(location=0) out vec4 oColor;
 
-vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
+vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir, float ao)
 {
     vec3 lightDir = normalize(-aLight.direction);
     vec3 viewDir = normalize(aViewDir);
@@ -61,14 +63,14 @@ vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
     vec3 reflectDir = reflect(-lightDir, aNormal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 2.0);
 
-    vec3 ambient = aLight.color * 0.2;
+    vec3 ambient = aLight.color * 0.2 * ao;
     vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
     vec3 specular = aLight.color * spec * aLight.specularStrength;
 
     return (ambient + diffuse + specular);
 }
 
-vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
+vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir, float ao)
 {
     vec3 lightDir = normalize(aLight.position - aPosition);
     vec3 viewDir = normalize(aViewDir);
@@ -82,7 +84,7 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 
 	float attenuation = 1.0 / (aLight.constant + aLight.linear * distance + aLight.quadratic * (distance * distance)); 
 
-    vec3 ambient = aLight.color * 0.2;
+    vec3 ambient = aLight.color * 0.2 * ao;
     vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
     vec3 specular = aLight.color * spec * aLight.specularStrength;
 
@@ -110,6 +112,7 @@ void main()
     vec3 positionTex = texture(uPosition, vTexCoord).rgb;
     vec3 viewDirTex = texture(uViewDir, vTexCoord).rgb;
     float depthTex = texture(uDepth, vTexCoord).r;
+    float aoTex = enableSSAO ? texture(uAO, vTexCoord).r : 1.0;
 
     switch(uDebugMode)
     {
@@ -129,6 +132,10 @@ void main()
             float linDepth = linearizeDepth(depthTex, 0.1f, 10.0f);
             oColor = vec4(vec3(linDepth), 1.0f);
             return;
+        case 6: // SSAO
+            if (enableSSAO) oColor = depthTex == 1.0 ? vec4(0.0) : vec4(vec3(aoTex), 1.0);
+            else oColor = vec4(0.0);
+            return;
         default: // Final render
             break;
     }
@@ -140,11 +147,11 @@ void main()
 
         if(uLight[i].type == 0)
         {
-            lightResult = CalcDirLight(uLight[i], normalTex, viewDirTex);
+            lightResult = CalcDirLight(uLight[i], normalTex, viewDirTex, aoTex);
         }
         else if(uLight[i].type == 1)
         {
-            lightResult = CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex);
+            lightResult = CalcPointLight(uLight[i], normalTex, positionTex, viewDirTex, aoTex);
         }
 
         returnColor += lightResult * uLight[i].color;

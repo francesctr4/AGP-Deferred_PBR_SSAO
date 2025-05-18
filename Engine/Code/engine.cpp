@@ -468,6 +468,17 @@ void App::Render()
             );
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+            // ------------------------------- SSAO Pass -------------------------------
+
+            if (enableSSAO)
+            {
+                GLuint gPositionAttachment = blinnPhongDeferredFBO.GetColorAttachment(2);
+                GLuint gNormalAttachment = blinnPhongDeferredFBO.GetColorAttachment(1);
+
+                CalculateSSAO(programs[SSAOprogramIdx], gPositionAttachment, gNormalAttachment);
+                ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
+            }
+
             // ------------------------------- Lighting Pass ------------------------------- //
             // Clear only color buffer, NOT depth buffer
             glClear(GL_COLOR_BUFFER_BIT);
@@ -497,7 +508,15 @@ void App::Render()
                 glBindTexture(GL_TEXTURE_2D, tex.textureID);
             }
 
+            if (enableSSAO)
+            {
+                // Bind SSAO texture
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+            }
+
             glUniform1i(programUniformDebugMode, (GLint)gBufferDebugMode);
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "enableSSAO"), (GLint)enableSSAO);
 
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -679,7 +698,10 @@ void App::Render()
 
             if (enableSSAO) 
             {
-                CalculateSSAO(programs[SSAOprogramIdx], pbrDeferredFBO.GetColorAttachment(2), pbrDeferredFBO.GetColorAttachment(1));
+                GLuint gPositionAttachment = pbrDeferredFBO.GetColorAttachment(2);
+                GLuint gNormalAttachment = pbrDeferredFBO.GetColorAttachment(1);
+
+                CalculateSSAO(programs[SSAOprogramIdx], gPositionAttachment, gNormalAttachment);
                 ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
             }
 

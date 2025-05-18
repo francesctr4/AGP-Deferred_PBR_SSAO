@@ -24,7 +24,10 @@ void Editor::DrawSSAOconfigWindow(App* app)
         ImVec4(0.2f, 0.7f, 0.2f, 1.0f) : ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, app->enableSSAO ?
         ImVec4(0.3f, 0.8f, 0.3f, 1.0f) : ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
-    ImGuiUtils::ToggleButton(app->enableSSAO ? " ACTIVE " : " INACTIVE ", &app->enableSSAO);
+    ImGuiUtils::ToggleButton("##SSAO", &app->enableSSAO);
+    ImGui::SameLine();
+    ImGui::Text("%s", app->enableSSAO ? " ACTIVE " : " INACTIVE ");
+
     ImGui::PopStyleColor(2);
 
     if (app->enableSSAO)
