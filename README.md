@@ -27,6 +27,10 @@ same point of view, with each technique enabled and disabled.
 
 ○ Name of shader files for every effect
 
+| Shader Name          | Purpose                                                                                       |
+|---------------------|------------------------------------------------------------------------------------------------|
+| BRDF_INTEGRATION_CONVOLUTION.glsl              | Cositas     |
+
 ![image](https://github.com/user-attachments/assets/8d0ee74f-75ab-4fd2-8b96-85d7c4a96e60)
 
 # Screen Space Ambient Occlusion (SSAO)
