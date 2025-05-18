@@ -11,10 +11,36 @@ _**Mario García Sutil**_
 ## Application Controls
 
 ### Camera Controls
-_Work In Progress_
+
+| **Action**               | **Input**                          |
+|--------------------------|------------------------------------|
+| **Orbit Camera**         | `Alt + Right Mouse Button + Drag`  |
+| **Free Look**            | `Right Mouse Button + Drag`        |
+| **Move Forward**         | `W`                                |
+| **Move Backward**        | `S`                                |
+| **Move Left**            | `A`                                |
+| **Move Right**           | `D`                                |
+| **Move Up**              | `E`                                |
+| **Move Down**            | `Q`                                |
+| **Speed Boost**          | `Hold Shift` (while moving)        |
+| **Zoom In/Out**          | `Right Mouse Button + Scroll`      |
 
 ### Debug Keys
-_Work In Progress_
+
+| Action                            | Key | Description                              |
+|-----------------------------------|-----|------------------------------------------|
+| **GBuffer - Final Render**        | `1` | Shows final rendered output              |
+| **GBuffer - Albedo**              | `2` | Displays albedo colors                   |
+| **GBuffer - Normals**             | `3` | Visualizes surface normals               |
+| **GBuffer - Position**            | `4` | Shows world-space positions              |
+| **GBuffer - View Direction**      | `5` | Displays camera-relative view vectors    |
+| **GBuffer - Depth**               | `6` | Visualizes depth buffer                  |
+| **GBuffer - Ambient Occlusion**   | `7` | Shows Screen Space AO (SSAO) map         |
+| **GBuffer - Metallic**            | `8` | Displays metallic values                 |
+| **GBuffer - Roughness**           | `9` | Visualizes roughness values              |
+| **Cycle Cubemaps**                | `M` | Rotates through available cubemaps       |
+| **Toggle Editor UI**              | `N` | Shows/hides editor interface             |
+| **Cycle Rendering Modes**         | `B` | Switches between rendering techniques    |
 
 # Physically Based Rendering (PBR) + Image Based Lighting (IBL)
 
@@ -23,7 +49,7 @@ same point of view, with each technique enabled and disabled.
 
 ○ Explain how to enable / disable / configure the options you may have.
 
-○ Include screenshots of the corresponding widgets when appropriate.
+○ Include screenshots of the corresponding debug widgets when appropriate.
 
 ○ Name of shader files for every effect
 
