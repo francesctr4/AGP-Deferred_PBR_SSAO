@@ -40,37 +40,25 @@ same point of view, with each technique enabled and disabled.
 
 # Final Result
 
+![Final Render](https://github.com/user-attachments/assets/0c23b607-026a-44ea-a24c-1f0ac3c1d6b6)
+
 ## Deferred Pipeline Breakdown
 
 | Attachment          | Preview                                                                                        |
 |---------------------|------------------------------------------------------------------------------------------------|
-| Albedo              | ![image](https://github.com/user-attachments/assets/194961c8-2c82-4968-b36e-1c9641222b7c)      |
-| Normals             | ![Normals]()    |
-| Position            | ![Position]()   |
-| View Direction      | ![View]()       |
-| Depth               | ![Depth]()      |
-| Ambient Occlusion   | ![AO]()         |
-| Metallic (PBR)      | ![Metallic]()   |
-| Roughness (PBR)     | ![Roughness]()  |
-| Skybox (IBL)        | ![Skybox]()     |
-| Irradiance (IBL)    | ![Irradiance]() |
-| Prefilter (IBL)     | ![Prefilter]()  |
-| BRDF (IBL)          | ![BRDF]()       |
-| Final Render        | ![Final]()      |
-
-![image](https://github.com/user-attachments/assets/b0b7919f-7fc0-4ca7-9a70-ddfd69b431a6)
-![image](https://github.com/user-attachments/assets/c5acb356-2bff-4195-9cc4-c52535ef4db1)
-![image](https://github.com/user-attachments/assets/b84f38f3-c8c3-4401-a588-1b43c7f7e3e1)
-![image](https://github.com/user-attachments/assets/b0d44f54-8662-4a73-99a9-bbd145e79a3c)
-![image](https://github.com/user-attachments/assets/23251b91-9cf4-44f0-b623-f3da7e1a5706)
-![image](https://github.com/user-attachments/assets/90f3458d-eb64-4a1d-8552-316bb2c56aee)
-![image](https://github.com/user-attachments/assets/4818939f-6c81-4444-96e2-285076c272c0)
-![image](https://github.com/user-attachments/assets/86c7249d-3c53-4966-adfa-a19d64d0c02d)
-![image](https://github.com/user-attachments/assets/c694396a-3564-4cbc-8c2d-67e4f461e4e7)
-![image](https://github.com/user-attachments/assets/dba39988-b0e9-44cc-bfd6-0d743606a9c8)
-![image](https://github.com/user-attachments/assets/841d2f10-6b14-4624-a2ae-ce429c640057)
-![image](https://github.com/user-attachments/assets/8fa65cdd-0fd6-4186-aaf6-99f5252dcfd1)
-
+| Albedo              | ![Albedo](https://github.com/user-attachments/assets/194961c8-2c82-4968-b36e-1c9641222b7c)     |
+| Normals             | ![Normals](https://github.com/user-attachments/assets/b0b7919f-7fc0-4ca7-9a70-ddfd69b431a6)    |
+| Position            | ![Position](https://github.com/user-attachments/assets/c5acb356-2bff-4195-9cc4-c52535ef4db1)   |
+| View Direction      | ![View](https://github.com/user-attachments/assets/b84f38f3-c8c3-4401-a588-1b43c7f7e3e1)       |
+| Depth               | ![Depth](https://github.com/user-attachments/assets/b0d44f54-8662-4a73-99a9-bbd145e79a3c)      |
+| Ambient Occlusion   | ![AO](https://github.com/user-attachments/assets/23251b91-9cf4-44f0-b623-f3da7e1a5706)         |
+| Metallic (PBR)      | ![Metallic](https://github.com/user-attachments/assets/90f3458d-eb64-4a1d-8552-316bb2c56aee)   |
+| Roughness (PBR)     | ![Roughness](https://github.com/user-attachments/assets/4818939f-6c81-4444-96e2-285076c272c0)  |
+| Skybox (IBL)        | ![Skybox](https://github.com/user-attachments/assets/8fa65cdd-0fd6-4186-aaf6-99f5252dcfd1)     |
+| Irradiance (IBL)    | ![Irradiance](https://github.com/user-attachments/assets/86c7249d-3c53-4966-adfa-a19d64d0c02d) |
+| Prefilter (IBL)     | ![Prefilter](https://github.com/user-attachments/assets/c694396a-3564-4cbc-8c2d-67e4f461e4e7)  |
+| BRDF (IBL)          | ![BRDF](https://github.com/user-attachments/assets/dba39988-b0e9-44cc-bfd6-0d743606a9c8)       |
+| Final Render        | ![Final](https://github.com/user-attachments/assets/841d2f10-6b14-4624-a2ae-ce429c640057)      |
 
 # Advanced Graphics Programming - Delivery 2 - Deferred Rendering
 
