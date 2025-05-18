@@ -154,6 +154,10 @@ public:
     // Shader Resources
     u32 SSAOprogramIdx;
     u32 SSAOblurProgramIdx;
+    u32 SSAOforwardGeometryProgramIdx;
+
+    // Framebuffer
+    Framebuffer forwardFBOforSSAO;
 
     // SSAO Resources
     GLuint ssaoFBO;

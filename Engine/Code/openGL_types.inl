@@ -79,6 +79,8 @@ enum Mode
     Mode_PBR_Forward_Rendering = 2,         // Forward PBR Shading Pipeline
     Mode_PBR_Deferred_Rendering = 3,        // Deferred PBR Shading Pipeline
 
+    Mode_PBR_Forward_Rendering_SSAO = 4,
+
     ALL_MODES
 };
 

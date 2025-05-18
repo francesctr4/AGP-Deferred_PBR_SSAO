@@ -274,5 +274,8 @@
     <None Include="WorkingDir\Shaders\SSAO.glsl">
       <Filter>Source Code\Shaders\SSAO</Filter>
     </None>
+    <None Include="WorkingDir\Shaders\FORWARD_GEOMETRY_PASS_FOR_SSAO.glsl">
+      <Filter>Source Code\Shaders\SSAO</Filter>
+    </None>
   </ItemGroup>
 </Project>

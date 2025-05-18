@@ -76,12 +76,15 @@ layout(binding = 0) uniform sampler2D albedoMap;
 layout(binding = 1) uniform sampler2D normalMap;
 layout(binding = 2) uniform sampler2D metallicMap;
 layout(binding = 3) uniform sampler2D roughnessMap;
-//uniform sampler2D aoMap;
+layout(binding = 4) uniform sampler2D aoMap;
 
 // IBL
-layout(binding = 4) uniform samplerCube irradianceMap;
-layout(binding = 5) uniform samplerCube prefilterMap;
-layout(binding = 6) uniform sampler2D brdfLUT;
+layout(binding = 5) uniform samplerCube irradianceMap;
+layout(binding = 6) uniform samplerCube prefilterMap;
+layout(binding = 7) uniform sampler2D brdfLUT;
+
+uniform vec2 uScreenSize;
+uniform bool enableSSAO;
 
 // lights
 struct Light 
@@ -158,7 +161,16 @@ void main()
     vec3 albedo = pow(texture(albedoMap, vTexCoord).rgb, vec3(2.2));
     float metallic = texture(metallicMap, vTexCoord).r;
     float roughness = texture(roughnessMap, vTexCoord).r;
-    //float ao = texture(aoMap, vTexCoord).r;
+
+    // Calculate screen UV
+    vec2 screenUV = vec2(1.0f);
+    float ao = 0.0f;
+
+    if (enableSSAO)
+    {
+        screenUV = vec2(gl_FragCoord.x / uScreenSize.x, 1.0 - (gl_FragCoord.y / uScreenSize.y));
+        ao = texture(aoMap, screenUV).r;
+    }
     
     // Normal map calculation
     mat3 TBN = mat3(normalize(vTangent), 
@@ -230,8 +242,12 @@ void main()
     vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-    //vec3 ambient = (kD * diffuse + specular) * ao;
     vec3 ambient = (kD * diffuse + specular);
+
+    if (enableSSAO)
+    {
+        ambient *= ao;
+    }
 
     vec3 color = ambient + Lo;
 
