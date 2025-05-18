@@ -1,5 +1,7 @@
 # Advanced Graphics Programming - Delivery 3 - OpenGL Features: PBR + IBL & SSAO
 
+![Final Render](https://github.com/user-attachments/assets/0c23b607-026a-44ea-a24c-1f0ac3c1d6b6)
+
 ## Team Members
 
 _**Francesc Teruel Rodríguez**_
@@ -73,10 +75,6 @@ same point of view, with each technique enabled and disabled.
 ![image](https://github.com/user-attachments/assets/bdbe06cb-5131-4839-a04a-57b906ca702e)
 ![image](https://github.com/user-attachments/assets/dce0da62-888d-4f63-a305-ecef7d149789)
 ![image](https://github.com/user-attachments/assets/83374746-ff33-4269-9a97-ed4826eefaf4)
-
-# Final Result
-
-![Final Render](https://github.com/user-attachments/assets/0c23b607-026a-44ea-a24c-1f0ac3c1d6b6)
 
 ## Deferred Pipeline Breakdown
 
