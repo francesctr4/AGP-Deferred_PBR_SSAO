@@ -1,3 +1,13 @@
+# Advanced Graphics Programming - Delivery 3 - PBR + IBL & SSAO
+
+## Team Members
+
+_**Francesc Teruel Rodríguez**_
+* **GitHub:** [francesctr4](https://github.com/francesctr4)
+
+_**Mario García Sutil**_
+* **GitHub:** [mariogs5](https://github.com/mariogs5)
+
 # Advanced Graphics Programming - Delivery 2 - Deferred Rendering
 
 ## Final Result
