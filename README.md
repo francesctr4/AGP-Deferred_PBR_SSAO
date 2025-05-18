@@ -27,6 +27,8 @@ same point of view, with each technique enabled and disabled.
 
 ○ Name of shader files for every effect
 
+![image](https://github.com/user-attachments/assets/8d0ee74f-75ab-4fd2-8b96-85d7c4a96e60)
+
 # Screen Space Ambient Occlusion (SSAO)
 
 ○ To show the effect of each technique, show a couple of renders from the
@@ -37,6 +39,10 @@ same point of view, with each technique enabled and disabled.
 ○ Include screenshots of the corresponding widgets when appropriate.
 
 ○ Name of shader files for every effect
+
+![image](https://github.com/user-attachments/assets/bdbe06cb-5131-4839-a04a-57b906ca702e)
+![image](https://github.com/user-attachments/assets/dce0da62-888d-4f63-a305-ecef7d149789)
+![image](https://github.com/user-attachments/assets/83374746-ff33-4269-9a97-ed4826eefaf4)
 
 # Final Result
 
