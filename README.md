@@ -38,6 +38,8 @@ same point of view, with each technique enabled and disabled.
 
 ○ Name of shader files for every effect
 
+# Final Result
+
 # Advanced Graphics Programming - Delivery 2 - Deferred Rendering
 
 ## Final Result
