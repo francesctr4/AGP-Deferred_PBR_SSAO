@@ -1,4 +1,4 @@
-# Advanced Graphics Programming - Delivery 3 - Advanced OpenGL: PBR + IBL & SSAO
+# Advanced Graphics Programming - Delivery 3 - OpenGL Features: PBR + IBL & SSAO
 
 ## Team Members
 
