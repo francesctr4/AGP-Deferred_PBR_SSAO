@@ -68,6 +68,8 @@ private:
 
     void ChangeRenderMode();
 
+    bool LoadPBRMaterial(const std::string& directory, MaterialPBR& material);
+
 public:
 
     // Core
@@ -194,7 +196,14 @@ private:
     u32 orangeTexIdx;
 
     // PBR
-    MaterialPBR cerberus;
+    MaterialPBR cerberusMat;
+    MaterialPBR lightGoldMat;
+    MaterialPBR spottedRust;
+    MaterialPBR fancyScaledGold;
+    MaterialPBR armoredDragonScales;
+
+    std::vector<MaterialPBR> PBRmaterials;
+    u32 currentPBRmaterialIndex = 0;
 
     // Model Indices
     u32 patrickIdx;
@@ -206,6 +215,7 @@ private:
     u32 torusIdx;
     u32 debugSphereIdx;
     u32 weaponIdx;
+    u32 spherePBRIdx;
 
     // Shader Program Indices
     u32 deferredRenderQuadProgramIdx;
