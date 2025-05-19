@@ -64,6 +64,9 @@
     <Filter Include="Source Code\Shaders\PBR\IBL">
       <UniqueIdentifier>{777e5504-a3af-41a7-9c68-0bad2bab121c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Shaders\SSAO\Forward SSAO">
+      <UniqueIdentifier>{c84846be-e35e-418f-b538-801ec080d255}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -279,6 +282,9 @@
     </None>
     <None Include="WorkingDir\Shaders\SKYBOX.glsl">
       <Filter>Source Code\Shaders\PBR\IBL</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\FORWARD_PRE_SSAO_RENDER.glsl">
+      <Filter>Source Code\Shaders\SSAO\Forward SSAO</Filter>
     </None>
   </ItemGroup>
 </Project>

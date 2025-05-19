@@ -83,6 +83,7 @@
     <None Include="WorkingDir\Shaders\DIFFUSE_IRRADIANCE_CONVOLUTION.glsl" />
     <None Include="WorkingDir\Shaders\EQUIRECTANGULAR_TO_CUBEMAP.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_PBR_DIRECT_TEXTURED.glsl" />
+    <None Include="WorkingDir\Shaders\FORWARD_PRE_SSAO_RENDER.glsl" />
     <None Include="WorkingDir\Shaders\GRID.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_PBR_IBL_TEXTURED.glsl" />
     <None Include="WorkingDir\Shaders\FORWARD_RENDER.glsl" />
