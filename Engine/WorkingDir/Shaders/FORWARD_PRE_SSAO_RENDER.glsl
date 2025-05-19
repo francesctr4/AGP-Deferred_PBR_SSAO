@@ -83,6 +83,8 @@ in vec3 vViewDir;
 layout(binding = 0) uniform sampler2D uAlbedo;
 
 layout(location=0) out vec4 oColor;
+layout(location=1) out vec4 oNormal;
+layout(location=2) out vec4 oPosition;
 
 vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
 {
@@ -146,6 +148,8 @@ void main()
     }
 
     oColor = vec4(returnColor, 1.0);
+    oNormal = vec4(vNormal, 1.0f);
+    oPosition = vec4(vPosition, 1.0f);
 }
 
 #endif

@@ -267,6 +267,11 @@ void App::Init()
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
 
+    if (!SSAOblinnPhongForwardFBO.Create(3, displaySize))
+    {
+        ELOG("[ERROR] The framebuffer was not created correctly.");
+    }
+
     // 11. Cubemap
     Cubemap::CreateCube();
 
@@ -546,6 +551,76 @@ void App::Render()
             // Cleanup
             glUseProgram(0);
             glBindTexture(GL_TEXTURE_2D, 0);
+
+            break;
+        }
+        case Mode_BlinnPhong_Forward_SSAO_Rendering: 
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, blinnPhongForwardFBO.GetFramebufferHandle());
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glViewport(0, 0, displaySize.x, displaySize.y);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // ----------------------------------- Skybox Pass ----------------------------------- //
+
+            if (!cubemaps.empty() && useSkybox)
+            {
+                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            }
+
+            // ----------------------------------- Grid Pass ----------------------------------- //
+
+            //glDepthMask(GL_FALSE);
+            //// Render the grid before entities
+            //RenderGrid();
+            //glDepthMask(GL_TRUE);
+
+            // ----------------------------------- Geometry Pass ----------------------------------- //
+
+            Program& texturedMeshProgram = programs[forwardRenderProgramIdx]; // change this shader to the new one
+            glUseProgram(texturedMeshProgram.handle);
+
+            // UNIFORM BUFFER:
+            // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
+
+            for (int i = 0; i < entities.size() - 1; ++i)
+            {
+                RenderEntity(&entities[i], texturedMeshProgram, forwardRenderProgramUniformTexture);
+            }
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
+
+            glUseProgram(0);
+
+            // ------------------------------- SSAO Pass -------------------------------
+
+            if (enableSSAO)
+            {
+                GLuint gPositionAttachment = blinnPhongForwardFBO.GetColorAttachment(2);
+                GLuint gNormalAttachment = blinnPhongForwardFBO.GetColorAttachment(1);
+
+                CalculateSSAO(programs[SSAOprogramIdx], gPositionAttachment, gNormalAttachment);
+                ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
+            }
+
+            // call the new shader with the forward final render and the SSAO calculation
+            // ssaoColorBufferBlur is the result of the SSAO calculation
+            // Use blinnPhongForwardFBO.GetColorAttachment(0) as "Color" and ssaoColorBufferBlur as SSAO
+
+            // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
+
+            glDisable(GL_BLEND);
+
+            if (gBufferDebugMode == 0 && enableLightDebug)
+            {
+                RenderLightDebugGeometry();
+            }
 
             break;
         }

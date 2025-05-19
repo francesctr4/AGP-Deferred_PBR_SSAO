@@ -74,10 +74,11 @@ struct Program
 // Rendering mode selector
 enum Mode
 {
-    Mode_BlinnPhong_Forward_Rendering = 0,  // Forward Blinn-Phong Shading Pipeline
-    Mode_BlinnPhong_Deferred_Rendering = 1, // Deferred Blinn-Phong Shading Pipeline
-    Mode_PBR_Forward_Rendering = 2,         // Forward PBR Shading Pipeline
-    Mode_PBR_Deferred_Rendering = 3,        // Deferred PBR Shading Pipeline
+    Mode_BlinnPhong_Forward_Rendering = 0,      // Forward Blinn-Phong Shading Pipeline
+    Mode_BlinnPhong_Deferred_Rendering = 1,     // Deferred Blinn-Phong Shading Pipeline
+    Mode_PBR_Forward_Rendering = 2,             // Forward PBR Shading Pipeline
+    Mode_PBR_Deferred_Rendering = 3,            // Deferred PBR Shading Pipeline
+    Mode_BlinnPhong_Forward_SSAO_Rendering = 4, // Forward SSAO Blinn-Phong Shading Pipeline
 
     ALL_MODES
 };
