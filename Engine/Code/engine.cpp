@@ -15,6 +15,7 @@
 
 #include <format>
 #include <random>
+#include <filesystem>
 
 App::App()
     : isRunning(true),
@@ -182,18 +183,19 @@ void App::Init()
         {blueTexIdx, "Textures/color_blue.png"},
         {lightGreenTexIdx, "Textures/color_light_green.png"},
         {orangeTexIdx, "Textures/color_orange.png"},
-
-        {cerberus.albedoIdx, "PBR/Textures/Cerberus_A.tga"},
-        {cerberus.normalIdx, "PBR/Textures/Cerberus_N.tga"},
-        {cerberus.metallicIdx, "PBR/Textures/Cerberus_M.tga"},
-        {cerberus.roughnessIdx, "PBR/Textures/Cerberus_R.tga"},
-
     };
 
     for (auto& [idx, path] : textures) 
     {
         idx = ImageLoader::LoadTexture2D(this, path);
     }
+
+    // PBR Materials
+    LoadPBRMaterial("PBR/Materials/Cerberus", cerberusMat);
+    LoadPBRMaterial("PBR/Materials/Light_Gold", lightGoldMat);
+    LoadPBRMaterial("PBR/Materials/Spotted_Rust", spottedRust);
+    LoadPBRMaterial("PBR/Materials/Fancy_Scaled_Gold", fancyScaledGold);
+    LoadPBRMaterial("PBR/Materials/Armored_Dragon_Scales", armoredDragonScales);
 
     // 5. Model Assets Loading
     const std::pair<GLuint&, const char*> models[] = 
@@ -206,7 +208,8 @@ void App::Init()
         {sphereIdx, "Meshes/Sphere.obj"},
         {torusIdx, "Meshes/Torus.obj"},
         {debugSphereIdx, "Meshes/DebugSphere.obj"},
-        {weaponIdx, "PBR/Cerberus_LP.fbx"}
+        {weaponIdx, "PBR/Cerberus_LP.fbx"},
+        //{spherePBRIdx, "PBR/SpherePBR.fbx"}
     };
 
     for (auto& [idx, path] : models) 
@@ -275,10 +278,7 @@ void App::Init()
         "HDR/airport_4k.hdr",
         "HDR/burnt_warehouse_4k.hdr",
         "HDR/mirrored_hall_4k.hdr",
-        //"HDR/cobblestone_street_night_4k.hdr",
-        //"HDR/stierberg_sunrise_4k.hdr",
         "HDR/sunset_jhbcentral_4k.hdr",
-        //"HDR/table_mountain_1_4k.hdr"
     };
 
     // Reserve space to prevent reallocation and copying
@@ -326,6 +326,11 @@ void App::Update()
     if (input.keys[K_M] == BUTTON_PRESS)
     {
         currentCubemapIndex = (currentCubemapIndex + 1) % cubemaps.size();
+    }
+
+    if (input.keys[K_V] == BUTTON_PRESS)
+    {
+        currentPBRmaterialIndex = (currentPBRmaterialIndex + 1) % PBRmaterials.size();
     }
 
     if (input.keys[K_N] == BUTTON_PRESS)
@@ -585,16 +590,16 @@ void App::Render()
             Mesh& mesh = meshes[model.meshIdx];
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.albedoIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.albedoIdx].handle);
 
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.normalIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.normalIdx].handle);
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.metallicIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.metallicIdx].handle);
 
             glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.roughnessIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.roughnessIdx].handle);
 
             // Bind pre-computed IBL data
             glActiveTexture(GL_TEXTURE4);
@@ -650,6 +655,7 @@ void App::Render()
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
             Entity& entity = entities[7];
+            entity.materialPBR = PBRmaterials[currentPBRmaterialIndex];
 
             // Bind entity's uniform buffer
             glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle,
@@ -659,18 +665,44 @@ void App::Render()
             Mesh& mesh = meshes[model.meshIdx];
 
             // Bind PBR textures
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.albedoIdx].handle);
+            MaterialPBR& material = entity.materialPBR;
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.normalIdx].handle);
+            if (material.HasAlbedo()) 
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textures[material.albedoIdx].handle);
+            }
 
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.metallicIdx].handle);
+            if (material.HasNormal()) 
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, textures[material.normalIdx].handle);
+            }
 
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberus.roughnessIdx].handle);
+            if (material.HasMetallic()) 
+            {
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, textures[material.metallicIdx].handle);
+            }
 
+            if (material.HasRoughness()) 
+            {
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, textures[material.roughnessIdx].handle);
+            }
+            
+            if (material.HasHeight()) 
+            {
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, textures[material.heightIdx].handle);
+            }
+            
+            if (material.HasAO()) 
+            {
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, textures[material.aoIdx].handle);
+            }
+            
             // Draw submeshes
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
             {
@@ -781,7 +813,7 @@ void App::Render()
             glBindTexture(GL_TEXTURE_2D, 0);
 
             break;
-        }  
+        }
     }
 }
 
@@ -1274,6 +1306,50 @@ void App::ChangeRenderMode()
 {
     // Handle reinit of features that change between forward and deferred rendering
 
+}
+
+// Helper function to check if a string ends with a suffix
+static bool EndsWith(const std::string& str, const std::string& suffix) 
+{
+    if (suffix.size() > str.size()) return false;
+    return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
+}
+
+bool App::LoadPBRMaterial(const std::string& directory, MaterialPBR& material) 
+{
+    // Clear existing indices (optional)
+    material = MaterialPBR();
+
+    for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+        if (!entry.is_regular_file()) continue;
+
+        std::string path = entry.path().string();
+        std::string filenameStem = entry.path().stem().string(); // Filename without extension
+
+        // Determine texture type based on suffix
+        if (EndsWith(filenameStem, "_Albedo")) {
+            material.albedoIdx = ImageLoader::LoadTexture2D(this, path.c_str());
+        }
+        else if (EndsWith(filenameStem, "_Normal")) {
+            material.normalIdx = ImageLoader::LoadTexture2D(this, path.c_str());
+        }
+        else if (EndsWith(filenameStem, "_Metallic")) {
+            material.metallicIdx = ImageLoader::LoadTexture2D(this, path.c_str());
+        }
+        else if (EndsWith(filenameStem, "_Roughness")) {
+            material.roughnessIdx = ImageLoader::LoadTexture2D(this, path.c_str());
+        }
+        else if (EndsWith(filenameStem, "_Height")) {
+            material.heightIdx = ImageLoader::LoadTexture2D(this, path.c_str());
+        }
+        else if (EndsWith(filenameStem, "_AO")) {
+            material.aoIdx = ImageLoader::LoadTexture2D(this, path.c_str());
+        }
+    }
+
+    PBRmaterials.emplace_back(material);
+
+    return true;
 }
 
 float Lerp(float a, float b, float f)

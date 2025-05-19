@@ -154,6 +154,26 @@ struct Model
     std::vector<u32> materialIdx;  // Associated materials
 };
 
+struct MaterialPBR
+{
+    MaterialPBR() : albedoIdx(0), normalIdx(0), metallicIdx(0),
+        roughnessIdx(0), heightIdx(0), aoIdx(0) { }
+
+    bool HasAlbedo() { return albedoIdx > 0; };
+    bool HasNormal() { return normalIdx > 0; };
+    bool HasMetallic() { return metallicIdx > 0; };
+    bool HasRoughness() { return roughnessIdx > 0; };
+    bool HasHeight() { return heightIdx > 0; };
+    bool HasAO() { return aoIdx > 0; };
+
+    u32 albedoIdx;
+    u32 normalIdx;
+    u32 metallicIdx;
+    u32 roughnessIdx;
+    u32 heightIdx;
+    u32 aoIdx;
+};
+
 // Scene entity with transform
 struct Entity
 {
@@ -164,6 +184,8 @@ struct Entity
     u32 entityBufferSize;   // Data size in instance buffer
 
     glm::mat4 worldMatrix;  // Model-to-world transform
+
+    MaterialPBR materialPBR;
 };
 
 // --- Lighting System ---
@@ -196,24 +218,4 @@ struct SSAOsettings
     float radius = 0.5f;
     float bias = 0.25f;
     float power = 5.0f;
-};
-
-struct MaterialPBR 
-{
-    MaterialPBR() : albedoIdx(0), normalIdx(0), metallicIdx(0),
-        roughnessIdx(0), heightIdx(0), aoIdx(0) { }
-
-    bool HasAlbedo() { return albedoIdx > 0; };
-    bool HasNormal() { return normalIdx > 0; };
-    bool HasMetallic() { return metallicIdx > 0; };
-    bool HasRoughness() { return roughnessIdx > 0; };
-    bool HasHeight() { return heightIdx > 0; };
-    bool HasAO() { return aoIdx > 0; };
-
-    u32 albedoIdx;
-    u32 normalIdx;
-    u32 metallicIdx;
-    u32 roughnessIdx;
-    u32 heightIdx;
-    u32 aoIdx;
 };
