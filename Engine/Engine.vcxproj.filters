@@ -286,5 +286,8 @@
     <None Include="WorkingDir\Shaders\FORWARD_PRE_SSAO_RENDER.glsl">
       <Filter>Source Code\Shaders\SSAO\Forward SSAO</Filter>
     </None>
+    <None Include="WorkingDir\Shaders\FORWARD_SSAO_RENDER.glsl">
+      <Filter>Source Code\Shaders\SSAO\Forward SSAO</Filter>
+    </None>
   </ItemGroup>
 </Project>
