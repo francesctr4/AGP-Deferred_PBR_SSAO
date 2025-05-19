@@ -55,8 +55,23 @@ same point of view, with each technique enabled and disabled.
 
 ○ Name of shader files for every effect
 
+### PBR
+
 | Shader Name          | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
+| FORWARD_PBR_DIRECT_TEXTURED.glsl              | Cositas     |
+| FORWARD_PBR_IBL_TEXTURED.glsl              | Cositas     |
+| DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl              | Cositas     |
+| DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | Cositas     |
+
+### IBL
+
+| Shader Name        | Purpose                                                                                       |
+|---------------------|------------------------------------------------------------------------------------------------|
+| EQUIRECTANGULAR_TO_CUBEMAP.glsl              | Cositas     |
+| SKYBOX.glsl              | Cositas     |
+| DIFFUSE_IRRADIANCE_CONVOLUTION.glsl              | Cositas     |
+| SPECULAR_PREFILTER_CONVOLUTION.glsl              | Cositas     |
 | BRDF_INTEGRATION_CONVOLUTION.glsl              | Cositas     |
 
 ![image](https://github.com/user-attachments/assets/8d0ee74f-75ab-4fd2-8b96-85d7c4a96e60)
@@ -72,9 +87,18 @@ same point of view, with each technique enabled and disabled.
 
 ○ Name of shader files for every effect
 
-![image](https://github.com/user-attachments/assets/bdbe06cb-5131-4839-a04a-57b906ca702e)
-![image](https://github.com/user-attachments/assets/dce0da62-888d-4f63-a305-ecef7d149789)
-![image](https://github.com/user-attachments/assets/83374746-ff33-4269-9a97-ed4826eefaf4)
+| Shader Name          | Purpose                                                                                       |
+|---------------------|------------------------------------------------------------------------------------------------|
+| SSAO.glsl              | Cositas     |
+| SSAO_BLUR.glsl              | Cositas     |
+| DEFERRED_RENDER_QUAD.glsl              | Modified to use SSAO     |
+| DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | Modified to use SSAO     |
+
+| Attachment          | Preview                                                                                        |
+|---------------------|------------------------------------------------------------------------------------------------|
+| Final Render             | ![image](https://github.com/user-attachments/assets/bdbe06cb-5131-4839-a04a-57b906ca702e)    |
+| SSAO Pass             | ![image](https://github.com/user-attachments/assets/dce0da62-888d-4f63-a305-ecef7d149789)   |
+| Final Render with SSAO            | ![image](https://github.com/user-attachments/assets/83374746-ff33-4269-9a97-ed4826eefaf4)   |
 
 ## Deferred Pipeline Breakdown
 
