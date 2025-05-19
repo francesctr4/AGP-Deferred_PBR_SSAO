@@ -183,10 +183,10 @@ void App::Init()
         {lightGreenTexIdx, "Textures/color_light_green.png"},
         {orangeTexIdx, "Textures/color_orange.png"},
 
-        {cerberusAlbedoIdx, "PBR/Textures/Cerberus_A.tga"},
-        {cerberusMetallicIdx, "PBR/Textures/Cerberus_M.tga"},
-        {cerberusNormalIdx, "PBR/Textures/Cerberus_N.tga"},
-        {cerberusRoughnessIdx, "PBR/Textures/Cerberus_R.tga"},
+        {cerberus.albedoIdx, "PBR/Textures/Cerberus_A.tga"},
+        {cerberus.normalIdx, "PBR/Textures/Cerberus_N.tga"},
+        {cerberus.metallicIdx, "PBR/Textures/Cerberus_M.tga"},
+        {cerberus.roughnessIdx, "PBR/Textures/Cerberus_R.tga"},
 
     };
 
@@ -273,11 +273,11 @@ void App::Init()
     const std::vector<const char*> cubemapPaths =
     {
         "HDR/airport_4k.hdr",
-        //"HDR/burnt_warehouse_4k.hdr",
-        //"HDR/mirrored_hall_4k.hdr",
-        "HDR/cobblestone_street_night_4k.hdr",
+        "HDR/burnt_warehouse_4k.hdr",
+        "HDR/mirrored_hall_4k.hdr",
+        //"HDR/cobblestone_street_night_4k.hdr",
         //"HDR/stierberg_sunrise_4k.hdr",
-        //"HDR/sunset_jhbcentral_4k.hdr",
+        "HDR/sunset_jhbcentral_4k.hdr",
         //"HDR/table_mountain_1_4k.hdr"
     };
 
@@ -585,16 +585,16 @@ void App::Render()
             Mesh& mesh = meshes[model.meshIdx];
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.albedoIdx].handle);
 
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.normalIdx].handle);
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.metallicIdx].handle);
 
             glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.roughnessIdx].handle);
 
             // Bind pre-computed IBL data
             glActiveTexture(GL_TEXTURE4);
@@ -660,16 +660,16 @@ void App::Render()
 
             // Bind PBR textures
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusAlbedoIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.albedoIdx].handle);
 
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusNormalIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.normalIdx].handle);
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMetallicIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.metallicIdx].handle);
 
             glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusRoughnessIdx].handle);
+            glBindTexture(GL_TEXTURE_2D, textures[cerberus.roughnessIdx].handle);
 
             // Draw submeshes
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)

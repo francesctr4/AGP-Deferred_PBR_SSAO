@@ -192,10 +192,7 @@ private:
     u32 orangeTexIdx;
 
     // PBR
-    u32 cerberusAlbedoIdx;
-    u32 cerberusMetallicIdx;
-    u32 cerberusNormalIdx;
-    u32 cerberusRoughnessIdx;
+    MaterialPBR cerberus;
 
     // Model Indices
     u32 patrickIdx;
