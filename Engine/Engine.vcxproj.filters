@@ -58,6 +58,12 @@
     <Filter Include="Source Code\Shaders\SSAO">
       <UniqueIdentifier>{33364ffb-5b7e-4f00-b717-a6da4a42f814}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Code\Shaders\PBR\Forward Shading">
+      <UniqueIdentifier>{87194363-65a0-4b49-a3fc-349fddbf17de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Code\Shaders\PBR\IBL">
+      <UniqueIdentifier>{777e5504-a3af-41a7-9c68-0bad2bab121c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -138,11 +144,11 @@
     <ClCompile Include="Code\Cubemap.cpp">
       <Filter>Source Code\!PBR\Cubemap</Filter>
     </ClCompile>
-    <ClCompile Include="WorkingDir\Shaders\SPECULAR_PREFILTER_CONVOLUTION.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </ClCompile>
     <ClCompile Include="Code\EditorSSAOconfigWindow.cpp">
       <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="WorkingDir\Shaders\SPECULAR_PREFILTER_CONVOLUTION.glsl">
+      <Filter>Source Code\Shaders\PBR\IBL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -235,24 +241,6 @@
     <None Include="WorkingDir\Shaders\GRID.glsl">
       <Filter>Source Code\Shaders</Filter>
     </None>
-    <None Include="WorkingDir\Shaders\FORWARD_PBR_IBL_TEXTURED.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\BRDF_INTEGRATION_CONVOLUTION.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\DIFFUSE_IRRADIANCE_CONVOLUTION.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR_TO_CUBEMAP.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\SKYBOX.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </None>
-    <None Include="WorkingDir\Shaders\FORWARD_PBR_DIRECT_TEXTURED.glsl">
-      <Filter>Source Code\Shaders\PBR</Filter>
-    </None>
     <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl">
       <Filter>Source Code\Shaders\PBR\Deferred Shading</Filter>
     </None>
@@ -273,6 +261,24 @@
     </None>
     <None Include="WorkingDir\Shaders\SSAO.glsl">
       <Filter>Source Code\Shaders\SSAO</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\FORWARD_PBR_IBL_TEXTURED.glsl">
+      <Filter>Source Code\Shaders\PBR\Forward Shading</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\FORWARD_PBR_DIRECT_TEXTURED.glsl">
+      <Filter>Source Code\Shaders\PBR\Forward Shading</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\BRDF_INTEGRATION_CONVOLUTION.glsl">
+      <Filter>Source Code\Shaders\PBR\IBL</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\DIFFUSE_IRRADIANCE_CONVOLUTION.glsl">
+      <Filter>Source Code\Shaders\PBR\IBL</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\EQUIRECTANGULAR_TO_CUBEMAP.glsl">
+      <Filter>Source Code\Shaders\PBR\IBL</Filter>
+    </None>
+    <None Include="WorkingDir\Shaders\SKYBOX.glsl">
+      <Filter>Source Code\Shaders\PBR\IBL</Filter>
     </None>
   </ItemGroup>
 </Project>
