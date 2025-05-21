@@ -145,6 +145,9 @@ public:
     u32 deferredPbrIblGeometryProgramIdx;
     u32 deferredPbrIblQuadProgramIdx;
 
+    float metallicInfluence = 1.0f;
+    float roughnessInfluence = 1.0f;
+
     u32 equirectangularToCubemapProgramIdx;
     u32 skyboxProgramIdx;
     u32 diffuseIrradianceProgramIdx;
@@ -155,6 +158,7 @@ public:
 
     bool enableSSAO = true;
     bool useAOtex = true;
+    bool enableIBL = true;
 
     // Shader Resources
     u32 SSAOprogramIdx;

@@ -208,7 +208,7 @@ void App::Init()
         {sphereIdx, "Meshes/Sphere.obj"},
         {torusIdx, "Meshes/Torus.obj"},
         {debugSphereIdx, "Meshes/DebugSphere.obj"},
-        {weaponIdx, "PBR/SpherePBR.fbx"},
+        {weaponIdx, "PBR/Cerberus_LP.fbx"},
         //{spherePBRIdx, "PBR/SpherePBR.fbx"}
     };
 
@@ -727,6 +727,12 @@ void App::Render()
 
             Program& geometryProgram = programs[deferredPbrIblGeometryProgramIdx];
             glUseProgram(geometryProgram.handle);
+
+            GLint metallicLoc = glGetUniformLocation(geometryProgram.handle, "uMetallicInfluence");
+            GLint roughnessLoc = glGetUniformLocation(geometryProgram.handle, "uRoughnessInfluence");
+            glUniform1f(metallicLoc, metallicInfluence);
+            glUniform1f(roughnessLoc, roughnessInfluence);
+
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
             Entity& entity = entities[7];
@@ -864,6 +870,7 @@ void App::Render()
 
             glUniform1i(glGetUniformLocation(quadProgram.handle, "gDebugMode"), (GLint)gBufferDebugMode);
             glUniform1i(glGetUniformLocation(quadProgram.handle, "enableSSAO"), (GLint)enableSSAO);
+            glUniform1i(glGetUniformLocation(quadProgram.handle, "enableIBL"), (GLint)enableIBL);
 
             // Render fullscreen quad
             glBindVertexArray(vao);

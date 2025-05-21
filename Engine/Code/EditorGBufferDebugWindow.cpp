@@ -16,7 +16,7 @@ void Editor::DrawGBufferDebugWindow(App* app)
         ImGui::Separator();
 
         // Horizontal layout using a table
-        ImGui::BeginTable("ModeToggles", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody);
+        ImGui::BeginTable("ModeToggles", 5, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody);
 
         ImGui::TableSetupColumn("Rendering", ImGuiTableColumnFlags_WidthFixed, 150);
         ImGui::TableSetupColumn("Lighting", ImGuiTableColumnFlags_WidthFixed, 150);
@@ -55,6 +55,20 @@ void Editor::DrawGBufferDebugWindow(App* app)
         ImGuiUtils::ToggleButton("##UseSkybox", &app->useSkybox);
         ImGui::SameLine();
         ImGui::Text("%s", app->useSkybox ? "Enabled" : "Disabled");
+        ImGui::EndGroup();
+
+        ImGui::TableNextColumn();
+
+        ImGui::BeginGroup();
+        ImGui::Dummy({ 50,0 });
+        ImGui::EndGroup();
+
+        ImGui::TableNextColumn();
+
+        // Render Mode
+        ImGui::BeginGroup();
+        ImGui::Dummy({ 0,12 });
+        ImGui::Text("[DEBUG] Current Render Mode: %d", static_cast<int>(app->mode));
         ImGui::EndGroup();
 
         ImGui::EndTable();

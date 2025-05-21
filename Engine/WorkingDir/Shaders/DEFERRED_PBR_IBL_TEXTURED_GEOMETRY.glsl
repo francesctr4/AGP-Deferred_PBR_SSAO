@@ -76,6 +76,9 @@ layout(binding = 3) uniform sampler2D uRoughness;
 layout(binding = 4) uniform sampler2D uHeight;
 layout(binding = 5) uniform sampler2D uAO;
 
+uniform float uMetallicInfluence;
+uniform float uRoughnessInfluence;
+
 layout(location=0) out vec4 oAlbedoRoughness;
 layout(location=1) out vec4 oNormalMetallic;
 layout(location=2) out vec4 oPositionAO;
@@ -85,8 +88,8 @@ void main()
 {
 	// Sample textures
     vec3 albedo = texture(uAlbedo, vTexCoord).rgb;
-    float metallic = texture(uMetallic, vTexCoord).r;
-    float roughness = texture(uRoughness, vTexCoord).r;
+    float metallic = texture(uMetallic, vTexCoord).r * uMetallicInfluence;
+    float roughness = texture(uRoughness, vTexCoord).r * uRoughnessInfluence;
     float ao = texture(uAO, vTexCoord).r;
     
     // Normal map calculation

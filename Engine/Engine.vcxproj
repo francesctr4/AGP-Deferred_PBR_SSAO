@@ -28,6 +28,7 @@
     <ClCompile Include="Code\EditorInfoWindow.cpp" />
     <ClCompile Include="Code\EditorLightsWindow.cpp" />
     <ClCompile Include="Code\EditorMainMenuBar.cpp" />
+    <ClCompile Include="Code\EditorPBRconfigWindow.cpp" />
     <ClCompile Include="Code\EditorShaderErrorsWindow.cpp" />
     <ClCompile Include="Code\EditorSSAOconfigWindow.cpp" />
     <ClCompile Include="Code\engine.cpp" />

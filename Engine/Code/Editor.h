@@ -12,6 +12,7 @@ namespace Editor
     void DrawGBufferDebugWindow(App* app);
     void DrawCameraInfo(App* app);
     void DrawSSAOconfigWindow(App* app);
+    void DrawPBRconfigWindow(App* app);
 
     inline void Draw(App* app)
     {
@@ -23,5 +24,6 @@ namespace Editor
         DrawGBufferDebugWindow(app);
         DrawCameraInfo(app);
         DrawSSAOconfigWindow(app);
+        DrawPBRconfigWindow(app);
     }
 }
