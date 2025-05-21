@@ -57,6 +57,8 @@ App::App()
     deferredRenderGeometryProgramIdx(0),
     forwardRenderProgramIdx(0),
     pointLightSphereProgramIdx(0),
+    forwardPreSSAOProgramIdx(0),
+    forwardSSAOProgramIdx(0),
     // Uniform Locations
     deferredRenderProgramUniformTexture(0),
     forwardRenderProgramUniformTexture(0),
@@ -152,6 +154,15 @@ void App::Init()
     // ------------------------ PBR ------------------------ //
 
     // ------------------------ SSAO ------------------------ //
+
+    // Forward SSAO pre render program
+    forwardPreSSAOProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/FORWARD_PRE_SSAO_RENDER.glsl", "FORWARD_PRE_SSA0_RENDER");
+
+    // Forward SSAO final render program
+    forwardSSAOProgramIdx = ShaderLoader::LoadProgram(this,
+        "Shaders/FORWARD_SSAO_RENDER.glsl", "FORWARD_SSA0_RENDER");
+
     SSAOprogramIdx = ShaderLoader::LoadProgram(this,
         "Shaders/SSAO.glsl", "SSAO");
 
@@ -270,7 +281,13 @@ void App::Init()
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
 
-    if (!SSAOblinnPhongForwardFBO.Create(3, displaySize))
+    // SSAO Forward Frame Buffers
+    if (!PreSSAOblinnPhongForwardFBO.Create(2, displaySize))
+    {
+        ELOG("[ERROR] The framebuffer was not created correctly.");
+    }
+
+    if (!SSAOblinnPhongForwardFBO.Create(2, displaySize))
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
@@ -587,7 +604,7 @@ void App::Render()
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
 
-            Program& texturedMeshProgram = programs[forwardRenderProgramIdx]; // change this shader to the new one
+            Program& texturedMeshProgram = programs[forwardPreSSAOProgramIdx]; // This shader make the Normal and Position texture
             glUseProgram(texturedMeshProgram.handle);
 
             // UNIFORM BUFFER:
@@ -607,16 +624,25 @@ void App::Render()
 
             if (enableSSAO)
             {
-                GLuint gPositionAttachment = blinnPhongForwardFBO.GetColorAttachment(2);
-                GLuint gNormalAttachment = blinnPhongForwardFBO.GetColorAttachment(1);
+                GLuint gNormalAttachment = blinnPhongForwardFBO.GetColorAttachment(0);
+                GLuint gPositionAttachment = blinnPhongForwardFBO.GetColorAttachment(1);
 
                 CalculateSSAO(programs[SSAOprogramIdx], gPositionAttachment, gNormalAttachment);
                 ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
             }
 
-            // call the new shader with the forward final render and the SSAO calculation
-            // ssaoColorBufferBlur is the result of the SSAO calculation
-            // Use blinnPhongForwardFBO.GetColorAttachment(0) as "Color" and ssaoColorBufferBlur as SSAO
+            // Bind the frame buffer like forward but adding the SSAO texture
+            glBindFramebuffer(GL_FRAMEBUFFER, blinnPhongForwardFBO.GetFramebufferHandle());
+
+            Program& texturedMeshProgram = programs[forwardSSAOProgramIdx];
+            glUseProgram(texturedMeshProgram.handle);
+
+            if (enableSSAO)
+            {
+                // Bind SSAO texture
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+            }
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 

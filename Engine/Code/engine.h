@@ -104,7 +104,6 @@ public:
 
     // Framebuffers
     Framebuffer blinnPhongForwardFBO;
-    Framebuffer SSAOblinnPhongForwardFBO;
     Framebuffer blinnPhongDeferredFBO;
     Framebuffer pbrDeferredFBO;
 
@@ -161,10 +160,16 @@ public:
     bool enableIBL = true;
 
     // Shader Resources
+    u32 forwardPreSSAOProgramIdx;
+    u32 forwardSSAOProgramIdx;
+
     u32 SSAOprogramIdx;
     u32 SSAOblurProgramIdx;
 
     // SSAO Resources
+    Framebuffer PreSSAOblinnPhongForwardFBO;
+    Framebuffer SSAOblinnPhongForwardFBO;
+
     GLuint ssaoFBO;
     GLuint ssaoColorBuffer;
 
