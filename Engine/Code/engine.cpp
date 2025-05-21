@@ -772,7 +772,7 @@ void App::Render()
                 glBindTexture(GL_TEXTURE_2D, textures[material.heightIdx].handle);
             }
             
-            if (material.HasAO()) 
+            if (material.HasAO() && useAOtex)
             {
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_2D, textures[material.aoIdx].handle);

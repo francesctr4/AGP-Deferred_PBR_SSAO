@@ -30,6 +30,22 @@ void Editor::DrawSSAOconfigWindow(App* app)
 
     ImGui::PopStyleColor(2);
 
+    ImGui::SameLine();
+
+    ImGui::Text("AO Texture:");
+    ImGui::SameLine();
+
+    // Colored toggle button
+    ImGui::PushStyleColor(ImGuiCol_Button, app->useAOtex ?
+        ImVec4(0.2f, 0.7f, 0.2f, 1.0f) : ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, app->useAOtex ?
+        ImVec4(0.3f, 0.8f, 0.3f, 1.0f) : ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+    ImGuiUtils::ToggleButton("##SSAO2", &app->useAOtex);
+    ImGui::SameLine();
+    ImGui::Text("%s", app->useAOtex ? " ACTIVE " : " INACTIVE ");
+
+    ImGui::PopStyleColor(2);
+
     if (app->enableSSAO)
     {
         ImGui::Spacing();

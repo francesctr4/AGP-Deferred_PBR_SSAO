@@ -154,6 +154,7 @@ public:
     // ------------- SSAO ------------- //
 
     bool enableSSAO = true;
+    bool useAOtex = true;
 
     // Shader Resources
     u32 SSAOprogramIdx;
