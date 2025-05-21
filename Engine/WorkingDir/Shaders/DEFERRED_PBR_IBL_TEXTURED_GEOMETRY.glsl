@@ -73,10 +73,12 @@ layout(binding = 0) uniform sampler2D uAlbedo;
 layout(binding = 1) uniform sampler2D uNormal;
 layout(binding = 2) uniform sampler2D uMetallic;
 layout(binding = 3) uniform sampler2D uRoughness;
+layout(binding = 4) uniform sampler2D uHeight;
+layout(binding = 5) uniform sampler2D uAO;
 
 layout(location=0) out vec4 oAlbedoRoughness;
 layout(location=1) out vec4 oNormalMetallic;
-layout(location=2) out vec4 oPosition;
+layout(location=2) out vec4 oPositionAO;
 layout(location=3) out vec4 oViewDir;
 
 void main()
@@ -85,6 +87,7 @@ void main()
     vec3 albedo = texture(uAlbedo, vTexCoord).rgb;
     float metallic = texture(uMetallic, vTexCoord).r;
     float roughness = texture(uRoughness, vTexCoord).r;
+    float ao = texture(uAO, vTexCoord).r;
     
     // Normal map calculation
     mat3 TBN = mat3(normalize(vTangent), 
@@ -96,7 +99,7 @@ void main()
     // Store in G-buffer
     oAlbedoRoughness = vec4(albedo, roughness);
     oNormalMetallic = vec4(normal * 0.5 + 0.5, metallic); // Pack normal
-    oPosition = vec4(vPosition, 1.0);
+    oPositionAO = vec4(vPosition, ao);
     oViewDir = vec4(vViewDir, 1.0);
 }
 

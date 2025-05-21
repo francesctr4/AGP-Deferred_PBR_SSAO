@@ -76,7 +76,7 @@ void Editor::DrawGBufferDebugWindow(App* app)
             ImGui::Separator();
             // Grid-styled debug keys
             ImGui::Text("DEBUG KEYS");
-            ImGui::Text("1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth | 7: SSAO");
+            ImGui::Text("1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth | 7: AO");
         }
 
         if (app->mode == Mode_PBR_Deferred_Rendering)
@@ -93,7 +93,7 @@ void Editor::DrawGBufferDebugWindow(App* app)
 
             // Grid-styled debug keys
             ImGui::Text("DEBUG KEYS");
-            ImGui::Text("1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth | 7: SSAO | 8: Metallic | 9: Roughness");
+            ImGui::Text("1: Final Render | 2: Albedo | 3: Normal | 4: Position | 5: ViewDir | 6: Depth | 7: AO | 8: Metallic | 9: Roughness");
         }
     }
     ImGui::End();

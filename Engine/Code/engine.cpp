@@ -191,10 +191,10 @@ void App::Init()
     }
 
     // PBR Materials
+    LoadPBRMaterial("PBR/Materials/Fancy_Scaled_Gold", fancyScaledGold);
     LoadPBRMaterial("PBR/Materials/Cerberus", cerberusMat);
     LoadPBRMaterial("PBR/Materials/Light_Gold", lightGoldMat);
     LoadPBRMaterial("PBR/Materials/Spotted_Rust", spottedRust);
-    LoadPBRMaterial("PBR/Materials/Fancy_Scaled_Gold", fancyScaledGold);
     LoadPBRMaterial("PBR/Materials/Armored_Dragon_Scales", armoredDragonScales);
 
     // 5. Model Assets Loading
@@ -208,7 +208,7 @@ void App::Init()
         {sphereIdx, "Meshes/Sphere.obj"},
         {torusIdx, "Meshes/Torus.obj"},
         {debugSphereIdx, "Meshes/DebugSphere.obj"},
-        {weaponIdx, "PBR/Cerberus_LP.fbx"},
+        {weaponIdx, "PBR/SpherePBR.fbx"},
         //{spherePBRIdx, "PBR/SpherePBR.fbx"}
     };
 
@@ -776,6 +776,11 @@ void App::Render()
             {
                 glActiveTexture(GL_TEXTURE5);
                 glBindTexture(GL_TEXTURE_2D, textures[material.aoIdx].handle);
+            }
+            else 
+            {
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, textures[whiteTexIdx].handle);
             }
             
             // Draw submeshes

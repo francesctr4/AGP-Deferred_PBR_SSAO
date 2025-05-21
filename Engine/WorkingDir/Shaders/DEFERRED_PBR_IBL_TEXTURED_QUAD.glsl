@@ -26,10 +26,10 @@ in vec2 vTexCoord;
 // Material Parameters
 layout(binding = 0) uniform sampler2D gAlbedoRoughness; // RGB: Albedo, A: Roughness
 layout(binding = 1) uniform sampler2D gNormalMetallic;  // RGB: Normal, A: Metallic
-layout(binding = 2) uniform sampler2D gPosition;
+layout(binding = 2) uniform sampler2D gPositionAO;      // RGB: Position, A: Material AO
 layout(binding = 3) uniform sampler2D gViewDir;
 layout(binding = 4) uniform sampler2D gDepth;
-layout(binding = 5) uniform sampler2D aoMap;
+layout(binding = 5) uniform sampler2D ssaoMap;
 
 // IBL
 layout(binding = 6) uniform samplerCube irradianceMap;
@@ -121,16 +121,19 @@ float linearizeDepth(float depth, float near, float far)
 void main()
 {		
     // Retrieve data from G-buffer
-    vec3 worldPos = texture(gPosition, vTexCoord).rgb;
+    vec4 positionAO = texture(gPositionAO, vTexCoord);
+    vec3 worldPos = positionAO.rgb;
+    float materialAO = positionAO.a;
+
     vec4 normalMetallic = texture(gNormalMetallic, vTexCoord);
     vec4 albedoRoughness = texture(gAlbedoRoughness, vTexCoord);
     float depth = texture(gDepth, vTexCoord).r;
     vec3 viewDir = texture(gViewDir, vTexCoord).rgb;
 
-    float ao = 0.0f;
+    float ao = materialAO;
     if (enableSSAO)
     {
-        ao = texture(aoMap, vTexCoord).r;
+        ao *= texture(ssaoMap, vTexCoord).r;
     }
 
     albedoRoughness.xyz = pow(albedoRoughness.xyz, vec3(2.2));
@@ -205,8 +208,7 @@ void main()
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular);
-
-    if (enableSSAO) ambient *= ao;
+    ambient *= ao;
 
     vec3 color = ambient + Lo;
 
@@ -234,8 +236,7 @@ void main()
             FragColor = vec4(vec3(linDepth), 1.0f);
             return;
         case 6: // SSAO
-            if (enableSSAO) FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(ao), 1.0);
-            else FragColor = vec4(0.0);
+            FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(ao), 1.0);
             return;
         case 7: // Metallic
             FragColor = depth == 1.0 ? vec4(0.0) : vec4(vec3(metallic), 1.0);
