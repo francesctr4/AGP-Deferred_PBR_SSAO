@@ -634,8 +634,8 @@ void App::Render()
             // Bind the frame buffer like forward but adding the SSAO texture
             glBindFramebuffer(GL_FRAMEBUFFER, blinnPhongForwardFBO.GetFramebufferHandle());
 
-            Program& texturedMeshProgram = programs[forwardSSAOProgramIdx];
-            glUseProgram(texturedMeshProgram.handle);
+            Program& texturedMeshProgram2 = programs[forwardSSAOProgramIdx];
+            glUseProgram(texturedMeshProgram2.handle);
 
             if (enableSSAO)
             {
