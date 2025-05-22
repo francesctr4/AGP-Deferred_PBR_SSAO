@@ -103,7 +103,6 @@ public:
     Camera worldCamera;
 
     // Framebuffers
-    Framebuffer blinnPhongForwardFBO;
     Framebuffer blinnPhongDeferredFBO;
     Framebuffer pbrDeferredFBO;
 

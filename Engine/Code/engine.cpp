@@ -287,7 +287,7 @@ void App::Init()
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
 
-    if (!SSAOblinnPhongForwardFBO.Create(2, displaySize))
+    if (!SSAOblinnPhongForwardFBO.Create(1, displaySize))
     {
         ELOG("[ERROR] The framebuffer was not created correctly.");
     }
@@ -578,7 +578,7 @@ void App::Render()
         }
         case Mode_BlinnPhong_Forward_SSAO_Rendering: 
         {
-            glBindFramebuffer(GL_FRAMEBUFFER, blinnPhongForwardFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_FRAMEBUFFER, PreSSAOblinnPhongForwardFBO.GetFramebufferHandle());
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -624,15 +624,15 @@ void App::Render()
 
             if (enableSSAO)
             {
-                GLuint gNormalAttachment = blinnPhongForwardFBO.GetColorAttachment(0);
-                GLuint gPositionAttachment = blinnPhongForwardFBO.GetColorAttachment(1);
+                GLuint gNormalAttachment = PreSSAOblinnPhongForwardFBO.GetColorAttachment(0);
+                GLuint gPositionAttachment = PreSSAOblinnPhongForwardFBO.GetColorAttachment(1);
 
                 CalculateSSAO(programs[SSAOprogramIdx], gPositionAttachment, gNormalAttachment);
                 ApplyBlurSSAO(programs[SSAOblurProgramIdx]);
             }
 
             // Bind the frame buffer like forward but adding the SSAO texture
-            glBindFramebuffer(GL_FRAMEBUFFER, blinnPhongForwardFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_FRAMEBUFFER, SSAOblinnPhongForwardFBO.GetFramebufferHandle());
 
             Program& texturedMeshProgram2 = programs[forwardSSAOProgramIdx];
             glUseProgram(texturedMeshProgram2.handle);
