@@ -75,6 +75,8 @@ layout(binding = 0, std140) uniform globalUBO
 	Light uLight[800];
 };
 
+layout(binding = 5) uniform sampler2D uSSAOTexture;
+
 in vec3 vPosition;
 in vec3 vNormal;
 in vec2 vTexCoord;

@@ -633,16 +633,25 @@ void App::Render()
 
             // Bind the frame buffer like forward but adding the SSAO texture
             glBindFramebuffer(GL_FRAMEBUFFER, SSAOblinnPhongForwardFBO.GetFramebufferHandle());
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             Program& texturedMeshProgram2 = programs[forwardSSAOProgramIdx];
             glUseProgram(texturedMeshProgram2.handle);
 
-            if (enableSSAO)
+            // Bind SSAO texture
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, enableSSAO ? ssaoColorBufferBlur : textures[whiteTexIdx].handle);
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
+
+            for (int i = 0; i < entities.size() - 1; ++i)
             {
-                // Bind SSAO texture
-                glActiveTexture(GL_TEXTURE5);
-                glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+                RenderEntity(&entities[i], texturedMeshProgram2, forwardRenderProgramUniformTexture);
             }
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
+
+            glUseProgram(0);
 
             // ----------------------------------- Light Debug Geometry Pass ----------------------------------- //
 
