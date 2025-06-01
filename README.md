@@ -1,6 +1,6 @@
 # Advanced Graphics Programming - Delivery 3 - OpenGL Features: PBR + IBL & SSAO
 
-![Final Render](https://github.com/user-attachments/assets/0c23b607-026a-44ea-a24c-1f0ac3c1d6b6)
+![Final Render](https://github.com/user-attachments/assets/1cad0e16-50e9-413e-a182-2e39492bbfe6)
 
 ## Team Members
 
