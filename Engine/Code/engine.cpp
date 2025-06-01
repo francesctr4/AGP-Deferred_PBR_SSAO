@@ -662,6 +662,20 @@ void App::Render()
                 RenderLightDebugGeometry();
             }
 
+            // ----------------------------------- Final Output to Screen ----------------------------------- //
+
+            // After rendering light debug geometry, blit to default framebuffer
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, SSAOblinnPhongForwardFBO.GetFramebufferHandle());
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Default framebuffer
+            glBlitFramebuffer(
+                0, 0, displaySize.x, displaySize.y,
+                0, 0, displaySize.x, displaySize.y,
+                GL_COLOR_BUFFER_BIT, GL_NEAREST
+            );
+
+            // Unbind framebuffers
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
             break;
         }
         case Mode_PBR_Forward_Rendering:
@@ -1048,6 +1062,12 @@ void App::OnResize(int width, int height)
 
     blinnPhongDeferredFBO.Clear();
     blinnPhongDeferredFBO.Create(4, displaySize);
+
+    SSAOblinnPhongForwardFBO.Clear();
+    SSAOblinnPhongForwardFBO.Create(1, displaySize);
+
+    PreSSAOblinnPhongForwardFBO.Clear();
+    PreSSAOblinnPhongForwardFBO.Create(2, displaySize);
 
     pbrDeferredFBO.Clear();
     pbrDeferredFBO.Create(4, displaySize);
