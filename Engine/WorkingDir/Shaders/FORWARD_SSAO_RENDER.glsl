@@ -43,6 +43,8 @@ out vec3 vNormal;
 out vec2 vTexCoord;
 out vec3 vViewDir;
 
+out vec4 vClipSpacePos;
+
 void main()
 {
 	vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0f));
@@ -51,6 +53,7 @@ void main()
 	vViewDir = uCameraPosition - vPosition;
 
 	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 1.0f);
+    vClipSpacePos = gl_Position;
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -81,6 +84,8 @@ in vec3 vPosition;
 in vec3 vNormal;
 in vec2 vTexCoord;
 in vec3 vViewDir;
+
+in vec4 vClipSpacePos;
 
 layout(binding = 0) uniform sampler2D uAlbedo;
 
@@ -130,7 +135,13 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir, f
 
 void main()
 {
-    float aoTex = texture(uAO, vTexCoord).r;
+    vec2 screenUV = vClipSpacePos.xy / vClipSpacePos.w;
+    screenUV = screenUV * 0.5 + 0.5;
+    
+    float aoTex = texture(uAO, screenUV).r;
+    //float aoTex = texture(uAO, vTexCoord).r;
+
+    vec3 normalTex = texture(uAO, screenUV).rgb;
     
 	vec3 returnColor = vec3(0.0);
     for(int i = 0; i < uLightCount; ++i)
@@ -150,6 +161,10 @@ void main()
     }
 
     oColor = vec4(returnColor, 1.0);
+
+    //Debug
+    //oColor = vec4(vec3(aoTex), 1.0);
+    //oColor = vec4(normalTex, 1.0);
 }
 
 #endif

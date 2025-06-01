@@ -20,8 +20,9 @@ out vec3 vNormal;
 
 void main()
 {
-	vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0));
+	vPosition = vec3(uWorldMatrix * vec4(aPosition, 1.0f));
 	vNormal = mat3(transpose(inverse(uWorldMatrix))) * aNormal;
+
 	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 1.0);
 }
 
@@ -35,8 +36,8 @@ layout(location=1) out vec4 oPosition;
 
 void main()
 {
-    oNormal = vec4(normalize(vNormal), 1.0);
-    oPosition = vec4(vPosition, 1.0);
+	oNormal = vec4(vNormal, 1.0f);
+    oPosition = vec4(vPosition, 1.0f);
 }
 
 #endif

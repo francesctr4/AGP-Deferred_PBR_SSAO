@@ -589,11 +589,11 @@ void App::Render()
 
             // ----------------------------------- Skybox Pass ----------------------------------- //
 
-            if (!cubemaps.empty() && useSkybox)
-            {
-                RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
-                    worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
-            }
+            //if (!cubemaps.empty() && useSkybox)
+            //{
+            //    RenderSkybox(skyboxProgramIdx, cubemaps[currentCubemapIndex].GetCubemapID(),
+            //        worldCamera.ViewMatrix(), worldCamera.ProjectionMatrix());
+            //}
 
             // ----------------------------------- Grid Pass ----------------------------------- //
 
@@ -616,11 +616,14 @@ void App::Render()
                 RenderEntity(&entities[i], texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
 
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
+            //glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
 
             glUseProgram(0);
 
             // ------------------------------- SSAO Pass ------------------------------- //
+
+            GLuint gNormalAttachment = PreSSAOblinnPhongForwardFBO.GetColorAttachment(0);
+            GLuint gPositionAttachment = PreSSAOblinnPhongForwardFBO.GetColorAttachment(1);
 
             if (enableSSAO)
             {
@@ -634,13 +637,10 @@ void App::Render()
             // Bind the frame buffer like forward but adding the SSAO texture
             glBindFramebuffer(GL_FRAMEBUFFER, SSAOblinnPhongForwardFBO.GetFramebufferHandle());
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glViewport(0, 0, displaySize.x, displaySize.y);
 
             Program& texturedMeshProgram2 = programs[forwardSSAOProgramIdx];
             glUseProgram(texturedMeshProgram2.handle);
-
-            // Bind SSAO texture
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, enableSSAO ? ssaoColorBufferBlur : textures[whiteTexIdx].handle);
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
@@ -650,6 +650,11 @@ void App::Render()
             }
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, 0, 0, 0);
+
+            // Bind SSAO texture
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, enableSSAO ? ssaoColorBufferBlur : textures[whiteTexIdx].handle);
+            //glBindTexture(GL_TEXTURE_2D, enableSSAO ? gPositionAttachment : textures[whiteTexIdx].handle); // Debug
 
             glUseProgram(0);
 
