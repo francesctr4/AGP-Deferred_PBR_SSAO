@@ -43,6 +43,8 @@ _**Mario García Sutil**_
 | **Cycle Cubemaps**                | `M` | Rotates through available cubemaps       |
 | **Toggle Editor UI**              | `N` | Shows/hides editor interface             |
 | **Cycle Rendering Modes**         | `B` | Switches between rendering techniques    |
+| **PBR - Cycle Materials**         | `V` | Switches between PBR materials           |
+| **PBR - Cycle Meshes**            | `C` | Switches between PBR meshes              |
 
 # Physically Based Rendering (PBR) + Image Based Lighting (IBL)
 
