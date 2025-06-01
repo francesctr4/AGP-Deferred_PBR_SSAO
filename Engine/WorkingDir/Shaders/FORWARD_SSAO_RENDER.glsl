@@ -75,7 +75,7 @@ layout(binding = 0, std140) uniform globalUBO
 	Light uLight[800];
 };
 
-layout(binding = 5) uniform sampler2D uSSAOTexture;
+layout(binding = 5) uniform sampler2D uAO;
 
 in vec3 vPosition;
 in vec3 vNormal;
@@ -86,7 +86,7 @@ layout(binding = 0) uniform sampler2D uAlbedo;
 
 layout(location=0) out vec4 oColor;
 
-vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
+vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir, float ao)
 {
     vec3 lightDir = normalize(-aLight.direction);
     vec3 viewDir = normalize(aViewDir);
@@ -96,14 +96,14 @@ vec3 CalcDirLight(Light aLight, vec3 aNormal, vec3 aViewDir)
     vec3 reflectDir = reflect(-lightDir, aNormal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 2.0);
 
-    vec3 ambient = aLight.color * 0.2;
+    vec3 ambient = aLight.color * 0.2 * ao;
     vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
     vec3 specular = aLight.color * spec * aLight.specularStrength;
 
     return (ambient + diffuse + specular);
 }
 
-vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
+vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir, float ao)
 {
     vec3 lightDir = normalize(aLight.position - aPosition);
     vec3 viewDir = normalize(aViewDir);
@@ -117,7 +117,7 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 
 	float attenuation = 1.0 / (aLight.constant + aLight.linear * distance + aLight.quadratic * (distance * distance));    
 
-    vec3 ambient = aLight.color * 0.2;
+    vec3 ambient = aLight.color * 0.2 * ao;
     vec3 diffuse = texture(uAlbedo, vTexCoord).xyz * diff;
     vec3 specular = aLight.color * spec * aLight.specularStrength;
 
@@ -130,6 +130,8 @@ vec3 CalcPointLight(Light aLight, vec3 aNormal, vec3 aPosition, vec3 aViewDir)
 
 void main()
 {
+    float aoTex = texture(uAO, vTexCoord).r;
+    
 	vec3 returnColor = vec3(0.0);
     for(int i = 0; i < uLightCount; ++i)
     {
@@ -137,11 +139,11 @@ void main()
 
         if(uLight[i].type == 0)
         {
-            lightResult += CalcDirLight(uLight[i], vNormal, vViewDir);
+            lightResult += CalcDirLight(uLight[i], vNormal, vViewDir, aoTex);
         }
         else if(uLight[i].type == 1)
         {
-            lightResult += CalcPointLight(uLight[i], vNormal, vPosition, vViewDir);
+            lightResult += CalcPointLight(uLight[i], vNormal, vPosition, vViewDir, aoTex);
         }
 
         returnColor += lightResult * uLight[i].color;
