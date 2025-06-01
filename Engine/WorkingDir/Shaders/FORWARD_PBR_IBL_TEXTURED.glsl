@@ -76,12 +76,17 @@ layout(binding = 0) uniform sampler2D albedoMap;
 layout(binding = 1) uniform sampler2D normalMap;
 layout(binding = 2) uniform sampler2D metallicMap;
 layout(binding = 3) uniform sampler2D roughnessMap;
-//uniform sampler2D aoMap;
+layout(binding = 4) uniform sampler2D heightMap;
+layout(binding = 5) uniform sampler2D aoMap;
 
 // IBL
-layout(binding = 4) uniform samplerCube irradianceMap;
-layout(binding = 5) uniform samplerCube prefilterMap;
-layout(binding = 6) uniform sampler2D brdfLUT;
+layout(binding = 6) uniform samplerCube irradianceMap;
+layout(binding = 7) uniform samplerCube prefilterMap;
+layout(binding = 8) uniform sampler2D brdfLUT;
+
+uniform float uMetallicInfluence;
+uniform float uRoughnessInfluence;
+uniform bool enableIBL;
 
 // lights
 struct Light 
@@ -156,9 +161,9 @@ void main()
 {		
     // material properties
     vec3 albedo = pow(texture(albedoMap, vTexCoord).rgb, vec3(2.2));
-    float metallic = texture(metallicMap, vTexCoord).r;
-    float roughness = texture(roughnessMap, vTexCoord).r;
-    //float ao = texture(aoMap, vTexCoord).r;
+    float metallic = texture(metallicMap, vTexCoord).r * uMetallicInfluence;
+    float roughness = texture(roughnessMap, vTexCoord).r * uRoughnessInfluence;
+    float ao = texture(aoMap, vTexCoord).r;
     
     // Normal map calculation
     mat3 TBN = mat3(normalize(vTangent), 
@@ -230,8 +235,18 @@ void main()
     vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-    //vec3 ambient = (kD * diffuse + specular) * ao;
-    vec3 ambient = (kD * diffuse + specular);
+    vec3 ambient = vec3(0.0f);
+
+    if (enableIBL) 
+    {
+        ambient = (kD * diffuse + specular);
+    }
+    else 
+    {
+        ambient = vec3(0.03) * albedo;
+    }
+
+    ambient *= ao;
 
     vec3 color = ambient + Lo;
 

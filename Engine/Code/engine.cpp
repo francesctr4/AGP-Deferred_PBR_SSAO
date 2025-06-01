@@ -202,8 +202,8 @@ void App::Init()
     }
 
     // PBR Materials
-    LoadPBRMaterial("PBR/Materials/Fancy_Scaled_Gold", fancyScaledGold);
     LoadPBRMaterial("PBR/Materials/Cerberus", cerberusMat);
+    LoadPBRMaterial("PBR/Materials/Fancy_Scaled_Gold", fancyScaledGold);
     LoadPBRMaterial("PBR/Materials/Light_Gold", lightGoldMat);
     LoadPBRMaterial("PBR/Materials/Spotted_Rust", spottedRust);
     LoadPBRMaterial("PBR/Materials/Armored_Dragon_Scales", armoredDragonScales);
@@ -220,7 +220,7 @@ void App::Init()
         {torusIdx, "Meshes/Torus.obj"},
         {debugSphereIdx, "Meshes/DebugSphere.obj"},
         {weaponIdx, "PBR/Cerberus_LP.fbx"},
-        //{spherePBRIdx, "PBR/SpherePBR.fbx"}
+        {spherePBRIdx, "PBR/SpherePBR.fbx"}
     };
 
     for (auto& [idx, path] : models) 
@@ -266,6 +266,7 @@ void App::Init()
         {sphereIdx, greenTexIdx},
         {torusIdx, lightBlueTexIdx},
         {weaponIdx, 0},
+        {spherePBRIdx, 0},
     };
 
     for (auto& [modelIdx, texIdx] : entities) 
@@ -350,11 +351,6 @@ void App::Update()
         currentCubemapIndex = (currentCubemapIndex + 1) % cubemaps.size();
     }
 
-    if (input.keys[K_V] == BUTTON_PRESS)
-    {
-        currentPBRmaterialIndex = (currentPBRmaterialIndex + 1) % PBRmaterials.size();
-    }
-
     if (input.keys[K_N] == BUTTON_PRESS)
     {
         drawEditor = !drawEditor;
@@ -362,8 +358,30 @@ void App::Update()
 
     if (input.keys[K_B] == BUTTON_PRESS)
     {
-        mode = static_cast<Mode>((static_cast<int>(mode) + 1) % ALL_MODES);
+        Mode newMode = static_cast<Mode>((static_cast<int>(mode) + 1) % ALL_MODES);
+
+        // Skip render mode 4 (Forward Rendering SSAO tests).
+
+        if (newMode != static_cast<Mode>(4)) 
+        {
+            mode = newMode;
+        }
+        else 
+        {
+            mode = static_cast<Mode>(0);
+        }
+
         needsReinit = true;
+    }
+
+    if (input.keys[K_V] == BUTTON_PRESS)
+    {
+        currentPBRmaterialIndex = (currentPBRmaterialIndex + 1) % PBRmaterials.size();
+    }
+
+    if (input.keys[K_C] == BUTTON_PRESS)
+    {
+        pbrShowcase = pbrShowcase == 7 ? pbrShowcase = 8 : pbrShowcase = 7;
     }
 
     // Handle rendering mode changes
@@ -389,7 +407,7 @@ void App::Update()
         patrickEntity->worldMatrix = patrickEntity->worldMatrix * rotation;
 
         // Rotate PBR Cerberus
-        static Entity* cerberusEntity = &entities[7];
+        Entity* cerberusEntity = &entities[pbrShowcase];
         cerberusEntity->worldMatrix = cerberusEntity->worldMatrix * rotation;
     }
 
@@ -445,7 +463,7 @@ void App::Render()
             // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (int i = 0; i < entities.size() - 1; ++i)
+            for (int i = 0; i < entities.size() - 2; ++i)
             {
                 RenderEntity(&entities[i], texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
@@ -478,7 +496,7 @@ void App::Render()
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (int i = 0; i < entities.size() - 1; ++i)
+            for (int i = 0; i < entities.size() - 2; ++i)
             {
                 RenderEntity(&entities[i], geometryProgram, deferredRenderProgramUniformTexture);
             }
@@ -611,7 +629,7 @@ void App::Render()
             // void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (int i = 0; i < entities.size() - 1; ++i)
+            for (int i = 0; i < entities.size() - 2; ++i)
             {
                 RenderEntity(&entities[i], texturedMeshProgram, forwardRenderProgramUniformTexture);
             }
@@ -644,7 +662,7 @@ void App::Render()
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            for (int i = 0; i < entities.size() - 1; ++i)
+            for (int i = 0; i < entities.size() - 2; ++i)
             {
                 RenderEntity(&entities[i], texturedMeshProgram2, forwardRenderProgramUniformTexture);
             }
@@ -703,41 +721,81 @@ void App::Render()
 
             // ----------------------------------- Geometry Pass ----------------------------------- //
             
-            //Program& forwardPbrProgram = programs[forwardPbrDirectProgramIdx];
             Program& forwardPbrProgram = programs[forwardPbrIblProgramIdx];
 
             glUseProgram(forwardPbrProgram.handle);
 
+            GLint metallicLoc = glGetUniformLocation(forwardPbrProgram.handle, "uMetallicInfluence");
+            GLint roughnessLoc = glGetUniformLocation(forwardPbrProgram.handle, "uRoughnessInfluence");
+            GLint enableIBLLoc = glGetUniformLocation(forwardPbrProgram.handle, "enableIBL");
+            glUniform1i(enableIBLLoc, (GLint)enableIBL);
+            glUniform1f(metallicLoc, metallicInfluence);
+            glUniform1f(roughnessLoc, roughnessInfluence);
+
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            Entity* entity = &entities[7];
+            Entity& entity = entities[pbrShowcase];
+            entity.materialPBR = PBRmaterials[currentPBRmaterialIndex];
 
-            // Bind uniform buffer
-            glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle, entity->entityBufferOffset, entity->entityBufferSize);
+            // Bind entity's uniform buffer
+            glBindBufferRange(GL_UNIFORM_BUFFER, 1, entityUBO.handle,
+                entity.entityBufferOffset, entity.entityBufferSize);
 
-            Model& model = models[entity->modelIdx];
+            Model& model = models[entity.modelIdx];
             Mesh& mesh = meshes[model.meshIdx];
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.albedoIdx].handle);
+            // Bind PBR textures
+            MaterialPBR& material = entity.materialPBR;
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.normalIdx].handle);
+            if (material.HasAlbedo())
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textures[material.albedoIdx].handle);
+            }
 
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.metallicIdx].handle);
+            if (material.HasNormal())
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, textures[material.normalIdx].handle);
+            }
 
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, textures[cerberusMat.roughnessIdx].handle);
+            if (material.HasMetallic())
+            {
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, textures[material.metallicIdx].handle);
+            }
+
+            if (material.HasRoughness())
+            {
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, textures[material.roughnessIdx].handle);
+            }
+
+            if (material.HasHeight())
+            {
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, textures[material.heightIdx].handle);
+            }
+
+            if (material.HasAO() && useAOtex)
+            {
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, textures[material.aoIdx].handle);
+            }
+            else
+            {
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, textures[whiteTexIdx].handle);
+            }
 
             // Bind pre-computed IBL data
-            glActiveTexture(GL_TEXTURE4);
+            glActiveTexture(GL_TEXTURE6);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetDiffuseIrradianceMap());
 
-            glActiveTexture(GL_TEXTURE5);
+            glActiveTexture(GL_TEXTURE7);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemaps[currentCubemapIndex].GetSpecularPrefilterMap());
 
-            glActiveTexture(GL_TEXTURE6);
+            glActiveTexture(GL_TEXTURE8);
             glBindTexture(GL_TEXTURE_2D, cubemaps[currentCubemapIndex].GetBRFDlookUpTexture());
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
@@ -789,7 +847,7 @@ void App::Render()
 
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, globalUBO.handle, 0, globalUBO.size);
 
-            Entity& entity = entities[7];
+            Entity& entity = entities[pbrShowcase];
             entity.materialPBR = PBRmaterials[currentPBRmaterialIndex];
 
             // Bind entity's uniform buffer

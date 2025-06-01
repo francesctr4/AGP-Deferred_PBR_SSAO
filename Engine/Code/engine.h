@@ -152,6 +152,8 @@ public:
     u32 specularPrefilterProgramIdx;
     u32 brdfIntegrationProgramIdx;
 
+    int pbrShowcase = 7;
+
     // ------------- SSAO ------------- //
 
     bool enableSSAO = true;
