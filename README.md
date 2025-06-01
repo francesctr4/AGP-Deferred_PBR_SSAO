@@ -93,10 +93,11 @@ same point of view, with each technique enabled and disabled.
 
 | Shader Name          | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
-| SSAO.glsl              | Cositas     |
-| SSAO_BLUR.glsl              | Cositas     |
+| SSAO.glsl              | Generate SSAO Texture     |
+| SSAO_BLUR.glsl              | Blur SSAO Texture     |
 | DEFERRED_RENDER_QUAD.glsl              | Modified to use SSAO     |
-| DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | Modified to use SSAO     |
+| FORWARD_PRE_SSAO_RENDER.glsl              | Get Position and Normal Texture in Forward Rendering     |
+| FORWARD_SSAO_RENDER.glsl              | Forward Rendering using SSAO     |
 
 <table>
   <tr>
