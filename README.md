@@ -81,16 +81,16 @@ same point of view, with each technique enabled and disabled.
 ![image](https://github.com/user-attachments/assets/55a36510-7342-4dd3-b410-a4bdfb639df3)
 
 # Screen Space Ambient Occlusion (SSAO)
+### Interface
 
-○ To show the effect of each technique, show a couple of renders from the
-same point of view, with each technique enabled and disabled.
+| Setting Name        | Purpose                                                                                       |
+|---------------------|------------------------------------------------------------------------------------------------|
+| SSAO Status            | Activate / Deactivate SSAO     |
+| AO Texture             | Activate / Deactivate PBR AO Texture     |
 
-○ Explain how to enable / disable / configure the options you may have.
+![image](https://github.com/user-attachments/assets/9a560ab1-857c-463e-8077-b0dd9283d2a4)
 
-○ Include screenshots of the corresponding widgets when appropriate.
-
-○ Name of shader files for every effect
-
+### Shader
 | Shader Name          | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
 | SSAO.glsl              | Generate SSAO Texture     |
@@ -99,6 +99,7 @@ same point of view, with each technique enabled and disabled.
 | FORWARD_PRE_SSAO_RENDER.glsl              | Get Position and Normal Texture in Forward Rendering     |
 | FORWARD_SSAO_RENDER.glsl              | Forward Rendering using SSAO     |
 
+### Showcase
 <table>
   <tr>
     <th>Attachment</th>
