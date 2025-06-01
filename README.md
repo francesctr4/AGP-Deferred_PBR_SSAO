@@ -98,11 +98,28 @@ same point of view, with each technique enabled and disabled.
 | DEFERRED_RENDER_QUAD.glsl              | Modified to use SSAO     |
 | DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | Modified to use SSAO     |
 
-| Attachment          | Preview                                                                                        |
-|---------------------|------------------------------------------------------------------------------------------------|
-| Final Render             | ![image](https://github.com/user-attachments/assets/bdbe06cb-5131-4839-a04a-57b906ca702e)    |
-| SSAO Pass             | ![image](https://github.com/user-attachments/assets/dce0da62-888d-4f63-a305-ecef7d149789)   |
-| Final Render with SSAO            | ![image](https://github.com/user-attachments/assets/83374746-ff33-4269-9a97-ed4826eefaf4)   |
+<table>
+  <tr>
+    <th>Attachment</th>
+    <th colspan="2">Preview</th>
+  </tr>
+  <tr>
+    <td>Final Render</td>
+    <td><img src="https://github.com/user-attachments/assets/bdbe06cb-5131-4839-a04a-57b906ca702e"></td>
+    <td><img src="https://github.com/user-attachments/assets/79b9c89e-c76a-4cc1-ab89-6f1d025bf401"></td>
+  </tr>
+  <tr>
+    <td>SSAO Pass</td>
+    <td><img src="https://github.com/user-attachments/assets/dce0da62-888d-4f63-a305-ecef7d149789"></td>
+    <td><img src="https://github.com/user-attachments/assets/41f520c5-e0b4-4ec7-a8a2-bc41cceec869"></td>
+  </tr>
+  <tr>
+    <td>Final Render with SSAO</td>
+    <td><img src="https://github.com/user-attachments/assets/83374746-ff33-4269-9a97-ed4826eefaf4"></td>
+    <td><img src="https://github.com/user-attachments/assets/5b9d145f-1ffe-449c-85e4-a0b765fbfe87"></td>
+  </tr>
+</table>
+
 
 ## Deferred Pipeline Breakdown
 
