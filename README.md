@@ -81,23 +81,6 @@ same point of view, with each technique enabled and disabled.
 ![image](https://github.com/user-attachments/assets/55a36510-7342-4dd3-b410-a4bdfb639df3)
 
 # Screen Space Ambient Occlusion (SSAO)
-### Interface
-
-| Setting Name        | Purpose                                                                                       |
-|---------------------|------------------------------------------------------------------------------------------------|
-| SSAO Status            | Activate / Deactivate SSAO     |
-| AO Texture             | Activate / Deactivate PBR AO Texture     |
-
-![image](https://github.com/user-attachments/assets/9a560ab1-857c-463e-8077-b0dd9283d2a4)
-
-### Shader
-| Shader Name          | Purpose                                                                                       |
-|---------------------|------------------------------------------------------------------------------------------------|
-| SSAO.glsl              | Generate SSAO Texture     |
-| SSAO_BLUR.glsl              | Blur SSAO Texture     |
-| DEFERRED_RENDER_QUAD.glsl              | Modified to use SSAO     |
-| FORWARD_PRE_SSAO_RENDER.glsl              | Get Position and Normal Texture in Forward Rendering     |
-| FORWARD_SSAO_RENDER.glsl              | Forward Rendering using SSAO     |
 
 ### Showcase
 <table>
@@ -122,6 +105,24 @@ same point of view, with each technique enabled and disabled.
   </tr>
 </table>
 
+### Debug Widgets
+
+| Setting Name        | Purpose                                                                                       |
+|---------------------|------------------------------------------------------------------------------------------------|
+| SSAO Status            | Activate / Deactivate SSAO     |
+| AO Texture             | Activate / Deactivate PBR AO Texture     |
+
+![image](https://github.com/user-attachments/assets/9a560ab1-857c-463e-8077-b0dd9283d2a4)
+
+### Shader Files
+
+| Shader Name          | Purpose                                                                                       |
+|---------------------|------------------------------------------------------------------------------------------------|
+| SSAO.glsl              | Generate SSAO Texture     |
+| SSAO_BLUR.glsl              | Blur SSAO Texture     |
+| DEFERRED_RENDER_QUAD.glsl              | Modified to use SSAO     |
+| FORWARD_PRE_SSAO_RENDER.glsl              | Get Position and Normal Texture in Forward Rendering     |
+| FORWARD_SSAO_RENDER.glsl              | Forward Rendering using SSAO     |
 
 ## Deferred Pipeline Breakdown
 
