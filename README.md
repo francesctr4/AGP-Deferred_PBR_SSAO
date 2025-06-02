@@ -58,7 +58,25 @@ Physically-Based Rendering is a collection of render techniques that are based o
 
 ## Debug Widgets
 
-(Work in Progress)
+| Setting Name          | Purpose                                                                                        |
+|-----------------------|------------------------------------------------------------------------------------------------|
+| Image Based Lighting  | Toggle IBL calculations on/off.                                                                |
+| Metallic Influence    | Slider to alter the metallic coeficient of the material.                                       |
+| Roughness Influence   | Slider to alter the roughness coeficient of the material.                                      |
+
+![image](https://github.com/user-attachments/assets/33398e77-9561-40eb-aadd-d51f68789b73)
+
+dcsdsscddsdcssdcsdcd
+
+### GBuffer Debug View to see each attachment from GBuffer
+
+![image](https://github.com/user-attachments/assets/6fa3e975-da67-4979-b26f-bfbb00af0be7)
+
+### GBuffer Debug View window also has IBL attachments available to display
+
+![image](https://github.com/user-attachments/assets/9034302a-32c9-4640-9e47-6e285d0089ef)
+
+### Remember to check the debug keys at the start of the file for other interactions!
 
 ## Shader Files
 
