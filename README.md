@@ -52,11 +52,9 @@ Physically-Based Rendering is a collection of render techniques that are based o
 
 ## Showcase
 
+![image](https://github.com/user-attachments/assets/6caa63ec-168d-4519-92fd-b7c48bc00c52)
+![image](https://github.com/user-attachments/assets/1c0b19f5-9410-4f23-b7a2-1c03d49280bf)
 ![image](https://github.com/user-attachments/assets/8d0ee74f-75ab-4fd2-8b96-85d7c4a96e60)
-![image](https://github.com/user-attachments/assets/e5eb921f-ff86-4671-8b88-a484bf5f97f7)
-![image](https://github.com/user-attachments/assets/ab5454e2-8942-44c8-b2dc-0934bfd9e6b2)
-![image](https://github.com/user-attachments/assets/7becf2c0-321e-4ca5-8f7b-fd0515bd68ba)
-![image](https://github.com/user-attachments/assets/55a36510-7342-4dd3-b410-a4bdfb639df3)
 
 ## Debug Widgets
 
