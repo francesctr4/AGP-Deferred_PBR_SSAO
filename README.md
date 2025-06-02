@@ -61,8 +61,8 @@ Physically-Based Rendering is a collection of render techniques that are based o
 | Setting Name          | Purpose                                                                                        |
 |-----------------------|------------------------------------------------------------------------------------------------|
 | Image Based Lighting  | Toggle IBL calculations on/off.                                                                |
-| Metallic Influence    | Slider to alter the metallic coeficient of the material.                                       |
-| Roughness Influence   | Slider to alter the roughness coeficient of the material.                                      |
+| Metallic Influence    | Slider to alter the Metallic coeficient of the material.                                       |
+| Roughness Influence   | Slider to alter the Roughness coeficient of the material.                                      |
 
 ![PBR - Debug Widgets](https://github.com/user-attachments/assets/33398e77-9561-40eb-aadd-d51f68789b73)
 
