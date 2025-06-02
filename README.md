@@ -48,14 +48,17 @@ _**Mario García Sutil**_
 
 # Physically Based Rendering (PBR) + Image Based Lighting (IBL)
 
-○ To show the effect of each technique, show a couple of renders from the
-same point of view, with each technique enabled and disabled.
+![image](https://github.com/user-attachments/assets/8d0ee74f-75ab-4fd2-8b96-85d7c4a96e60)
+![image](https://github.com/user-attachments/assets/e5eb921f-ff86-4671-8b88-a484bf5f97f7)
+![image](https://github.com/user-attachments/assets/ab5454e2-8942-44c8-b2dc-0934bfd9e6b2)
+![image](https://github.com/user-attachments/assets/7becf2c0-321e-4ca5-8f7b-fd0515bd68ba)
+![image](https://github.com/user-attachments/assets/55a36510-7342-4dd3-b410-a4bdfb639df3)
 
-○ Explain how to enable / disable / configure the options you may have.
+## Showcase
 
-○ Include screenshots of the corresponding debug widgets when appropriate.
+## Debug Widgets
 
-○ Name of shader files for every effect
+## Shader Files
 
 ### PBR
 
@@ -75,12 +78,6 @@ same point of view, with each technique enabled and disabled.
 | DIFFUSE_IRRADIANCE_CONVOLUTION.glsl              | Generates a low-frequency cubemap used for diffuse IBL (ambient diffuse lighting), by convolving the environment map.     |
 | SPECULAR_PREFILTER_CONVOLUTION.glsl              | Generates a mipmapped cubemap used for specular IBL. Each mip level corresponds to different surface roughness.     |
 | BRDF_INTEGRATION_CONVOLUTION.glsl              | Precomputes a 2D lookup texture (BRDF LUT) used for the split-sum approximation in PBR specular IBL, based on roughness and view angle.     |
-
-![image](https://github.com/user-attachments/assets/8d0ee74f-75ab-4fd2-8b96-85d7c4a96e60)
-![image](https://github.com/user-attachments/assets/e5eb921f-ff86-4671-8b88-a484bf5f97f7)
-![image](https://github.com/user-attachments/assets/ab5454e2-8942-44c8-b2dc-0934bfd9e6b2)
-![image](https://github.com/user-attachments/assets/7becf2c0-321e-4ca5-8f7b-fd0515bd68ba)
-![image](https://github.com/user-attachments/assets/55a36510-7342-4dd3-b410-a4bdfb639df3)
 
 # Screen Space Ambient Occlusion (SSAO)
 
