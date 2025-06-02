@@ -37,15 +37,6 @@
     <Filter Include="Source Code\Graphics">
       <UniqueIdentifier>{e57e5485-ee4f-4a09-a921-fe8db900210d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Code\!SSAO">
-      <UniqueIdentifier>{88aed557-eabf-4787-a086-0e18eae20758}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Code\!PBR">
-      <UniqueIdentifier>{94e17458-3997-4735-bc13-b38176ff934d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Code\!PBR\Cubemap">
-      <UniqueIdentifier>{1406ea75-8a89-4712-b546-a7fc598049ed}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Code\Shaders\PBR">
       <UniqueIdentifier>{2588d97b-d600-48a3-8d6e-4a8a53fc9ec8}</UniqueIdentifier>
     </Filter>
@@ -135,17 +126,11 @@
     <ClCompile Include="Code\engine.cpp">
       <Filter>Source Code\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Code\Camera.cpp">
-      <Filter>Source Code\Features</Filter>
-    </ClCompile>
     <ClCompile Include="Code\OpenGL_Framebuffer.cpp">
       <Filter>Source Code\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Code\EditorCameraInfoWindow.cpp">
       <Filter>Source Code\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\Cubemap.cpp">
-      <Filter>Source Code\!PBR\Cubemap</Filter>
     </ClCompile>
     <ClCompile Include="Code\EditorSSAOconfigWindow.cpp">
       <Filter>Source Code\Editor</Filter>
@@ -155,6 +140,12 @@
     </ClCompile>
     <ClCompile Include="Code\EditorPBRconfigWindow.cpp">
       <Filter>Source Code\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Cubemap.cpp">
+      <Filter>Source Code\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Camera.cpp">
+      <Filter>Source Code\Features</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -218,14 +209,14 @@
     <ClInclude Include="Code\engine.h">
       <Filter>Source Code\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Camera.h">
-      <Filter>Source Code\Features</Filter>
-    </ClInclude>
     <ClInclude Include="Code\OpenGL_Framebuffer.h">
       <Filter>Source Code\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Code\Cubemap.h">
-      <Filter>Source Code\!PBR\Cubemap</Filter>
+      <Filter>Source Code\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Camera.h">
+      <Filter>Source Code\Features</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -240,9 +231,6 @@
     </None>
     <None Include="Code\openGL_types.inl">
       <Filter>Source Code\Graphics</Filter>
-    </None>
-    <None Include="Code\PBR_types.inl">
-      <Filter>Source Code\!PBR</Filter>
     </None>
     <None Include="WorkingDir\Shaders\GRID.glsl">
       <Filter>Source Code\Shaders</Filter>

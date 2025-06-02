@@ -77,7 +77,6 @@
   <ItemGroup>
     <None Include="Code\ImGuiUtils.inl" />
     <None Include="Code\openGL_types.inl" />
-    <None Include="Code\PBR_types.inl" />
     <None Include="WorkingDir\Shaders\BRDF_INTEGRATION_CONVOLUTION.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl" />
     <None Include="WorkingDir\Shaders\DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl" />
