@@ -74,7 +74,7 @@ Physically-Based Rendering is a collection of render techniques that are based o
 
 ![image](https://github.com/user-attachments/assets/9034302a-32c9-4640-9e47-6e285d0089ef)
 
-### Remember to check the other [Debug Keys](### Debug Keys) for additional interactions!
+### Remember to check the other [Debug Keys](#debug-keys) for additional interactions!
 
 ## Shader Files
 
