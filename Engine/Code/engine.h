@@ -1,10 +1,6 @@
 #ifndef _ENGINE_H_
 #define _ENGINE_H_
 
-//
-// engine.h: Engine types and core functionality
-//
-
 #include "openGL_types.inl"
 #include "OpenGL_Framebuffer.h"
 #include "BufferManagement.h"
@@ -12,25 +8,28 @@
 #include "Cubemap.h"
 #include <vector>
 
-struct GridLightConfig
-{
-    int gridSizeX = 10;  // Number of columns (X-axis)
-    int gridSizeZ = 10;  // Number of rows (Z-axis)
-    float minX = -23.0f; // Start X range
-    float maxX = 23.0f;  // End X range
-    float minZ = -23.0f; // Start Z range
-    float maxZ = 23.0f;  // End Z range
-    float yPos = 0.5f;   // Fixed Y position
-
-    float gridLightConstant = 1.0f;
-    float gridLightLinear = 8.0f;
-    float gridLightQuadratic = 3.0f;
-    float gridLightSpecularStrength = 2.0f;
-};
-
 class App
 {
 public:
+
+    // --- Configuration Structs ---
+
+    struct GridLightConfig
+    {
+        int gridSizeX = 10;
+        int gridSizeZ = 10;
+        float minX = -23.0f;
+        float maxX = 23.0f;
+        float minZ = -23.0f;
+        float maxZ = 23.0f;
+        float yPos = 0.5f;
+        float gridLightConstant = 1.0f;
+        float gridLightLinear = 8.0f;
+        float gridLightQuadratic = 3.0f;
+        float gridLightSpecularStrength = 2.0f;
+    };
+
+    // --- Lifecycle Management ---
 
     App();
     ~App();
@@ -43,37 +42,21 @@ public:
 
     void OnResize(int width, int height);
 
-    // ------------------------------------------------------------- //
+    // --- Lighting Management ---
 
     void CreateLights();
     void UpdateLightList();
     void UpdateLights();
 
-    // ------------------------------------------------------------- //
+    // --- Rendering Features ---
 
     void RenderGrid();
 
-private:
+    // --- Public Members - Core ---
 
-    void RenderLightDebugGeometry();
-
-    glm::mat4 CreateTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale);
-    void CreateEntity(u32 modelIdx, u32 textureIdx, const glm::mat4& worldMatrix);
-    void UpdateEntities();
-    GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
-    void RenderEntity(Entity* entity, Program& program, u32 programUniformTexture);
-
-    // Render skybox using specified shader
-    void RenderSkybox(u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection);
-
-    void ChangeRenderMode();
-
-    bool LoadPBRMaterial(const std::string& directory, MaterialPBR& material);
-
-public:
-
-    // Core
     bool isRunning;
+    bool needsReinit;
+
     bool drawEditor;
     bool drawGrid;
 
@@ -84,67 +67,69 @@ public:
     f32 deltaTime;
     Input input;
     Mode mode;
-    bool needsReinit;
     ivec2 displaySize;
 
-    // Graphics Resources
+    // --- Public Members - Resources ---
+
     std::string mOpenGLInfo;
 
-    // Resource pools
-    std::vector<Texture>  textures;
+    std::vector<Texture> textures;
     std::vector<Material> materials;
-    std::vector<Mesh>     meshes;
-    std::vector<Model>    models;
-    std::vector<Program>  programs;
-    std::vector<Entity>   entities;
-    std::vector<Cubemap>  cubemaps;
+    std::vector<Mesh> meshes;
+    std::vector<Model> models;
+    std::vector<Program> programs;
+    std::vector<Entity> entities;
+    std::vector<Cubemap> cubemaps;
+    u32 currentCubemapIndex;
 
-    // Rendering State
+    // --- Public Members - Rendering State ---
+
     Camera worldCamera;
 
-    // Framebuffers
     Framebuffer blinnPhongDeferredFBO;
     Framebuffer pbrDeferredFBO;
 
-    // Cubemap
-    u32 currentCubemapIndex;
-
-    // Embedded geometry
     GLuint embeddedVertices;
     GLuint embeddedElements;
     GLuint vao;
 
-    // Buffers and UBOs
     GLint maxUniformBufferSize;
     GLint uniformBlockAlignment;
+
     Buffer globalUBO;
     Buffer entityUBO;
 
-    // Lighting
+    // --- Public Members - Lighting ---
+
     std::vector<Light> lights;
     std::vector<Light> gridLights;
     std::vector<Light> defaultLights;
-
     bool gridLightsEnabled;
     bool enableLightDebug;
-
     GridLightConfig gridConfig;
-    SSAOsettings ssaoSettings;
 
-    // Debug/UI State
+    // --- Public Members - Debug/UI ---
+
     std::vector<std::string> shaderErrors;
     bool showShaderErrors;
-
     int gBufferDebugMode;
 
-    // PBR + IBL
-    u32 forwardPbrIblProgramIdx;
-    u32 forwardPbrDirectProgramIdx;
-    u32 deferredPbrIblGeometryProgramIdx;
-    u32 deferredPbrIblQuadProgramIdx;
+    // --- Public Members - PBR ---
+
+    int pbrShowcase;
 
     float metallicInfluence;
     float roughnessInfluence;
+
+    u32 forwardPbrIblProgramIdx;
+    u32 forwardPbrDirectProgramIdx;
+
+    u32 deferredPbrIblGeometryProgramIdx;
+    u32 deferredPbrIblQuadProgramIdx;
+
+    // --- Public Members - IBL ---
+
+    bool enableIBL;
 
     u32 equirectangularToCubemapProgramIdx;
     u32 skyboxProgramIdx;
@@ -152,47 +137,42 @@ public:
     u32 specularPrefilterProgramIdx;
     u32 brdfIntegrationProgramIdx;
 
-    int pbrShowcase;
-
-    // ------------- SSAO ------------- //
+    // --- Public Members - SSAO ---
 
     bool enableSSAO;
     bool useAOtex;
-    bool enableIBL;
-
-    // Shader Resources
     u32 forwardPreSSAOProgramIdx;
     u32 forwardSSAOProgramIdx;
-
     u32 SSAOprogramIdx;
     u32 SSAOblurProgramIdx;
-
-    // SSAO Resources
     Framebuffer PreSSAOblinnPhongForwardFBO;
     Framebuffer SSAOblinnPhongForwardFBO;
+    SSAOsettings ssaoSettings;
 
-    GLuint ssaoFBO;
-    GLuint ssaoColorBuffer;
+private:
 
-    // Blur Resources
-    GLuint ssaoBlurFBO;
-    GLuint ssaoColorBufferBlur;
+    // --- Internal Helpers ---
 
-    // Kernel Resources
-    std::vector<glm::vec3> ssaoKernel;
-    std::vector<glm::vec3> ssaoNoise;
-    GLuint noiseTexture;
+    glm::mat4 CreateTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale);
+    void CreateEntity(u32 modelIdx, u32 textureIdx, const glm::mat4& worldMatrix);
+    void UpdateEntities();
+    GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program);
+    void RenderEntity(Entity* entity, Program& program, u32 programUniformTexture);
+    
+    void ChangeRenderMode();
+    void RenderLightDebugGeometry();
+    void RenderSkybox(u32 skyboxShaderIdx, u32 cubemapIdx, const glm::mat4& view, const glm::mat4& projection);
+    bool LoadPBRMaterial(const std::string& directory, MaterialPBR& material);
+    
+    // --- SSAO Implementation ---
 
-    // Functions
     void CreateResourcesSSAO();
     void DeleteResourcesSSAO();
     void CalculateSSAO(Program& shaderSSAO, GLuint gPositionID, GLuint gNormalID);
     void ApplyBlurSSAO(Program& shaderBlurSSAO);
 
-    // ------------- SSAO ------------- //
-
-private:
-
+    // --- Internal Resources ---
+    
     // Texture Indices
     u32 diceTexIdx;
     u32 whiteTexIdx;
@@ -206,13 +186,12 @@ private:
     u32 lightGreenTexIdx;
     u32 orangeTexIdx;
 
-    // PBR
+    // PBR Materials
     MaterialPBR cerberusMat;
     MaterialPBR lightGoldMat;
     MaterialPBR spottedRust;
     MaterialPBR fancyScaledGold;
     MaterialPBR armoredDragonScales;
-
     std::vector<MaterialPBR> PBRmaterials;
     u32 currentPBRmaterialIndex;
 
@@ -235,11 +214,19 @@ private:
     u32 pointLightSphereProgramIdx;
     u32 gridProgramIdx;
 
-    // Uniform locations
+    // Uniform Locations
     u32 deferredRenderProgramUniformTexture;
     u32 forwardRenderProgramUniformTexture;
     u32 programUniformDebugMode;
 
+    // SSAO Resources
+    GLuint ssaoFBO;
+    GLuint ssaoColorBuffer;
+    GLuint ssaoBlurFBO;
+    GLuint ssaoColorBufferBlur;
+    std::vector<glm::vec3> ssaoKernel;
+    std::vector<glm::vec3> ssaoNoise;
+    GLuint noiseTexture;
 };
 
 #endif // _ENGINE_H_

@@ -219,7 +219,8 @@ void Cubemap::RenderQuad()
     glBindVertexArray(0);
 }
 
-void Cubemap::ReleaseResources() {
+void Cubemap::ReleaseResources() 
+{
     glDeleteTextures(1, &cubemapID);
     glDeleteTextures(1, &hdrTextureID);
     glDeleteTextures(1, &irradianceMap);

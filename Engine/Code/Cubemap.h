@@ -29,6 +29,8 @@ public:
     GLuint GetSpecularPrefilterMap() const { return prefilterMap; }
     GLuint GetBRFDlookUpTexture() const { return BRDF_LUT; }
 
+    void ReleaseResources();
+
 private:
 
     bool LoadHDRTexture(const char* hdrPath);
@@ -63,6 +65,4 @@ private:
     void CreateCubemapObject(GLuint& textureID);
 
     void SetTextureParameters(GLenum target);
-
-    void ReleaseResources();
 };

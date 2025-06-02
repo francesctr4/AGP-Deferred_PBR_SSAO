@@ -1065,53 +1065,56 @@ void App::CleanUp()
 {
     ELOG("Cleaning Up Engine");
 
+    // --- Clean Up SSAO Resources ---
+    DeleteResourcesSSAO(); // Deletes SSAO FBOs/textures
+
+    // --- Clean Up Framebuffers ---
+    blinnPhongDeferredFBO.Clear();
+    PreSSAOblinnPhongForwardFBO.Clear();
+    SSAOblinnPhongForwardFBO.Clear();
+    pbrDeferredFBO.Clear();
+
     // --- Clean Up Cubemaps ---
+    for (Cubemap& cubemap : cubemaps) 
+    {
+        cubemap.ReleaseResources(); // Ensures each cubemap releases its textures
+    }
     cubemaps.clear();
-    Cubemap::ReleaseCube();
+    Cubemap::ReleaseCube(); // Deletes static cube VAO
 
     // --- Delete Textures ---
-    for (auto& texture : textures)
-    {
+    for (auto& texture : textures) {
         glDeleteTextures(1, &texture.handle);
     }
     textures.clear();
 
     // --- Delete Shader Programs ---
-    for (auto& program : programs)
-    {
+    for (auto& program : programs) {
         glDeleteProgram(program.handle);
     }
     programs.clear();
 
     // --- Delete Main VAO ---
-    if (vao != 0)
-    {
+    if (vao != 0) {
         glDeleteVertexArrays(1, &vao);
         vao = 0;
     }
 
-    // --- Delete Element/Index Buffers ---
-    if (embeddedElements != 0)
-    {
+    // --- Delete Embedded Buffers ---
+    if (embeddedElements != 0) {
         glDeleteBuffers(1, &embeddedElements);
         embeddedElements = 0;
     }
-
-    // --- Delete Vertex Buffers ---
-    if (embeddedVertices != 0)
-    {
+    if (embeddedVertices != 0) {
         glDeleteBuffers(1, &embeddedVertices);
         embeddedVertices = 0;
     }
 
-    // --- Clean Up Meshes (VAOs, VBOs, and IBOs) ---
-    for (auto& mesh : meshes)
-    {
+    // --- Clean Up Meshes (VAOs, VBOs, IBOs) ---
+    for (auto& mesh : meshes) {
         // Delete VAOs for each submesh
-        for (auto& submesh : mesh.submeshes)
-        {
-            for (auto& vao : submesh.vaos)
-            {
+        for (auto& submesh : mesh.submeshes) {
+            for (auto& vao : submesh.vaos) {
                 glDeleteVertexArrays(1, &vao.handle);
             }
             submesh.vaos.clear();
@@ -1121,18 +1124,17 @@ void App::CleanUp()
     }
     meshes.clear();
 
-    // --- Clean Up Models and Materials ---
+    // --- Clean Up Models/Materials ---
     models.clear();
     materials.clear();
+    PBRmaterials.clear(); // Clear PBR material references
 
     // --- Clean Up Uniform Buffers ---
-    if (globalUBO.handle != 0)
-    {
+    if (globalUBO.handle != 0) {
         glDeleteBuffers(1, &globalUBO.handle);
         globalUBO.handle = 0;
     }
-    if (entityUBO.handle != 0)
-    {
+    if (entityUBO.handle != 0) {
         glDeleteBuffers(1, &entityUBO.handle);
         entityUBO.handle = 0;
     }
@@ -1140,12 +1142,13 @@ void App::CleanUp()
     // --- Clean Up Entities ---
     entities.clear();
 
-    // --- Clean Up FBO ---
-    blinnPhongDeferredFBO.Clear();
-
+    // --- Clean Up Light Data ---
     lights.clear();
     gridLights.clear();
     defaultLights.clear();
+
+    // --- Clean Up Shader Error Logs ---
+    shaderErrors.clear();
 }
 
 App::~App()
