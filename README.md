@@ -66,7 +66,7 @@ Physically-Based Rendering is a collection of render techniques that are based o
 
 ![PBR - Debug Widgets](https://github.com/user-attachments/assets/33398e77-9561-40eb-aadd-d51f68789b73)
 
-### GBuffer Debug View to see all the attachments from GBuffer (including new ones from PBR)
+### GBuffer Debug View to see all the attachments from GBuffer (including PBR)
 
 ![image](https://github.com/user-attachments/assets/6fa3e975-da67-4979-b26f-bfbb00af0be7)
 
