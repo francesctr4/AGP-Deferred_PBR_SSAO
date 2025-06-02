@@ -84,7 +84,9 @@ same point of view, with each technique enabled and disabled.
 
 # Screen Space Ambient Occlusion (SSAO)
 
-### Showcase
+Screen space ambient occlusion (SSAO) is a computer graphics technique for efficiently approximating the ambient occlusion effect in real time.
+
+## Showcase
 <table>
   <tr>
     <th>Attachment</th>
@@ -107,24 +109,31 @@ same point of view, with each technique enabled and disabled.
   </tr>
 </table>
 
-### Debug Widgets
+## Debug Widgets
 
 | Setting Name        | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
-| SSAO Status            | Activate / Deactivate SSAO     |
-| AO Texture             | Activate / Deactivate PBR AO Texture     |
+| SSAO Status            | Toggle Screen Space Ambient Occlusion on/off.    |
+| AO Texture             | 	Toggle the PBR AO texture on/off.     |
+| Kernel Size            |  Controls the number of sample points used to estimate occlusion; larger values can improve accuracy but reduce performance.    |
+| Radius             |  Defines the sampling radius around each pixel in world space; determines how far to look for occluding geometry.    |
+| Bias            |   Prevents self-occlusion artifacts (a.k.a. shadow acne) by ignoring very close geometry. Higher values reduce false occlusion but may miss subtle shadows.   |
+| Power            |   Adjusts the final contrast or intensity of the ambient occlusion; higher values darken occluded areas more strongly.   |
 
 ![image](https://github.com/user-attachments/assets/9a560ab1-857c-463e-8077-b0dd9283d2a4)
 
-### Shader Files
+## Shader Files
 
 | Shader Name          | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
 | SSAO.glsl              | Generate SSAO Texture     |
 | SSAO_BLUR.glsl              | Blur SSAO Texture     |
-| DEFERRED_RENDER_QUAD.glsl              | Modified to use SSAO     |
-| FORWARD_PRE_SSAO_RENDER.glsl              | Get Position and Normal Texture in Forward Rendering     |
-| FORWARD_SSAO_RENDER.glsl              | Forward Rendering using SSAO     |
+| FORWARD_PRE_SSAO_RENDER.glsl              | (Blinn-Phong) Get Position and Normal Texture in Forward Rendering     |
+| FORWARD_SSAO_RENDER.glsl              | (Blinn-Phong) Forward Rendering using SSAO     |
+| DEFERRED_RENDER_GEOMETRY.glsl              | (Blinn-Phong) Deferred Rendering using SSAO     |
+| DEFERRED_RENDER_QUAD.glsl              | (Blinn-Phong) Deferred Rendering using SSAO     |
+| DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl              | 	(PBR) Deferred Rendering using SSAO     |
+| DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | (PBR) Deferred Rendering using SSAO     |
 
 ## Deferred Pipeline Breakdown
 
