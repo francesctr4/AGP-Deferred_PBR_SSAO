@@ -58,24 +58,26 @@ Physically-Based Rendering is a collection of render techniques that are based o
 
 ## Debug Widgets
 
+(Work in Progress)
+
 ## Shader Files
 
 ### PBR
 
 | Shader Name          | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
-| FORWARD_PBR_DIRECT_TEXTURED.glsl              | Computes direct lighting using the PBR model in a forward rendering pass. Textured version that uses albedo, normal, metallic, roughness, and AO maps.     |
-| FORWARD_PBR_IBL_TEXTURED.glsl              | Performs forward PBR rendering with both direct lighting and IBL. Uses precomputed environment maps for ambient lighting. Supports full texture-based material inputs.     |
-| DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl              | 	G-Buffer pass in deferred rendering. Writes PBR-relevant surface data (position, normal, albedo, metallic, roughness, etc.) to textures for use in a later lighting pass.     |
-| DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | Lighting/composition pass in deferred rendering. Reads the G-Buffer and applies lighting including IBL using prefiltered environment maps and the BRDF LUT.     |
+| FORWARD_PBR_DIRECT_TEXTURED.glsl              | Computes direct lighting using the PBR model in a forward rendering textured pass.     |
+| FORWARD_PBR_IBL_TEXTURED.glsl              | Performs forward PBR rendering with both direct lighting influence and IBL. Uses precomputed environment maps for ambient lighting. Supports full texture-based material inputs.     |
+| DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl              | 	G-Buffer pass in deferred rendering. Writes PBR-relevant surface data (position, normal, albedo, metallic, roughness, ...) to textures for use in a later lighting pass.     |
+| DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl              | Lighting/composition pass in deferred rendering. Reads the G-Buffer and applies lighting including IBL precomputed environment maps for ambient lighting.    |
 
 ### IBL
 
 | Shader Name        | Purpose                                                                                       |
 |---------------------|------------------------------------------------------------------------------------------------|
 | EQUIRECTANGULAR_TO_CUBEMAP.glsl              | Converts an HDR equirectangular image (panoramic environment map) into a cubemap format for skyboxes and IBL.     |
-| SKYBOX.glsl              | Renders the cubemap as a skybox. Typically used for visual background and environment reflection source.     |
-| DIFFUSE_IRRADIANCE_CONVOLUTION.glsl              | Generates a low-frequency cubemap used for diffuse IBL (ambient diffuse lighting), by convolving the environment map.     |
+| SKYBOX.glsl              | Renders the cubemap as a skybox used for visual background and environment reflection source.     |
+| DIFFUSE_IRRADIANCE_CONVOLUTION.glsl              | Generates a low-frequency cubemap used for diffuse IBL, by convolving the environment map.     |
 | SPECULAR_PREFILTER_CONVOLUTION.glsl              | Generates a mipmapped cubemap used for specular IBL. Each mip level corresponds to different surface roughness.     |
 | BRDF_INTEGRATION_CONVOLUTION.glsl              | Precomputes a 2D lookup texture (BRDF LUT) used for the split-sum approximation in PBR specular IBL, based on roughness and view angle.     |
 
