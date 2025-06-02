@@ -44,7 +44,7 @@ private:
     GLuint captureFBO;
     GLuint captureRBO;
 
-    int size = 0;
+    int size;
 
     static GLuint cubeVAO;
     static GLuint cubeVBO;

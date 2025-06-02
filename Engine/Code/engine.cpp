@@ -20,6 +20,7 @@
 App::App()
     : isRunning(true),
     deltaTime(0.0f),
+    input({}),
     mode(Mode_PBR_Deferred_Rendering),
     needsReinit(false),
     displaySize(0, 0),
@@ -31,6 +32,16 @@ App::App()
     gridLightsEnabled(false),
     gBufferDebugMode(0),
     showShaderErrors(false),
+    currentCubemapIndex(0),
+    drawEditor(true),
+    drawGrid(false),
+    useDeferredRendering(true),
+    usePBR(true),
+    useSkybox(true),
+    enableSSAO(true),
+    useAOtex(true),
+    enableIBL(true),
+    enableLightDebug(false),
     // Texture Indices
     diceTexIdx(0),
     whiteTexIdx(0),
@@ -52,23 +63,49 @@ App::App()
     sphereIdx(0),
     torusIdx(0),
     debugSphereIdx(0),
+    weaponIdx(0),
+    spherePBRIdx(0),
     // Shader Program Indices
     deferredRenderQuadProgramIdx(0),
     deferredRenderGeometryProgramIdx(0),
     forwardRenderProgramIdx(0),
     pointLightSphereProgramIdx(0),
+    gridProgramIdx(0),
+    forwardPbrIblProgramIdx(0),
+    forwardPbrDirectProgramIdx(0),
+    deferredPbrIblGeometryProgramIdx(0),
+    deferredPbrIblQuadProgramIdx(0),
+    equirectangularToCubemapProgramIdx(0),
+    skyboxProgramIdx(0),
+    diffuseIrradianceProgramIdx(0),
+    specularPrefilterProgramIdx(0),
+    brdfIntegrationProgramIdx(0),
     forwardPreSSAOProgramIdx(0),
     forwardSSAOProgramIdx(0),
+    SSAOprogramIdx(0),
+    SSAOblurProgramIdx(0),
     // Uniform Locations
     deferredRenderProgramUniformTexture(0),
     forwardRenderProgramUniformTexture(0),
     programUniformDebugMode(0),
-    input({})
+    // PBR Settings
+    pbrShowcase(7),
+    currentPBRmaterialIndex(0),
+    metallicInfluence(1.0f),
+    roughnessInfluence(1.0f),
+    // SSAO Resources
+    ssaoFBO(0),
+    ssaoColorBuffer(0),
+    ssaoBlurFBO(0),
+    ssaoColorBufferBlur(0),
+    noiseTexture(0)
 {
     worldCamera.created = false;
-    currentCubemapIndex = 0;
-    drawEditor = true;
-    drawGrid = true;
+    worldCamera.SetPosition(glm::vec3(75.6f, 15.7f, 30.9f));
+    worldCamera.SetTarget(glm::vec3(74.8f, 15.3f, 30.4f));
+    worldCamera.SetNearFar(0.1f, 1000.0f);
+    worldCamera.SetUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+    worldCamera.SetVerticalFOV(90.0f);
 }
 
 void App::Init()
@@ -1670,8 +1707,8 @@ void App::CalculateSSAO(Program& shaderSSAO, GLuint gPositionID, GLuint gNormalI
     glUniform1f(glGetUniformLocation(shaderSSAO.handle, "bias"), ssaoSettings.bias);
     glUniform1f(glGetUniformLocation(shaderSSAO.handle, "power"), ssaoSettings.power);
 
-    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_WIDTH"), displaySize.x);
-    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_HEIGHT"), displaySize.y);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_WIDTH"), (GLfloat)displaySize.x);
+    glUniform1f(glGetUniformLocation(shaderSSAO.handle, "SCREEN_HEIGHT"), (GLfloat)displaySize.y);
 
     // Send kernel + rotation 
     for (unsigned int i = 0; i < 64; ++i)

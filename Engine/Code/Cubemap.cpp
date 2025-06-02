@@ -15,7 +15,7 @@ GLuint Cubemap::quadVBO = 0;
 
 bool Cubemap::cubeInitialized = false;
 
-Cubemap::Cubemap() : cubemapID(0), hdrTextureID(0), captureFBO(0), captureRBO(0), irradianceMap(0), prefilterMap(0), BRDF_LUT(0)
+Cubemap::Cubemap() : cubemapID(0), hdrTextureID(0), captureFBO(0), captureRBO(0), irradianceMap(0), prefilterMap(0), BRDF_LUT(0), size(0)
 {
     captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
     captureViews =

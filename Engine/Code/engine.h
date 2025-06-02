@@ -77,9 +77,9 @@ public:
     bool drawEditor;
     bool drawGrid;
 
-    bool useDeferredRendering = true;
-    bool usePBR = true;
-    bool useSkybox = true;
+    bool useDeferredRendering;
+    bool usePBR;
+    bool useSkybox;
 
     f32 deltaTime;
     Input input;
@@ -125,17 +125,17 @@ public:
     std::vector<Light> gridLights;
     std::vector<Light> defaultLights;
 
-    bool gridLightsEnabled = true;
-    bool enableLightDebug = false;
+    bool gridLightsEnabled;
+    bool enableLightDebug;
 
     GridLightConfig gridConfig;
     SSAOsettings ssaoSettings;
 
     // Debug/UI State
     std::vector<std::string> shaderErrors;
-    bool showShaderErrors = false;
+    bool showShaderErrors;
 
-    int gBufferDebugMode = 0;
+    int gBufferDebugMode;
 
     // PBR + IBL
     u32 forwardPbrIblProgramIdx;
@@ -143,8 +143,8 @@ public:
     u32 deferredPbrIblGeometryProgramIdx;
     u32 deferredPbrIblQuadProgramIdx;
 
-    float metallicInfluence = 1.0f;
-    float roughnessInfluence = 1.0f;
+    float metallicInfluence;
+    float roughnessInfluence;
 
     u32 equirectangularToCubemapProgramIdx;
     u32 skyboxProgramIdx;
@@ -152,13 +152,13 @@ public:
     u32 specularPrefilterProgramIdx;
     u32 brdfIntegrationProgramIdx;
 
-    int pbrShowcase = 7;
+    int pbrShowcase;
 
     // ------------- SSAO ------------- //
 
-    bool enableSSAO = true;
-    bool useAOtex = true;
-    bool enableIBL = true;
+    bool enableSSAO;
+    bool useAOtex;
+    bool enableIBL;
 
     // Shader Resources
     u32 forwardPreSSAOProgramIdx;
@@ -214,7 +214,7 @@ private:
     MaterialPBR armoredDragonScales;
 
     std::vector<MaterialPBR> PBRmaterials;
-    u32 currentPBRmaterialIndex = 0;
+    u32 currentPBRmaterialIndex;
 
     // Model Indices
     u32 patrickIdx;
