@@ -18,8 +18,8 @@ find_package(Stb REQUIRED)
 # Source files (your own code)
 # --------------------------------------------------------------------
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
-        Engine/Code/*.cpp
-        Engine/Code/*.h
+        Source/*.cpp
+        Source/*.h
 )
 
 add_executable(${PROJECT_NAME} ${ENGINE_SOURCES})
@@ -28,7 +28,7 @@ add_executable(${PROJECT_NAME} ${ENGINE_SOURCES})
 # Include directories (for your engine code)
 # --------------------------------------------------------------------
 target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Code
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
         ${Stb_INCLUDE_DIR}
 )
 
@@ -48,4 +48,13 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 # Optional: specify output directory
 set_target_properties(${PROJECT_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+# --------------------------------------------------------------------
+# Copy working directory assets to output folder after build
+# --------------------------------------------------------------------
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/Assets"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )

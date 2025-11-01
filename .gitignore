@@ -137,14 +137,14 @@ _ReSharper*/
 # TeamCity is a build add-in
 _TeamCity*
 
-# DotCover is a Code Coverage Tool
+# DotCover is a Source Coverage Tool
 *.dotCover
 
-# AxoCover is a Code Coverage Tool
+# AxoCover is a Source Coverage Tool
 .axoCover/*
 !.axoCover/settings.json
 
-# Coverlet is a free, cross platform Code Coverage Tool
+# Coverlet is a free, cross platform Source Coverage Tool
 coverage*.json
 coverage*.xml
 coverage*.info
@@ -372,13 +372,13 @@ healthchecksdb
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 
-# Ionide (cross platform F# VS Code tools) working folder
+# Ionide (cross platform F# VS Source tools) working folder
 .ionide/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# VS Code files for those working on multiple tools
+# VS Source files for those working on multiple tools
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -386,7 +386,7 @@ FodyWeavers.xsd
 !.vscode/extensions.json
 *.code-workspace
 
-# Local History for Visual Studio Code
+# Local History for Visual Studio Source
 .history/
 
 # Windows Installer files from build outputs

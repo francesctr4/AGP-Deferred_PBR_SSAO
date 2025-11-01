@@ -7,10 +7,7 @@
 
 void Editor::DrawGBufferDebugWindow(App* app)
 {
-    ImGui::Begin("GBuffer Debug View", (bool*)0, 
-        ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("GBuffer Debug View", (bool*)0);
     {
         static Mode prevMode = app->mode;
         ImGui::Separator();
