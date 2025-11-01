@@ -2,8 +2,8 @@
 
 #include "ImageLoader.h"
 #include "engine.h"
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include <stb_image_write.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 // Initialize static members
