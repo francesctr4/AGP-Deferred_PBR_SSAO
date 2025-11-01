@@ -144,14 +144,14 @@ void App::Init()
     // 3. Shader Programs Initialization
         // Forward rendering program
     forwardRenderProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/FORWARD_RENDER.glsl", "FORWARD_RENDER");
+        "Shaders/Blinn-Phong/FORWARD_RENDER.glsl", "FORWARD_RENDER");
 
         // Deferred rendering programs
     deferredRenderGeometryProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
+        "Shaders/Blinn-Phong/DEFERRED_RENDER_GEOMETRY.glsl", "DEFERRED_RENDER_GEOMETRY");
 
     deferredRenderQuadProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
+        "Shaders/Blinn-Phong/DEFERRED_RENDER_QUAD.glsl", "DEFERRED_RENDER_QUAD");
 
         // Light Debug programs
     pointLightSphereProgramIdx = ShaderLoader::LoadProgram(this,
@@ -163,48 +163,48 @@ void App::Init()
 
     // ------------------------ PBR ------------------------ //
     forwardPbrIblProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/FORWARD_PBR_IBL_TEXTURED.glsl", "FORWARD_PBR_IBL_TEXTURED");
+        "Shaders/PBR/Forward Shading/FORWARD_PBR_IBL_TEXTURED.glsl", "FORWARD_PBR_IBL_TEXTURED");
 
     forwardPbrDirectProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/FORWARD_PBR_DIRECT_TEXTURED.glsl", "FORWARD_PBR_DIRECT_TEXTURED");
+        "Shaders/PBR/Forward Shading/FORWARD_PBR_DIRECT_TEXTURED.glsl", "FORWARD_PBR_DIRECT_TEXTURED");
 
     deferredPbrIblGeometryProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl", "DEFERRED_PBR_IBL_TEXTURED_GEOMETRY");
+        "Shaders/PBR/Deferred Shading/DEFERRED_PBR_IBL_TEXTURED_GEOMETRY.glsl", "DEFERRED_PBR_IBL_TEXTURED_GEOMETRY");
 
     deferredPbrIblQuadProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl", "DEFERRED_PBR_IBL_TEXTURED_QUAD");
+        "Shaders/PBR/Deferred Shading/DEFERRED_PBR_IBL_TEXTURED_QUAD.glsl", "DEFERRED_PBR_IBL_TEXTURED_QUAD");
 
     equirectangularToCubemapProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/EQUIRECTANGULAR_TO_CUBEMAP.glsl", "EQUIRECTANGULAR_TO_CUBEMAP");
+        "Shaders/PBR/IBL/EQUIRECTANGULAR_TO_CUBEMAP.glsl", "EQUIRECTANGULAR_TO_CUBEMAP");
 
     skyboxProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/SKYBOX.glsl", "SKYBOX");
+        "Shaders/PBR/IBL/SKYBOX.glsl", "SKYBOX");
 
     diffuseIrradianceProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/DIFFUSE_IRRADIANCE_CONVOLUTION.glsl", "DIFFUSE_IRRADIANCE_CONVOLUTION");
+        "Shaders/PBR/IBL/DIFFUSE_IRRADIANCE_CONVOLUTION.glsl", "DIFFUSE_IRRADIANCE_CONVOLUTION");
 
     specularPrefilterProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/SPECULAR_PREFILTER_CONVOLUTION.glsl", "SPECULAR_PREFILTER_CONVOLUTION");
+        "Shaders/PBR/IBL/SPECULAR_PREFILTER_CONVOLUTION.glsl", "SPECULAR_PREFILTER_CONVOLUTION");
 
     brdfIntegrationProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/BRDF_INTEGRATION_CONVOLUTION.glsl", "BRDF_INTEGRATION_CONVOLUTION");
+        "Shaders/PBR/IBL/BRDF_INTEGRATION_CONVOLUTION.glsl", "BRDF_INTEGRATION_CONVOLUTION");
     // ------------------------ PBR ------------------------ //
 
     // ------------------------ SSAO ------------------------ //
 
     // Forward SSAO pre render program
     forwardPreSSAOProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/FORWARD_PRE_SSAO_RENDER.glsl", "FORWARD_PRE_SSA0_RENDER");
+        "Shaders/SSAO/Forward SSAO/FORWARD_PRE_SSAO_RENDER.glsl", "FORWARD_PRE_SSA0_RENDER");
 
     // Forward SSAO final render program
     forwardSSAOProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/FORWARD_SSAO_RENDER.glsl", "FORWARD_SSA0_RENDER");
+        "Shaders/SSAO/Forward SSAO/FORWARD_SSAO_RENDER.glsl", "FORWARD_SSA0_RENDER");
 
     SSAOprogramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/SSAO.glsl", "SSAO");
+        "Shaders/SSAO/SSAO.glsl", "SSAO");
 
     SSAOblurProgramIdx = ShaderLoader::LoadProgram(this,
-        "Shaders/SSAO_BLUR.glsl", "SSAO_BLUR");
+        "Shaders/SSAO/SSAO_BLUR.glsl", "SSAO_BLUR");
     // ------------------------ SSAO ------------------------ //
 
         // Cache uniform locations
