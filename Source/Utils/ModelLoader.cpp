@@ -1,7 +1,7 @@
 #include "ModelLoader.h"
 
-#include "ImageLoader.h"
-#include "engine.h"
+#include "Utils/ImageLoader.h"
+#include "Core/engine.h"
 
 void ModelLoader::ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices)
 {

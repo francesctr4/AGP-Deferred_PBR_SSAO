@@ -1,6 +1,6 @@
 #pragma once
-#include "platform.h"
-#include <glad/glad.h>
+#include "Core/platform.h"
+#include "glad/glad.h"
 
 // --- Vertex Data Structures ---
 // Defines a vertex with 3D position and 2D UV coordinates

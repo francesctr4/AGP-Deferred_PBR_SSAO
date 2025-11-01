@@ -1,7 +1,7 @@
 #ifndef OPENGL_ERROR_GUARD_H
 #define OPENGL_ERROR_GUARD_H
 
-#include <glad/glad.h>
+#include "glad/glad.h"
 
 class OpenGLErrorGuard
 {

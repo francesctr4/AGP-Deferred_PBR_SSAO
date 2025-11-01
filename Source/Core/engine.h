@@ -1,11 +1,11 @@
 #ifndef _ENGINE_H_
 #define _ENGINE_H_
 
-#include "openGL_types.inl"
-#include "OpenGL_Framebuffer.h"
-#include "BufferManagement.h"
-#include "Camera.h"
-#include "Cubemap.h"
+#include "Graphics/openGL_types.inl"
+#include "Graphics/OpenGL_Framebuffer.h"
+#include "Utils/BufferManagement.h"
+#include "Features/Camera.h"
+#include "Graphics/Cubemap.h"
 #include <vector>
 
 class App

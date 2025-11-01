@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/quaternion.hpp>  // For quaternion operations
-#include <glm/gtx/rotate_vector.hpp>
+#include "glm/glm.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/quaternion.hpp"  // For quaternion operations
+#include "glm/gtx/rotate_vector.hpp"
 #include <vector>
 #include <string>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "platform.h"
+#include "Core/platform.h"
 #include "openGL_types.inl"
 
 #include <array>

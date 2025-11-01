@@ -15,15 +15,15 @@
 #include <unistd.h>
 #endif
 
-#include "engine.h"
+#include "Core/engine.h"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 #define USE_DISCRETE_GPU 1
 #if USE_DISCRETE_GPU == 1
@@ -39,7 +39,7 @@ extern "C"
 #endif
 
 #ifdef _DEBUG
-#include "OpenGLDebugCallback.h"
+#include "Debugging Tools/OpenGLDebugCallback.h"
 #endif
 
 #define GLOBAL_FRAME_ARENA_SIZE MB(16)
@@ -245,7 +245,7 @@ int main()
 
     std::stringstream vendorInfo;
 
-    // Obtener información de OpenGL
+    // Obtener informaciï¿½n de OpenGL
     vendorInfo << "OpenGL version:" << std::endl;
     vendorInfo << glGetString(GL_VERSION) << std::endl << std::endl;
 

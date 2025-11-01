@@ -1,6 +1,6 @@
 #pragma once
 
-#include "openGL_types.inl"
+#include "Graphics/openGL_types.inl"
 
 class App;
 

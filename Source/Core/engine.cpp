@@ -7,11 +7,11 @@
 
 #include "engine.h"
 
-#include "ImageLoader.h"
-#include "ModelLoader.h"
-#include "ShaderLoader.h"
+#include "Utils/ImageLoader.h"
+#include "Utils/ModelLoader.h"
+#include "Utils/ShaderLoader.h"
 
-#include "Editor.h"
+#include "Editor/Editor.h"
 
 #include <format>
 #include <random>

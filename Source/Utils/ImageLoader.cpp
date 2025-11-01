@@ -1,9 +1,9 @@
 #include "ImageLoader.h"
 
-#include "engine.h"
+#include "Core/engine.h"
 
-#include <stb_image.h>
-#include <stb_image_write.h>
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 Image ImageLoader::LoadImage(const char* filename)
 {

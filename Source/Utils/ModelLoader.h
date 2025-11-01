@@ -1,10 +1,10 @@
 #pragma once
 
-#include "openGL_types.inl"
+#include "Graphics/openGL_types.inl"
 
-#include <assimp/cimport.h>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include "assimp/cimport.h"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
 
 #include <vector>
 

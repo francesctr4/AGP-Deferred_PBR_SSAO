@@ -1,10 +1,10 @@
 #include "Cubemap.h"
 
-#include "ImageLoader.h"
-#include "engine.h"
+#include "Utils/ImageLoader.h"
+#include "Core/engine.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <glm/gtc/matrix_transform.hpp>
+#include "stb_image.h"
+#include "glm/gtc/matrix_transform.hpp"
 
 // Initialize static members
 GLuint Cubemap::cubeVAO = 0;

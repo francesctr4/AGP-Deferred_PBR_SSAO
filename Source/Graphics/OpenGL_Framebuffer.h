@@ -1,8 +1,8 @@
 #ifndef _OPENGL_FRAMEBUFFER_H_
 #define _OPENGL_FRAMEBUFFER_H_
 
-#include "platform.h"
-#include <glad/glad.h>
+#include "Core/platform.h"
+#include "glad/glad.h"
 #include <vector>
 #include <utility>
 
